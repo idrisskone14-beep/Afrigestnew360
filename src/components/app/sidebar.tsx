@@ -29,7 +29,7 @@ function NavLink({ href, icon, children, active, onNavigate, trailing, index = 0
       aria-current={active ? "page" : undefined}
       style={{ animationDelay: `${Math.min(index, 14) * 28}ms` }}
       className={cn(
-        "group relative flex animate-slide-in-left items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+        "group relative flex animate-slide-in-left items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
         active ? "text-white" : "text-sidebar-foreground/75 hover:translate-x-0.5 hover:bg-white/[0.06] hover:text-white",
       )}
     >
@@ -37,10 +37,10 @@ function NavLink({ href, icon, children, active, onNavigate, trailing, index = 0
         <motion.span
           layoutId="sidebar-active"
           transition={{ type: "spring", stiffness: 420, damping: 34 }}
-          className="absolute inset-0 rounded-lg bg-gradient-to-r from-brand/90 to-brand-2/80 shadow-glow"
+          className="absolute inset-0 rounded-md bg-white/[0.11] before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-r before:bg-brand-2"
         />
       )}
-      <span className={cn("relative z-10 shrink-0 transition-transform duration-200 group-hover:scale-110", active ? "text-white" : "text-indigo-300/80 group-hover:text-white")}>{icon}</span>
+      <span className={cn("relative z-10 shrink-0 transition-transform duration-200 group-hover:scale-110", active ? "text-brand-2" : "text-sidebar-foreground/55 group-hover:text-brand-2")}>{icon}</span>
       <span className="relative z-10 truncate">{children}</span>
       {trailing && <span className="relative z-10 ml-auto">{trailing}</span>}
     </Link>
@@ -54,9 +54,8 @@ export function SidebarContent({ modules, canSeeSettings, unreadCount, validatio
   const extensions = modules.filter((m) => m.kind === "EXTENSION");
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-sidebar bg-gradient-to-b from-[#0d1a4d] via-sidebar to-[#070d2b] text-sidebar-foreground">
-      <div className="pointer-events-none absolute -left-16 -top-24 size-64 rounded-full bg-brand/30 blur-3xl" aria-hidden />
-      <div className="pointer-events-none absolute -bottom-24 -right-16 size-56 rounded-full bg-brand-green/15 blur-3xl" aria-hidden />
+    <div className="pattern-mudcloth relative flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-sidebar via-sidebar/90 to-sidebar" aria-hidden />
       <div className="relative z-10 flex h-16 shrink-0 items-center border-b border-sidebar-border px-5">
         <Link href="/app/dashboard" onClick={onNavigate} className="text-white transition-transform hover:scale-[1.02]"><Logo /></Link>
       </div>
@@ -75,7 +74,7 @@ export function SidebarContent({ modules, canSeeSettings, unreadCount, validatio
 
         {extensions.length > 0 && (
           <div className="space-y-0.5">
-            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-indigo-300/50">Extensions</p>
+            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-2/70">Extensions</p>
             {extensions.map((m, i) => (
               <NavLink key={m.key} index={standard.length + i + 2} href={m.href} icon={<ModuleIcon name={m.icon} className="size-4" />} active={is(m.href)} onNavigate={onNavigate}>
                 {m.name}
@@ -85,14 +84,14 @@ export function SidebarContent({ modules, canSeeSettings, unreadCount, validatio
         )}
       </nav>
 
-      <div className="relative z-10 space-y-0.5 border-t border-sidebar-border bg-black/10 p-3">
+      <div className="relative z-10 space-y-0.5 border-t border-sidebar-border bg-black/20 p-3">
         {validations && (
           <NavLink
             href="/app/validations"
             icon={<ClipboardCheck className="size-4" />}
             active={is("/app/validations")}
             onNavigate={onNavigate}
-            trailing={validations.pending > 0 ? <Badge className="h-5 min-w-5 justify-center animate-pulse-glow bg-warning px-1.5 text-[11px] text-white">{validations.pending > 99 ? "99+" : validations.pending}</Badge> : null}
+            trailing={validations.pending > 0 ? <Badge className="h-5 min-w-5 justify-center animate-pulse-glow bg-brand-2 px-1.5 text-[11px] text-[#1a1405]">{validations.pending > 99 ? "99+" : validations.pending}</Badge> : null}
           >
             Validations
           </NavLink>
@@ -102,7 +101,7 @@ export function SidebarContent({ modules, canSeeSettings, unreadCount, validatio
           icon={<Bell className="size-4" />}
           active={is("/app/notifications")}
           onNavigate={onNavigate}
-          trailing={unreadCount > 0 ? <Badge className="h-5 min-w-5 justify-center bg-brand-green px-1.5 text-[11px] text-white">{unreadCount > 99 ? "99+" : unreadCount}</Badge> : null}
+          trailing={unreadCount > 0 ? <Badge className="h-5 min-w-5 justify-center bg-brand px-1.5 text-[11px] text-white">{unreadCount > 99 ? "99+" : unreadCount}</Badge> : null}
         >
           Notifications
         </NavLink>

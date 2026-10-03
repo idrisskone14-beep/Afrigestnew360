@@ -20,7 +20,7 @@ export function Topbar({ nav, companies, activeCompanyId, user }: {
 }) {
   const [drawer, setDrawer] = useState(false);
   return (
-    <header className="glass sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border/60 px-3 shadow-[0_1px_0_0_rgb(47_91_255/0.06)] sm:px-5">
+    <header className="glass sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border px-3 sm:px-5">
       <Sheet open={drawer} onOpenChange={setDrawer}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Ouvrir le menu"><Menu className="size-5" /></Button>
@@ -39,7 +39,7 @@ export function Topbar({ nav, companies, activeCompanyId, user }: {
         <Button variant="ghost" size="icon" asChild className="relative" aria-label="Notifications">
           <Link href="/app/notifications">
             <Bell className="size-4" />
-            {nav.unreadCount > 0 && <span className="absolute right-1.5 top-1.5 size-2 rounded-full animate-pulse-glow bg-brand-green ring-2 ring-background" />}
+            {nav.unreadCount > 0 && <span className="absolute right-1.5 top-1.5 size-2 rounded-full animate-pulse-glow bg-brand-2 ring-2 ring-background" />}
           </Link>
         </Button>
         <ThemeToggle />

@@ -4,15 +4,15 @@ import { cn } from "@/lib/utils"
 import { Slot } from "radix-ui"
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 outline-none active:scale-[0.97] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-semibold whitespace-nowrap transition-all duration-150 outline-none active:translate-x-0 active:translate-y-0 active:shadow-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "gradient-brand bg-[length:140%_100%] bg-left text-white shadow-[0_6px_16px_-6px_rgb(47_91_255/0.65)] hover:-translate-y-px hover:bg-right hover:shadow-[0_10px_22px_-6px_rgb(47_91_255/0.75)]",
+        default: "bg-primary text-primary-foreground hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_var(--brand-2)]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         outline:
-          "border bg-card shadow-xs hover:-translate-y-px hover:border-brand/40 hover:bg-accent hover:text-accent-foreground hover:shadow-sm dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border border-foreground/25 bg-card hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-foreground hover:shadow-[3px_3px_0_0_var(--brand-2)] dark:border-input dark:bg-input/30",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground",
         ghost:

@@ -33,5 +33,5 @@ export function AnimatedValue({ value, duration = 900 }: { value: string; durati
   }, [value, duration]);
 
   // une valeur qui change entre deux rendus s'affiche tout de suite telle quelle, sans attendre l'animation
-  return <>{frame.of === value ? frame.text : value}</>;
+  return <>{(frame.of === value ? frame.text : value).replace(/ /g, " ")}</>;
 }

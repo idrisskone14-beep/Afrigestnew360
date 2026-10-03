@@ -5,17 +5,16 @@ const LINE = "M0,70 C30,62 50,66 80,48 C110,30 130,44 160,28 C190,12 220,22 250,
 export function DashboardMockup() {
   return (
     <div className="relative" role="img" aria-label="Aperçu du tableau de bord AfriGest 360 : chiffre d'affaires, trésorerie, factures à encaisser et activité récente">
-      <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-brand/25 via-brand-green/15 to-transparent blur-2xl" />
-      <div className="animate-float overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-brand/20 [animation-duration:9s]">
+            <div className="overflow-hidden rounded-xl border border-foreground/30 bg-card shadow-offset-lg">
         <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
           <span className="size-2.5 rounded-full bg-destructive/70" /><span className="size-2.5 rounded-full bg-warning/80" /><span className="size-2.5 rounded-full bg-success/80" />
           <span className="ml-3 text-[11px] text-muted-foreground">app.afrigest360.com / dashboard</span>
         </div>
         <div className="grid grid-cols-[3.2rem_1fr] sm:grid-cols-[9rem_1fr]">
-          <aside className="space-y-1.5 border-r bg-gradient-to-b from-[#0d1a4d] to-[#070d2b] p-2.5 sm:p-3">
+          <aside className="space-y-1.5 border-r bg-sidebar p-2.5 sm:p-3">
             {["Tableau de bord", "Finance", "Ventes", "CRM", "Stock", "RH", "Projets"].map((l, i) => (
-              <div key={l} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px] ${i === 0 ? "bg-gradient-to-r from-brand to-brand-2 font-medium text-white" : "text-indigo-200/70"}`}>
-                <span className={`size-2 shrink-0 rounded-sm ${i === 0 ? "bg-white" : "bg-indigo-300/40"}`} />
+              <div key={l} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px] ${i === 0 ? "bg-white/[0.11] font-medium text-white" : "text-sidebar-foreground/65"}`}>
+                <span className={`size-2 shrink-0 rounded-sm ${i === 0 ? "bg-brand-2" : "bg-sidebar-foreground/30"}`} />
                 <span className="hidden sm:inline">{l}</span>
               </div>
             ))}
@@ -39,7 +38,7 @@ export function DashboardMockup() {
               <div className="rounded-lg border bg-background p-3">
                 <p className="text-[11px] font-medium">Évolution du chiffre d'affaires</p>
                 <div className="mt-3 flex h-24 items-end gap-1.5">
-                  {BARS.map((h, i) => <div key={i} className="flex-1 origin-bottom animate-[grow-y_0.9s_cubic-bezier(0.22,1,0.36,1)_backwards] rounded-t bg-gradient-to-t from-brand to-brand-2" style={{ height: `${h}%`, opacity: 0.55 + i / 26, animationDelay: `${0.3 + i * 0.06}s` }} />)}
+                  {BARS.map((h, i) => <div key={i} className="flex-1 origin-bottom animate-[grow-y_0.9s_cubic-bezier(0.22,1,0.36,1)_backwards] rounded-t-sm bg-forest dark:bg-brand-green" style={{ height: `${h}%`, opacity: 0.55 + i / 26, animationDelay: `${0.3 + i * 0.06}s` }} />)}
                 </div>
               </div>
               <div className="rounded-lg border bg-background p-3">
