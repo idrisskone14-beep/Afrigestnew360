@@ -172,6 +172,13 @@
 @keyframes drift { from { background-position: 0 0; } to { background-position: 440px 0; } }
 @keyframes grow-y { from { transform: scaleY(0); } to { transform: none; } }
 @keyframes draw-line { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes row-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@keyframes card-reveal { from { opacity: 0; scale: 0.96; } to { opacity: 1; scale: 1; } }
+@keyframes wiggle { 0%, 100% { rotate: 0deg; } 12% { rotate: -14deg; } 24% { rotate: 12deg; } 36% { rotate: -9deg; } 48% { rotate: 6deg; } 60% { rotate: 0deg; } }
+@keyframes title-up { from { transform: translateY(105%); } to { transform: none; } }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes route-load { from { width: 0; opacity: 1; } to { width: 88%; opacity: 1; } }
+@keyframes route-finish { from { width: 88%; opacity: 1; } 40% { width: 100%; opacity: 1; } to { width: 100%; opacity: 0; } }
 @keyframes route-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 @layer base {
@@ -237,6 +244,42 @@
 .stagger > *:nth-child(5) { animation-delay: 0.24s; }
 .stagger > *:nth-child(6) { animation-delay: 0.29s; }
 .stagger > *:nth-child(n + 7) { animation-delay: 0.34s; }
+
+/* Lignes de tableau : apparition en cascade (les 14 premières) */
+[data-slot="table-body"] > tr { animation: row-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+[data-slot="table-body"] > tr:nth-child(1) { animation-delay: 0.03s; }
+[data-slot="table-body"] > tr:nth-child(2) { animation-delay: 0.06s; }
+[data-slot="table-body"] > tr:nth-child(3) { animation-delay: 0.09s; }
+[data-slot="table-body"] > tr:nth-child(4) { animation-delay: 0.12s; }
+[data-slot="table-body"] > tr:nth-child(5) { animation-delay: 0.15s; }
+[data-slot="table-body"] > tr:nth-child(6) { animation-delay: 0.18s; }
+[data-slot="table-body"] > tr:nth-child(7) { animation-delay: 0.21s; }
+[data-slot="table-body"] > tr:nth-child(8) { animation-delay: 0.24s; }
+[data-slot="table-body"] > tr:nth-child(9) { animation-delay: 0.27s; }
+[data-slot="table-body"] > tr:nth-child(10) { animation-delay: 0.30s; }
+[data-slot="table-body"] > tr:nth-child(11) { animation-delay: 0.33s; }
+[data-slot="table-body"] > tr:nth-child(12) { animation-delay: 0.36s; }
+[data-slot="table-body"] > tr:nth-child(13) { animation-delay: 0.39s; }
+[data-slot="table-body"] > tr:nth-child(14) { animation-delay: 0.42s; }
+
+/* Cartes : apparition progressive à l'entrée dans la fenêtre (navigateurs compatibles uniquement) */
+@supports (animation-timeline: view()) {
+  main [data-slot="card"] { animation: card-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+}
+
+/* Barre de progression de navigation (motif tissé) */
+.route-bar { background: repeating-linear-gradient(90deg, var(--brand-2) 0 14px, var(--brand) 14px 28px); box-shadow: 0 0 10px 1px color-mix(in srgb, var(--brand-2) 70%, transparent); }
+.route-bar[data-state="loading"] { animation: route-load 9s cubic-bezier(0.1, 0.6, 0.2, 1) forwards; }
+.route-bar[data-state="finishing"] { animation: route-finish 0.7s ease-out forwards; }
+
+/* Défilement horizontal infini (bandeau de pays) */
+.marquee-track { animation: marquee 48s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+/* Transition de thème : un cercle révèle le nouveau thème depuis le bouton (View Transitions API) */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(root) { z-index: 2; }
+::view-transition-old(root) { z-index: 1; }
 
 /* Barre de défilement discrète */
 * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted-foreground) 35%, transparent) transparent; }

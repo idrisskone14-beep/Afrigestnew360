@@ -45,7 +45,7 @@ export default async function DashboardPage() {
     <>
       <section className="relative mb-8 overflow-hidden rounded-xl border border-foreground/20 bg-forest text-[#f5eedf] shadow-offset-lg">
         <div className="motif-strip" aria-hidden />
-        <div className="pattern-mudcloth pointer-events-none absolute inset-x-0 bottom-0 top-[10px] opacity-90" aria-hidden />
+        <div className="pattern-mudcloth pattern-drift pointer-events-none absolute inset-x-0 bottom-0 top-[10px] opacity-90" aria-hidden />
         <div className="relative flex flex-wrap items-end justify-between gap-4 p-6 sm:p-8">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-2">{new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>

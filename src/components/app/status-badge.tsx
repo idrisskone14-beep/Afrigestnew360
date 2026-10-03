@@ -11,7 +11,12 @@ const TONES: Record<Tone, string> = {
 };
 
 export function StatusBadge({ tone = "neutral", children, className }: { tone?: Tone; children: React.ReactNode; className?: string }) {
-  return <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", TONES[tone], className)}>{children}</span>;
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium", TONES[tone], className)}>
+      {(tone === "warning" || tone === "info") && <span aria-hidden className="size-1.5 animate-pulse rounded-full bg-current" />}
+      {children}
+    </span>
+  );
 }
 
 /** Table de correspondance statut → libellé + couleur, partagée par les modules. */

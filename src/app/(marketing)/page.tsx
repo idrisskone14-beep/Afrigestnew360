@@ -41,7 +41,7 @@ export default async function LandingPage() {
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1fr_1.1fr] lg:gap-8 lg:px-8 lg:pb-24">
           <Reveal>
             <p className="eyebrow mb-5 flex items-center gap-2"><Sparkles className="size-3.5" /> La plateforme de gestion pensée pour l'Afrique</p>
-            <h1 className="font-display text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-[4.2rem]">Toute votre entreprise. <span className="italic text-brand">Une seule plateforme.</span></h1>
+            <h1 className="font-display text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-[4.2rem]">Toute votre entreprise. <span className="relative inline-block italic text-brand">Une seule plateforme.<svg aria-hidden viewBox="0 0 300 12" preserveAspectRatio="none" className="absolute -bottom-1 left-0 h-2.5 w-full text-brand-2"><path d="M2 8 C60 2 120 11 180 5 S270 3 298 7" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" pathLength={1} strokeDasharray={1} className="animate-[draw-line_1.2s_ease-out_0.9s_backwards]" /></svg></span></h1>
             <p className="mt-6 max-w-xl text-lg text-muted-foreground">Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis AfriGest 360.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" className="h-12 px-7 text-base" asChild><Link href="/demo">Demander une démo <ArrowRight className="size-4" /></Link></Button>
@@ -59,9 +59,15 @@ export default async function LandingPage() {
       <section aria-label="Pays couverts" className="border-y bg-card/50 py-8">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
           <p className="text-sm text-muted-foreground">Conçu pour les entreprises de toute l'Afrique francophone et anglophone</p>
-          <ul className="mt-4 flex flex-wrap justify-center gap-2">
-            {CORE_COUNTRIES.map((c) => <li key={c.code} className="rounded-full border bg-background px-3.5 py-1.5 text-sm font-medium text-muted-foreground">{c.name}</li>)}
-          </ul>
+        </div>
+        <div className="marquee mt-5 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
+          <div className="marquee-track flex w-max gap-2.5">
+            {[0, 1].map((k) => (
+              <ul key={k} className="flex gap-2.5" aria-hidden={k === 1 ? true : undefined}>
+                {CORE_COUNTRIES.map((c) => <li key={c.code} className="rounded-full border border-foreground/20 bg-card px-4 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:border-foreground hover:bg-brand-2/30">{c.name}</li>)}
+              </ul>
+            ))}
+          </div>
         </div>
       </section>
 

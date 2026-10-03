@@ -40,7 +40,7 @@ function NavLink({ href, icon, children, active, onNavigate, trailing, index = 0
           className="absolute inset-0 rounded-md bg-white/[0.11] before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-r before:bg-brand-2"
         />
       )}
-      <span className={cn("relative z-10 shrink-0 transition-transform duration-200 group-hover:scale-110", active ? "text-brand-2" : "text-sidebar-foreground/55 group-hover:text-brand-2")}>{icon}</span>
+      <span className={cn("relative z-10 shrink-0 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-125", active ? "text-brand-2" : "text-sidebar-foreground/55 group-hover:text-brand-2")}>{icon}</span>
       <span className="relative z-10 truncate">{children}</span>
       {trailing && <span className="relative z-10 ml-auto">{trailing}</span>}
     </Link>

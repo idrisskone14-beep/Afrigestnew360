@@ -38,7 +38,7 @@ export function Topbar({ nav, companies, activeCompanyId, user }: {
         <CommandPalette modules={nav.modules} companies={companies} activeCompanyId={activeCompanyId} canSeeSettings={nav.canSeeSettings} />
         <Button variant="ghost" size="icon" asChild className="relative" aria-label="Notifications">
           <Link href="/app/notifications">
-            <Bell className="size-4" />
+            <Bell className={nav.unreadCount > 0 ? "size-4 origin-top animate-[wiggle_1.4s_ease-in-out_1.8s_3]" : "size-4"} />
             {nav.unreadCount > 0 && <span className="absolute right-1.5 top-1.5 size-2 rounded-full animate-pulse-glow bg-brand-2 ring-2 ring-background" />}
           </Link>
         </Button>

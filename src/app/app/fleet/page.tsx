@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, CircleCheck } from "lucide-react";
 import { forbidden, redirect } from "next/navigation";
+import { AnimatedValue } from "@/components/app/animated-value";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { d } from "@/core/money";
@@ -85,7 +86,7 @@ function Kpi({ label, value, hint, href, tone }: { label: string; value: string;
     <Link href={href}>
       <Card className="h-full transition-colors hover:border-brand"><CardContent className="space-y-1 p-5">
         <p className="text-sm text-muted-foreground">{label}</p>
-        <p className={cn("truncate text-2xl font-semibold tracking-tight tabular", tone === "danger" && "text-destructive", tone === "warning" && "text-warning")}>{value}</p>
+        <p className={cn("truncate text-2xl font-semibold tracking-tight tabular", tone === "danger" && "text-destructive", tone === "warning" && "text-warning")}><AnimatedValue value={value} /></p>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </CardContent></Card>
     </Link>

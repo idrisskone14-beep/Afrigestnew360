@@ -14,7 +14,7 @@ export function LogoMark({ className }: { className?: string }) {
 
 export function Logo({ className, compact = false }: { className?: string; compact?: boolean }) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5 tracking-tight", className)}>
+    <span className={cn("inline-flex items-center gap-2.5 tracking-tight [&_svg]:transition-transform [&_svg]:duration-500 hover:[&_svg]:-rotate-[10deg] hover:[&_svg]:scale-110", className)}>
       <LogoMark />
       {!compact && (
         <span className="font-display text-[19px] font-semibold leading-none">
