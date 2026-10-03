@@ -36,15 +36,18 @@ export default async function LandingPage() {
     <>
       {/* 2. Hero */}
       <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[34rem] bg-gradient-to-b from-accent/70 via-background to-background" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[40rem] bg-gradient-to-b from-accent/80 via-background to-background" />
+        <div className="pointer-events-none absolute -right-24 -top-24 -z-10 size-[30rem] animate-float rounded-full bg-brand/20 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute -left-24 top-40 -z-10 size-[24rem] animate-float rounded-full bg-brand-green/20 blur-3xl [animation-delay:-3s]" aria-hidden />
+        <div className="pointer-events-none absolute left-1/2 top-10 -z-10 size-72 animate-float rounded-full bg-brand-2/15 blur-3xl [animation-delay:-5s]" aria-hidden />
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1fr_1.1fr] lg:gap-8 lg:px-8 lg:pb-24">
           <Reveal>
-            <Badge variant="secondary" className="mb-5 gap-1.5 px-3 py-1"><Sparkles className="size-3.5 text-brand" /> La plateforme de gestion pensée pour l'Afrique</Badge>
-            <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.4rem]">Toute votre entreprise. <span className="text-brand">Une seule plateforme.</span></h1>
+            <Badge variant="secondary" className="mb-5 gap-1.5 border-brand/20 bg-brand/10 px-3 py-1 text-brand"><Sparkles className="size-3.5" /> La plateforme de gestion pensée pour l'Afrique</Badge>
+            <h1 className="text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.6rem]">Toute votre entreprise. <span className="gradient-brand-text animate-gradient-pan bg-[length:200%_100%]">Une seule plateforme.</span></h1>
             <p className="mt-6 max-w-xl text-lg text-muted-foreground">Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis AfriGest 360.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button size="lg" asChild><Link href="/demo">Demander une démo <ArrowRight className="size-4" /></Link></Button>
-              <Button size="lg" variant="outline" asChild><Link href="#presentation">Découvrir AfriGest 360</Link></Button>
+              <Button size="lg" className="h-12 px-7 text-base" asChild><Link href="/demo">Demander une démo <ArrowRight className="size-4" /></Link></Button>
+              <Button size="lg" variant="outline" className="h-12 px-7 text-base" asChild><Link href="#presentation">Découvrir AfriGest 360</Link></Button>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               {["FCFA & multi-devises", "Multi-entreprises", "Données isolées et auditées"].map((t) => <li key={t} className="flex items-center gap-1.5"><Check className="size-4 text-brand-green" />{t}</li>)}

@@ -29,7 +29,7 @@ export function CustomizeDialog({ initial }: { initial: LayoutEntry[] }) {
   });
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) setItems(initial); }}>
-      <DialogTrigger asChild><Button variant="outline"><SlidersHorizontal className="size-4" /> Personnaliser</Button></DialogTrigger>
+      <DialogTrigger asChild><Button variant="outline" className="border-white/25 bg-white/10 text-white backdrop-blur hover:border-white/40 hover:bg-white/20 hover:text-white"><SlidersHorizontal className="size-4" /> Personnaliser</Button></DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader><DialogTitle>Personnaliser le tableau de bord</DialogTitle><DialogDescription>Affichez ou masquez les widgets et changez leur ordre. Seuls les widgets que votre rôle et les modules actifs permettent sont proposés.</DialogDescription></DialogHeader>
         <ul className="divide-y rounded-lg border">

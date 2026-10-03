@@ -9,7 +9,7 @@ export function PageHeader({ title, description, actions, breadcrumbs }: {
   breadcrumbs?: { label: string; href?: string }[];
 }) {
   return (
-    <div className="mb-6 space-y-3">
+    <div className="mb-8 space-y-3">
       {breadcrumbs && breadcrumbs.length > 0 && (
         <Breadcrumb>
           <BreadcrumbList>
@@ -30,8 +30,8 @@ export function PageHeader({ title, description, actions, breadcrumbs }: {
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {description && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>}
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl"><span className="gradient-brand-text bg-[length:200%_100%] animate-gradient-pan">{title}</span></h1>
+          {description && <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">{description}</p>}
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
@@ -43,8 +43,8 @@ export function EmptyState({ icon, title, description, action }: {
   icon?: React.ReactNode; title: string; description?: string; action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-card/50 px-6 py-14 text-center">
-      {icon && <div className="mb-3 text-muted-foreground">{icon}</div>}
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-brand/30 bg-gradient-to-b from-accent/50 to-card/50 px-6 py-14 text-center">
+      {icon && <div className="mb-3 grid size-14 animate-float place-items-center rounded-2xl bg-brand/10 text-brand">{icon}</div>}
       <h3 className="text-base font-semibold">{title}</h3>
       {description && <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>}
       {action && <div className="mt-4">{action}</div>}

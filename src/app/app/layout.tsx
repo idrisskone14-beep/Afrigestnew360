@@ -27,7 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-dvh lg:pl-64">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-sidebar-border lg:block">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 shadow-[4px_0_32px_-12px_rgb(10_18_54/0.5)] lg:block">
         <SidebarContent {...nav} />
       </aside>
       <Topbar

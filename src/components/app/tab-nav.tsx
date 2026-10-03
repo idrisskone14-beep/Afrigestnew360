@@ -8,14 +8,14 @@ import { cn } from "@/lib/utils";
 export function TabNav({ tabs, label = "Sections" }: { tabs: { href: string; label: string; exact?: boolean }[]; label?: string }) {
   const pathname = usePathname();
   return (
-    <nav aria-label={label} className="-mx-1 mb-6 overflow-x-auto border-b">
-      <ul className="flex min-w-max gap-1 px-1">
+    <nav aria-label={label} className="-mx-1 mb-6 overflow-x-auto pb-1">
+      <ul className="flex min-w-max gap-1 rounded-xl border border-border/60 bg-card/70 p-1 shadow-soft backdrop-blur">
         {tabs.map((t) => {
           const active = t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(`${t.href}/`);
           return (
             <li key={t.href}>
               <Link href={t.href} aria-current={active ? "page" : undefined}
-                className={cn("relative inline-block px-3 py-2.5 text-sm font-medium transition-colors", active ? "text-foreground after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-brand" : "text-muted-foreground hover:text-foreground")}>
+                className={cn("relative inline-block rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-200", active ? "gradient-brand text-white shadow-[0_4px_12px_-4px_rgb(47_91_255/0.6)]" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground")}>
                 {t.label}
               </Link>
             </li>
