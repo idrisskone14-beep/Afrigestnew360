@@ -4,7 +4,7 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 
-type ViewTransitionDoc = Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
+type ViewTransitionDoc = Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } };
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -24,12 +24,14 @@ export function ThemeToggle() {
       document.documentElement.classList.toggle("dark", next === "dark");
       setTheme(next);
     });
+    // un second clic pendant l'animation annule la première transition : sans importance, le thème est déjà appliqué
+    void t.finished.catch(() => undefined);
     void t.ready.then(() => {
       document.documentElement.animate(
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
         { duration: 700, easing: "cubic-bezier(0.65, 0, 0.35, 1)", pseudoElement: "::view-transition-new(root)" },
       );
-    });
+    }).catch(() => undefined);
   };
 
   return (
