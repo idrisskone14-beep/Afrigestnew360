@@ -11,7 +11,12 @@ const g = globalThis as unknown as { __afgPrisma?: PrismaClient };
 function createBase(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL est requis.");
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+  return new PrismaClient({
+    adapter: new PrismaPg({ connectionString }),
+    // Défauts de Prisma (attente 2 s, exécution 5 s) trop justes : première compilation en développement, base distante
+    // ou pic de charge faisaient échouer des requêtes pourtant correctes (« Unable to start a transaction in the given time »).
+    transactionOptions: { maxWait: 10_000, timeout: 20_000 },
+  });
 }
 
 /**
