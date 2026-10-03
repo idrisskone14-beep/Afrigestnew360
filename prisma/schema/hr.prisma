@@ -1,0 +1,207 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 4B — Ressources humaines
+// ════════════════════════════════════════════════════════════════
+
+enum EmployeeStatus {
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum ContractType {
+  PERMANENT
+  FIXED_TERM
+  TEMP
+  INTERNSHIP
+  CONSULTANT
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  REMOTE
+  HALF_DAY
+}
+
+enum PayoutMethod {
+  BANK_TRANSFER
+  CASH
+  MOBILE_MONEY
+}
+
+model Employee {
+  id                String         @id @default(uuid()) @db.Uuid
+  companyId         String         @db.Uuid
+  number            String
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  birthDate         DateTime?      @db.Date
+  nationalId        String?
+  address           String?
+  city              String?
+  hireDate          DateTime       @db.Date
+  endDate           DateTime?      @db.Date
+  terminationReason String?
+  status            EmployeeStatus @default(ACTIVE)
+  jobTitle          String?
+  departmentId      String?        @db.Uuid
+  branchId          String?        @db.Uuid
+  managerId         String?        @db.Uuid
+  // Compte utilisateur lié (accès en libre-service : congés, bulletins). Un utilisateur = au plus un salarié par entreprise.
+  userId            String?        @db.Uuid
+  // Salaire de base mensuel brut ; donnée sensible, réservée aux droits « contrats » et « paie »
+  baseSalary        Decimal        @default(0) @db.Decimal(18, 2)
+  currency          String
+  payoutMethod      PayoutMethod   @default(BANK_TRANSFER)
+  payoutReference   String?
+  createdById       String?        @db.Uuid
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+
+  company         Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  department      Department?           @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  branch          Branch?               @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  manager         Employee?             @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  reports         Employee[]            @relation("EmployeeManager")
+  contracts       EmploymentContract[]
+  leaves          LeaveRequest[]
+  attendances     Attendance[]
+  evaluations     Evaluation[]
+  trainings       Training[]
+  payrollItems    EmployeePayrollItem[]
+  payslips        Payslip[]
+  managedProjects Project[]             @relation("ProjectManager")
+  assignedTasks   ProjectTask[]         @relation("TaskAssignee")
+  timeEntries     TimeEntry[]
+
+  @@unique([companyId, number])
+  @@unique([companyId, userId])
+  @@index([companyId, status])
+  @@index([companyId, departmentId])
+  @@index([companyId, branchId])
+}
+
+model EmploymentContract {
+  id          String       @id @default(uuid()) @db.Uuid
+  companyId   String       @db.Uuid
+  employeeId  String       @db.Uuid
+  type        ContractType
+  startDate   DateTime     @db.Date
+  endDate     DateTime?    @db.Date
+  jobTitle    String?
+  salary      Decimal      @db.Decimal(18, 2)
+  notes       String?
+  createdById String?      @db.Uuid
+  createdAt   DateTime     @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId, startDate])
+  @@index([companyId, endDate])
+}
+
+model LeaveType {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  name       String
+  // Droit annuel en jours ouvrés ; 0 = non plafonné (maladie, maternité…)
+  annualDays Decimal  @default(0) @db.Decimal(5, 1)
+  paid       Boolean  @default(true)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requests LeaveRequest[]
+
+  @@unique([companyId, name])
+}
+
+model LeaveRequest {
+  id          String      @id @default(uuid()) @db.Uuid
+  companyId   String      @db.Uuid
+  employeeId  String      @db.Uuid
+  typeId      String      @db.Uuid
+  startDate   DateTime    @db.Date
+  endDate     DateTime    @db.Date
+  // Jours ouvrés (lundi-vendredi) calculés par le serveur
+  days        Decimal     @db.Decimal(5, 1)
+  reason      String?
+  status      LeaveStatus @default(PENDING)
+  createdById String?     @db.Uuid
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type     LeaveType @relation(fields: [typeId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, employeeId, startDate])
+  @@index([companyId, status])
+}
+
+model Attendance {
+  id          String           @id @default(uuid()) @db.Uuid
+  companyId   String           @db.Uuid
+  employeeId  String           @db.Uuid
+  date        DateTime         @db.Date
+  status      AttendanceStatus
+  checkIn     String?
+  checkOut    String?
+  notes       String?
+  createdById String?          @db.Uuid
+  updatedAt   DateTime         @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+  @@index([companyId, date])
+}
+
+model Evaluation {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  employeeId  String   @db.Uuid
+  period      String
+  date        DateTime @db.Date
+  score       Int
+  objectives  String?
+  comments    String?
+  evaluatorId String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId, date])
+}
+
+model Training {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  employeeId String   @db.Uuid
+  title      String
+  provider   String?
+  date       DateTime @db.Date
+  hours      Decimal  @default(0) @db.Decimal(6, 1)
+  cost       Decimal  @default(0) @db.Decimal(18, 2)
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId, date])
+}

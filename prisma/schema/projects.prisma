@@ -1,0 +1,118 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 4D — Projets, tâches et temps passé
+// ════════════════════════════════════════════════════════════════
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  ON_HOLD
+  DONE
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Project {
+  id           String        @id @default(uuid()) @db.Uuid
+  companyId    String        @db.Uuid
+  code         String
+  name         String
+  description  String?
+  customerId   String?       @db.Uuid
+  managerId    String?       @db.Uuid
+  status       ProjectStatus @default(PLANNED)
+  startDate    DateTime?     @db.Date
+  endDate      DateTime?     @db.Date
+  // Budget de coûts (main-d'œuvre + dépenses + achats rattachés)
+  budget       Decimal       @default(0) @db.Decimal(18, 2)
+  // Taux horaire de facturation du temps passé
+  billRate     Decimal       @default(0) @db.Decimal(18, 2)
+  branchId     String?       @db.Uuid
+  costCenterId String?       @db.Uuid
+  createdById  String?       @db.Uuid
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+
+  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  manager  Employee?      @relation("ProjectManager", fields: [managerId], references: [id], onDelete: SetNull)
+  tasks    ProjectTask[]
+  time     TimeEntry[]
+  expenses Expense[]
+  bills    SupplierBill[]
+  invoices Invoice[]
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+}
+
+model ProjectTask {
+  id            String       @id @default(uuid()) @db.Uuid
+  companyId     String       @db.Uuid
+  projectId     String       @db.Uuid
+  title         String
+  description   String?
+  status        TaskStatus   @default(TODO)
+  priority      TaskPriority @default(MEDIUM)
+  assigneeId    String?      @db.Uuid
+  startDate     DateTime?    @db.Date
+  dueDate       DateTime?    @db.Date
+  estimateHours Decimal      @default(0) @db.Decimal(8, 2)
+  // Prédécesseur (fin → début) pour le diagramme de Gantt
+  dependsOnId   String?      @db.Uuid
+  position      Int          @default(0)
+  completedAt   DateTime?
+  createdById   String?      @db.Uuid
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  company    Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee   Employee?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  dependsOn  ProjectTask?  @relation("TaskDependency", fields: [dependsOnId], references: [id], onDelete: SetNull)
+  dependents ProjectTask[] @relation("TaskDependency")
+  time       TimeEntry[]
+
+  @@index([companyId, projectId, status])
+  @@index([companyId, assigneeId])
+}
+
+model TimeEntry {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  projectId   String   @db.Uuid
+  taskId      String?  @db.Uuid
+  employeeId  String   @db.Uuid
+  date        DateTime @db.Date
+  hours       Decimal  @db.Decimal(5, 2)
+  billable    Boolean  @default(true)
+  // Coût horaire et taux de facturation figés à la saisie (l'historique ne bouge pas si les salaires changent)
+  costRate    Decimal  @default(0) @db.Decimal(18, 2)
+  billRate    Decimal  @default(0) @db.Decimal(18, 2)
+  description String?
+  invoiceId   String?  @db.Uuid
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project  Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task     ProjectTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  employee Employee     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  invoice  Invoice?     @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, projectId, date])
+  @@index([companyId, employeeId, date])
+}

@@ -1,0 +1,300 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 6A — Transport & Flotte (extension optionnelle) : véhicules, chauffeurs, affectations, missions,
+// carburant, entretiens, assurances / visites techniques, contraventions.
+// Les références vers d'autres modules (client, projet, fournisseur, salarié, agence, centre de coûts) sont des identifiants
+// validés par le service DANS l'entreprise : l'extension reste indépendante des modules qu'elle consomme.
+// ════════════════════════════════════════════════════════════════
+
+enum VehicleType {
+  CAR
+  VAN
+  TRUCK
+  TRAILER
+  MOTORCYCLE
+  MACHINE
+  OTHER
+}
+
+enum VehicleStatus {
+  ACTIVE
+  IN_MAINTENANCE
+  OUT_OF_SERVICE
+  SOLD
+}
+
+enum FuelType {
+  DIESEL
+  PETROL
+  ELECTRIC
+  HYBRID
+  GAS
+  NONE
+}
+
+enum DriverStatus {
+  ACTIVE
+  SUSPENDED
+  LEFT
+}
+
+enum TripStatus {
+  PLANNED
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  REPAIR
+  TIRES
+  OTHER
+}
+
+enum MaintenanceStatus {
+  PLANNED
+  DONE
+  CANCELLED
+}
+
+enum ComplianceKind {
+  INSURANCE
+  TECHNICAL_INSPECTION
+  REGISTRATION
+  OTHER
+}
+
+enum FineStatus {
+  TO_PAY
+  PAID
+  CONTESTED
+  CANCELLED
+}
+
+model Vehicle {
+  id              String        @id @default(uuid()) @db.Uuid
+  companyId       String        @db.Uuid
+  // Immatriculation normalisée (majuscules, sans espaces) : unique par entreprise
+  plate           String
+  name            String?
+  type            VehicleType   @default(TRUCK)
+  brand           String?
+  model           String?
+  year            Int?
+  vin             String?
+  fuelType        FuelType      @default(DIESEL)
+  // Dernier kilométrage connu (ne diminue jamais : relevés contrôlés)
+  odometer        Int           @default(0)
+  status          VehicleStatus @default(ACTIVE)
+  acquisitionDate DateTime?     @db.Date
+  acquisitionCost Decimal       @default(0) @db.Decimal(18, 2)
+  branchId        String?       @db.Uuid
+  costCenterId    String?       @db.Uuid
+  notes           String?
+  createdById     String?       @db.Uuid
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignments VehicleAssignment[]
+  trips       Trip[]
+  fuelLogs    FuelLog[]
+  maintenance MaintenanceRecord[]
+  compliance  VehicleCompliance[]
+  fines       TrafficFine[]
+
+  @@unique([companyId, plate])
+  @@index([companyId, status])
+}
+
+model Driver {
+  id              String       @id @default(uuid()) @db.Uuid
+  companyId       String       @db.Uuid
+  fullName        String
+  // Salarié correspondant (facultatif : un chauffeur peut être un prestataire)
+  employeeId      String?      @db.Uuid
+  phone           String?
+  licenseNumber   String?
+  licenseCategory String?
+  licenseExpiry   DateTime?    @db.Date
+  status          DriverStatus @default(ACTIVE)
+  notes           String?
+  createdById     String?      @db.Uuid
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  deletedAt       DateTime?
+
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignments VehicleAssignment[]
+  trips       Trip[]
+  fuelLogs    FuelLog[]
+  fines       TrafficFine[]
+
+  @@index([companyId, status])
+}
+
+model VehicleAssignment {
+  id        String    @id @default(uuid()) @db.Uuid
+  companyId String    @db.Uuid
+  vehicleId String    @db.Uuid
+  driverId  String    @db.Uuid
+  startDate DateTime  @db.Date
+  endDate   DateTime? @db.Date
+  note      String?
+  createdAt DateTime  @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, vehicleId, startDate])
+  @@index([companyId, driverId])
+}
+
+model Trip {
+  id           String     @id @default(uuid()) @db.Uuid
+  companyId    String     @db.Uuid
+  number       String
+  vehicleId    String     @db.Uuid
+  driverId     String     @db.Uuid
+  origin       String
+  destination  String
+  purpose      String?
+  plannedStart DateTime
+  plannedEnd   DateTime?
+  startedAt    DateTime?
+  endedAt      DateTime?
+  startKm      Int?
+  endKm        Int?
+  // Distance parcourue : endKm − startKm, calculée à la clôture
+  distanceKm   Int?
+  cargo        String?
+  customerId   String?    @db.Uuid
+  projectId    String?    @db.Uuid
+  // Produit de la mission (facturé au client) : base de la rentabilité par véhicule
+  revenue      Decimal    @default(0) @db.Decimal(18, 2)
+  status       TripStatus @default(PLANNED)
+  notes        String?
+  createdById  String?    @db.Uuid
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, number])
+  @@index([companyId, vehicleId, plannedStart])
+  @@index([companyId, driverId, plannedStart])
+  @@index([companyId, status])
+}
+
+model FuelLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  vehicleId   String   @db.Uuid
+  driverId    String?  @db.Uuid
+  date        DateTime @db.Date
+  liters      Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @default(0) @db.Decimal(18, 2)
+  amount      Decimal  @db.Decimal(18, 2)
+  odometer    Int
+  // Plein complet : permet de calculer la consommation entre deux pleins
+  fullTank    Boolean  @default(true)
+  station     String?
+  // Dépense créée dans Finance à partir de ce plein (jamais comptée deux fois)
+  expenseId   String?  @db.Uuid
+  notes       String?
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver? @relation(fields: [driverId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, vehicleId, date])
+}
+
+model MaintenanceRecord {
+  id          String            @id @default(uuid()) @db.Uuid
+  companyId   String            @db.Uuid
+  vehicleId   String            @db.Uuid
+  type        MaintenanceType
+  status      MaintenanceStatus @default(PLANNED)
+  // Date prévue (statut PLANNED) ou date de réalisation (DONE)
+  date        DateTime          @db.Date
+  odometer    Int?
+  description String
+  supplierId  String?           @db.Uuid
+  cost        Decimal           @default(0) @db.Decimal(18, 2)
+  // Prochaine échéance (date et/ou kilométrage) : alimente les alertes d'entretien
+  nextDueDate DateTime?         @db.Date
+  nextDueKm   Int?
+  expenseId   String?           @db.Uuid
+  notes       String?
+  createdById String?           @db.Uuid
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, vehicleId, date])
+  @@index([companyId, status, date])
+}
+
+// Assurance, visite technique, carte grise… : chaque ligne porte une échéance et déclenche les alertes
+model VehicleCompliance {
+  id          String         @id @default(uuid()) @db.Uuid
+  companyId   String         @db.Uuid
+  vehicleId   String         @db.Uuid
+  kind        ComplianceKind
+  reference   String?
+  provider    String?
+  startDate   DateTime?      @db.Date
+  expiresAt   DateTime       @db.Date
+  cost        Decimal        @default(0) @db.Decimal(18, 2)
+  notes       String?
+  createdById String?        @db.Uuid
+  createdAt   DateTime       @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, vehicleId, kind, expiresAt])
+  @@index([companyId, expiresAt])
+}
+
+model TrafficFine {
+  id            String     @id @default(uuid()) @db.Uuid
+  companyId     String     @db.Uuid
+  // Numéro du PV (unique par entreprise : un même PV n'est enregistré qu'une fois)
+  number        String
+  vehicleId     String     @db.Uuid
+  driverId      String?    @db.Uuid
+  date          DateTime   @db.Date
+  time          String?
+  place         String?
+  offence       String
+  amount        Decimal    @db.Decimal(18, 2)
+  dueDate       DateTime?  @db.Date
+  status        FineStatus @default(TO_PAY)
+  paidAt        DateTime?  @db.Date
+  contestReason String?
+  notes         String?
+  expenseId     String?    @db.Uuid
+  createdById   String?    @db.Uuid
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  driver  Driver? @relation(fields: [driverId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, number])
+  @@index([companyId, vehicleId, date])
+  @@index([companyId, driverId, date])
+  @@index([companyId, status, dueDate])
+}

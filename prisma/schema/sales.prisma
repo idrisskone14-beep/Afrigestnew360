@@ -1,0 +1,405 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 3C — Ventes & facturation
+// Parcours : devis → commande → livraison → facture → paiement
+// ════════════════════════════════════════════════════════════════
+
+enum QuoteKind {
+  QUOTE
+  PROFORMA
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  PARTIALLY_DELIVERED
+  DELIVERED
+  INVOICED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  DRAFT
+  DELIVERED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+enum CreditNoteStatus {
+  DRAFT
+  ISSUED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  MOBILE_MONEY
+  CARD
+  OTHER
+}
+
+enum PaymentDirection {
+  IN
+  OUT
+}
+
+enum PaymentStatus {
+  PENDING
+  VALIDATED
+  CANCELLED
+}
+
+model Quote {
+  id                 String      @id @default(uuid()) @db.Uuid
+  companyId          String      @db.Uuid
+  number             String
+  kind               QuoteKind   @default(QUOTE)
+  customerId         String      @db.Uuid
+  opportunityId      String?     @db.Uuid
+  status             QuoteStatus @default(DRAFT)
+  issueDate          DateTime    @default(now())
+  validUntil         DateTime?
+  currency           String
+  subtotal           Decimal     @default(0) @db.Decimal(18, 2)
+  discountTotal      Decimal     @default(0) @db.Decimal(18, 2)
+  taxTotal           Decimal     @default(0) @db.Decimal(18, 2)
+  total              Decimal     @default(0) @db.Decimal(18, 2)
+  notes              String?
+  terms              String?
+  convertedOrderId   String?     @db.Uuid
+  convertedInvoiceId String?     @db.Uuid
+  createdById        String?     @db.Uuid
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  lines    QuoteLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, customerId])
+}
+
+model QuoteLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  companyId   String  @db.Uuid
+  quoteId     String  @db.Uuid
+  position    Int
+  productId   String? @db.Uuid
+  description String
+  unit        String  @default("unité")
+  quantity    Decimal @db.Decimal(18, 3)
+  unitPrice   Decimal @db.Decimal(18, 2)
+  discountPct Decimal @default(0) @db.Decimal(5, 2)
+  taxId       String? @db.Uuid
+  taxRate     Decimal @default(0) @db.Decimal(7, 4)
+  netAmount   Decimal @db.Decimal(18, 2)
+  taxAmount   Decimal @db.Decimal(18, 2)
+  total       Decimal @db.Decimal(18, 2)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+}
+
+model SalesOrder {
+  id               String      @id @default(uuid()) @db.Uuid
+  companyId        String      @db.Uuid
+  number           String
+  customerId       String      @db.Uuid
+  quoteId          String?     @db.Uuid
+  status           OrderStatus @default(DRAFT)
+  orderDate        DateTime    @default(now())
+  expectedDelivery DateTime?
+  warehouseId      String?     @db.Uuid
+  currency         String
+  subtotal         Decimal     @default(0) @db.Decimal(18, 2)
+  discountTotal    Decimal     @default(0) @db.Decimal(18, 2)
+  taxTotal         Decimal     @default(0) @db.Decimal(18, 2)
+  total            Decimal     @default(0) @db.Decimal(18, 2)
+  notes            String?
+  createdById      String?     @db.Uuid
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  lines      OrderLine[]
+  deliveries Delivery[]
+  invoices   Invoice[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, customerId])
+}
+
+model OrderLine {
+  id           String  @id @default(uuid()) @db.Uuid
+  companyId    String  @db.Uuid
+  orderId      String  @db.Uuid
+  position     Int
+  productId    String? @db.Uuid
+  description  String
+  unit         String  @default("unité")
+  quantity     Decimal @db.Decimal(18, 3)
+  deliveredQty Decimal @default(0) @db.Decimal(18, 3)
+  invoicedQty  Decimal @default(0) @db.Decimal(18, 3)
+  unitPrice    Decimal @db.Decimal(18, 2)
+  discountPct  Decimal @default(0) @db.Decimal(5, 2)
+  taxId        String? @db.Uuid
+  taxRate      Decimal @default(0) @db.Decimal(7, 4)
+  netAmount    Decimal @db.Decimal(18, 2)
+  taxAmount    Decimal @db.Decimal(18, 2)
+  total        Decimal @db.Decimal(18, 2)
+
+  company Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  order   SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model Delivery {
+  id           String         @id @default(uuid()) @db.Uuid
+  companyId    String         @db.Uuid
+  number       String
+  orderId      String         @db.Uuid
+  customerId   String         @db.Uuid
+  warehouseId  String?        @db.Uuid
+  status       DeliveryStatus @default(DRAFT)
+  deliveryDate DateTime       @default(now())
+  notes        String?
+  createdById  String?        @db.Uuid
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  order    SalesOrder     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  customer Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  lines    DeliveryLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, orderId])
+}
+
+model DeliveryLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  companyId   String  @db.Uuid
+  deliveryId  String  @db.Uuid
+  orderLineId String  @db.Uuid
+  productId   String? @db.Uuid
+  description String
+  unit        String  @default("unité")
+  quantity    Decimal @db.Decimal(18, 3)
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId])
+}
+
+model Invoice {
+  id             String        @id @default(uuid()) @db.Uuid
+  companyId      String        @db.Uuid
+  // attribué à l'ÉMISSION (numérotation sans trou) ; null pour un brouillon
+  number         String?
+  customerId     String        @db.Uuid
+  orderId        String?       @db.Uuid
+  quoteId        String?       @db.Uuid
+  status         InvoiceStatus @default(DRAFT)
+  issueDate      DateTime      @default(now())
+  dueDate        DateTime?
+  currency       String
+  subtotal       Decimal       @default(0) @db.Decimal(18, 2)
+  discountTotal  Decimal       @default(0) @db.Decimal(18, 2)
+  taxTotal       Decimal       @default(0) @db.Decimal(18, 2)
+  total          Decimal       @default(0) @db.Decimal(18, 2)
+  amountPaid     Decimal       @default(0) @db.Decimal(18, 2)
+  creditedAmount Decimal       @default(0) @db.Decimal(18, 2)
+  notes          String?
+  terms          String?
+  branchId       String?       @db.Uuid
+  costCenterId   String?       @db.Uuid
+  issuedAt       DateTime?
+  cancelledAt    DateTime?
+  createdById    String?       @db.Uuid
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  order        SalesOrder?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  lines        InvoiceLine[]
+  installments InvoiceInstallment[]
+  payments     Payment[]
+  creditNotes  CreditNote[]
+  reminders    Reminder[]
+  projectId    String?              @db.Uuid
+  project      Project?             @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  timeEntries  TimeEntry[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status, dueDate])
+  @@index([companyId, customerId])
+}
+
+model InvoiceLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  companyId   String  @db.Uuid
+  invoiceId   String  @db.Uuid
+  position    Int
+  orderLineId String? @db.Uuid
+  productId   String? @db.Uuid
+  description String
+  unit        String  @default("unité")
+  quantity    Decimal @db.Decimal(18, 3)
+  unitPrice   Decimal @db.Decimal(18, 2)
+  discountPct Decimal @default(0) @db.Decimal(5, 2)
+  taxId       String? @db.Uuid
+  taxRate     Decimal @default(0) @db.Decimal(7, 4)
+  netAmount   Decimal @db.Decimal(18, 2)
+  taxAmount   Decimal @db.Decimal(18, 2)
+  total       Decimal @db.Decimal(18, 2)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+// Échéancier : les paiements s'imputent sur les échéances dans l'ordre
+model InvoiceInstallment {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  invoiceId  String   @db.Uuid
+  position   Int
+  dueDate    DateTime
+  amount     Decimal  @db.Decimal(18, 2)
+  paidAmount Decimal  @default(0) @db.Decimal(18, 2)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, dueDate])
+  @@index([invoiceId])
+}
+
+model CreditNote {
+  id          String           @id @default(uuid()) @db.Uuid
+  companyId   String           @db.Uuid
+  number      String?
+  invoiceId   String           @db.Uuid
+  customerId  String           @db.Uuid
+  status      CreditNoteStatus @default(DRAFT)
+  issueDate   DateTime         @default(now())
+  reason      String?
+  restock     Boolean          @default(false)
+  currency    String
+  subtotal    Decimal          @default(0) @db.Decimal(18, 2)
+  taxTotal    Decimal          @default(0) @db.Decimal(18, 2)
+  total       Decimal          @default(0) @db.Decimal(18, 2)
+  createdById String?          @db.Uuid
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoice Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  lines   CreditNoteLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, invoiceId])
+}
+
+model CreditNoteLine {
+  id            String  @id @default(uuid()) @db.Uuid
+  companyId     String  @db.Uuid
+  creditNoteId  String  @db.Uuid
+  position      Int
+  invoiceLineId String? @db.Uuid
+  productId     String? @db.Uuid
+  description   String
+  unit          String  @default("unité")
+  quantity      Decimal @db.Decimal(18, 3)
+  unitPrice     Decimal @db.Decimal(18, 2)
+  discountPct   Decimal @default(0) @db.Decimal(5, 2)
+  taxRate       Decimal @default(0) @db.Decimal(7, 4)
+  netAmount     Decimal @db.Decimal(18, 2)
+  taxAmount     Decimal @db.Decimal(18, 2)
+  total         Decimal @db.Decimal(18, 2)
+
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creditNote CreditNote @relation(fields: [creditNoteId], references: [id], onDelete: Cascade)
+
+  @@index([creditNoteId])
+}
+
+// Encaissements (IN) — les décaissements fournisseurs (OUT) arrivent en 3D
+model Payment {
+  id            String           @id @default(uuid()) @db.Uuid
+  companyId     String           @db.Uuid
+  number        String
+  direction     PaymentDirection @default(IN)
+  customerId    String?          @db.Uuid
+  supplierId    String?          @db.Uuid
+  invoiceId     String?          @db.Uuid
+  billId        String?          @db.Uuid
+  amount        Decimal          @db.Decimal(18, 2)
+  currency      String
+  method        PaymentMethod
+  date          DateTime         @default(now())
+  reference     String?
+  accountId     String?          @db.Uuid
+  status        PaymentStatus    @default(PENDING)
+  notes         String?
+  validatedById String?          @db.Uuid
+  validatedAt   DateTime?
+  createdById   String?          @db.Uuid
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  company  Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer?       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  invoice  Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  supplier Supplier?       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  bill     SupplierBill?   @relation(fields: [billId], references: [id], onDelete: Restrict)
+  account  FinanceAccount? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, number])
+  @@index([companyId, status, date])
+  @@index([companyId, invoiceId])
+  @@index([companyId, customerId])
+}
+
+model Reminder {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  invoiceId   String   @db.Uuid
+  level       Int
+  channel     String
+  note        String?
+  sentAt      DateTime @default(now())
+  createdById String?  @db.Uuid
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, invoiceId])
+}

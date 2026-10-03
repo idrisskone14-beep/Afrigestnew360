@@ -1,0 +1,40 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 5F — Import de données (CSV / Excel) : analyse → correspondance des colonnes → prévisualisation → import
+// Les lignes brutes ne sont conservées que le temps de l'import ; seul le rapport (erreurs, comptes) reste ensuite.
+// ════════════════════════════════════════════════════════════════
+
+enum ImportStatus {
+  UPLOADED
+  VALIDATED
+  RUNNING
+  DONE
+  FAILED
+}
+
+model ImportJob {
+  id           String       @id @default(uuid()) @db.Uuid
+  companyId    String       @db.Uuid
+  entity       String // customers | suppliers | employees | products | stock
+  fileName     String
+  status       ImportStatus @default(UPLOADED)
+  headers      Json
+  // Lignes du fichier (tableaux de textes) ; purgées à la fin de l'import
+  rows         Json?
+  rowCount     Int
+  mapping      Json? // champ cible → indice de colonne
+  validCount   Int          @default(0)
+  errorCount   Int          @default(0)
+  ignoredCount Int          @default(0)
+  createdCount Int          @default(0)
+  failedCount  Int          @default(0)
+  // Anomalies : [{ line, kind: "error" | "ignored", message, values[] }] (plafonné)
+  report       Json?
+  createdById  String       @db.Uuid
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  completedAt  DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+}

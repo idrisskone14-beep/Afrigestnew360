@@ -1,0 +1,112 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 4E — GED : dossiers, documents versionnés, liens vers les entités, partage
+// Les fichiers ne sont jamais servis directement : toujours via une route authentifiée qui revérifie l'accès.
+// ════════════════════════════════════════════════════════════════
+
+enum DocumentVisibility {
+  COMPANY
+  RESTRICTED
+}
+
+enum DocumentStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model DocFolder {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String    @db.Uuid
+  parentId    String?   @db.Uuid
+  name        String
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent    DocFolder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  DocFolder[] @relation("FolderTree")
+  documents Document[]
+
+  @@index([companyId, parentId])
+}
+
+model Document {
+  id             String             @id @default(uuid()) @db.Uuid
+  companyId      String             @db.Uuid
+  folderId       String?            @db.Uuid
+  name           String
+  description    String?
+  visibility     DocumentVisibility @default(COMPANY)
+  status         DocumentStatus     @default(ACTIVE)
+  // Numéro de la version courante (les anciennes versions restent consultables)
+  currentVersion Int                @default(1)
+  tags           String[]
+  // Échéance (contrat, assurance, certificat…) : déclenche une alerte avant expiration
+  expiresAt      DateTime?          @db.Date
+  ownerId        String             @db.Uuid
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  deletedAt      DateTime?
+
+  company  Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  folder   DocFolder?        @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  versions DocumentVersion[]
+  links    DocumentLink[]
+  shares   DocumentShare[]
+
+  @@index([companyId, folderId])
+  @@index([companyId, status])
+  @@index([companyId, expiresAt])
+}
+
+model DocumentVersion {
+  id           String   @id @default(uuid()) @db.Uuid
+  companyId    String   @db.Uuid
+  documentId   String   @db.Uuid
+  version      Int
+  fileName     String
+  mimeType     String
+  size         Int
+  // Empreinte SHA-256 du contenu (intégrité, détection de doublons)
+  sha256       String
+  storageKey   String
+  comment      String?
+  uploadedById String   @db.Uuid
+  createdAt    DateTime @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([companyId, sha256])
+}
+
+// Lien polymorphe vers une entité (client, facture, salarié, projet…) ; l'appartenance de l'entité à l'entreprise est vérifiée par le service
+model DocumentLink {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  documentId String   @db.Uuid
+  entityType String
+  entityId   String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, entityType, entityId])
+  @@index([companyId, entityType, entityId])
+}
+
+model DocumentShare {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  documentId String   @db.Uuid
+  userId     String   @db.Uuid
+  canEdit    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+}

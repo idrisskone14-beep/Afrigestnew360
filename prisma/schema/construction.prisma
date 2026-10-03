@@ -1,0 +1,194 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 6C — Gestion de chantiers (extension optionnelle)
+// Un chantier est TOUJOURS relié à un projet (créé automatiquement) : dépenses, factures fournisseur, factures client et temps
+// passé rattachés à ce projet alimentent donc le chantier sans doublon. Matériaux : sorties de stock réelles (module Stock).
+// ════════════════════════════════════════════════════════════════
+
+enum SiteStatus {
+  PLANNED
+  ACTIVE
+  ON_HOLD
+  DONE
+  CANCELLED
+}
+
+enum SiteBudgetCategory {
+  MATERIALS
+  LABOUR
+  EQUIPMENT
+  SUBCONTRACT
+  OTHER
+}
+
+enum SubcontractStatus {
+  PLANNED
+  ACTIVE
+  DONE
+  CANCELLED
+}
+
+enum SiteStockType {
+  ISSUE
+  RETURN
+}
+
+model ConstructionSite {
+  id          String     @id @default(uuid()) @db.Uuid
+  companyId   String     @db.Uuid
+  code        String
+  name        String
+  // Projet technique associé (1 chantier = 1 projet) : support des coûts, du temps et de la facturation
+  projectId   String     @unique @db.Uuid
+  customerId  String?    @db.Uuid
+  address     String?
+  city        String?
+  managerId   String?    @db.Uuid
+  status      SiteStatus @default(PLANNED)
+  startDate   DateTime?  @db.Date
+  endDate     DateTime?  @db.Date
+  // Avancement physique en % : suit le dernier rapport terrain
+  progress    Int        @default(0)
+  description String?
+  createdById String?    @db.Uuid
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+
+  company      Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  budgetLines  SiteBudgetLine[]
+  members      SiteMember[]
+  equipment    SiteEquipment[]
+  materialPlan SiteMaterialPlan[]
+  materialUse  SiteMaterialIssue[]
+  subcontracts SiteSubcontract[]
+  reports      SiteReport[]
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+}
+
+model SiteBudgetLine {
+  id        String             @id @default(uuid()) @db.Uuid
+  companyId String             @db.Uuid
+  siteId    String             @db.Uuid
+  category  SiteBudgetCategory
+  amount    Decimal            @default(0) @db.Decimal(18, 2)
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site    ConstructionSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, category])
+}
+
+model SiteMember {
+  id         String    @id @default(uuid()) @db.Uuid
+  companyId  String    @db.Uuid
+  siteId     String    @db.Uuid
+  employeeId String    @db.Uuid
+  role       String?
+  startDate  DateTime  @db.Date
+  endDate    DateTime? @db.Date
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site    ConstructionSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, siteId])
+  @@index([companyId, employeeId])
+}
+
+// Engins et matériels : véhicule/engin de la flotte (si l'extension est active) ou matériel libre (location…)
+model SiteEquipment {
+  id        String    @id @default(uuid()) @db.Uuid
+  companyId String    @db.Uuid
+  siteId    String    @db.Uuid
+  vehicleId String?   @db.Uuid
+  name      String
+  // Coût journalier imputé au chantier (interne ou location)
+  dailyRate Decimal   @default(0) @db.Decimal(18, 2)
+  startDate DateTime  @db.Date
+  endDate   DateTime? @db.Date
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site    ConstructionSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, siteId])
+  @@index([companyId, vehicleId])
+}
+
+model SiteMaterialPlan {
+  id         String  @id @default(uuid()) @db.Uuid
+  companyId  String  @db.Uuid
+  siteId     String  @db.Uuid
+  productId  String  @db.Uuid
+  plannedQty Decimal @db.Decimal(18, 3)
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site    ConstructionSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, productId])
+}
+
+// Sortie (ISSUE) ou retour (RETURN) de matériau du stock vers le chantier ; le coût est figé au coût moyen du moment
+model SiteMaterialIssue {
+  id          String        @id @default(uuid()) @db.Uuid
+  companyId   String        @db.Uuid
+  siteId      String        @db.Uuid
+  productId   String        @db.Uuid
+  warehouseId String        @db.Uuid
+  type        SiteStockType
+  quantity    Decimal       @db.Decimal(18, 3)
+  unitCost    Decimal       @db.Decimal(18, 4)
+  movementId  String?       @db.Uuid
+  date        DateTime      @db.Date
+  note        String?
+  createdById String?       @db.Uuid
+  createdAt   DateTime      @default(now())
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site    ConstructionSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, siteId, date])
+  @@index([companyId, productId])
+}
+
+model SiteSubcontract {
+  id             String            @id @default(uuid()) @db.Uuid
+  companyId      String            @db.Uuid
+  siteId         String            @db.Uuid
+  // Le sous-traitant est un fournisseur : ses factures rattachées au projet du chantier donnent le « facturé »
+  supplierId     String            @db.Uuid
+  scope          String
+  contractAmount Decimal           @default(0) @db.Decimal(18, 2)
+  status         SubcontractStatus @default(PLANNED)
+  startDate      DateTime?         @db.Date
+  endDate        DateTime?         @db.Date
+  notes          String?
+  createdAt      DateTime          @default(now())
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site    ConstructionSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, siteId])
+}
+
+// Rapport terrain journalier (un par chantier et par jour) ; photos et pièces via la GED
+model SiteReport {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  siteId    String   @db.Uuid
+  date      DateTime @db.Date
+  authorId  String   @db.Uuid
+  weather   String?
+  workforce Int      @default(0)
+  summary   String
+  progress  Int      @default(0)
+  incidents String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site    ConstructionSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, date])
+  @@index([companyId, date])
+}

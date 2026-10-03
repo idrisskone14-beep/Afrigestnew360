@@ -1,0 +1,644 @@
+// AfriGest 360 — modèle de données.
+// Livré par phase. Règle : toute table métier porte `companyId` (UUID) et a la RLS activée
+// dans sa migration (voir prisma/migrations/*_rls_and_app_role et le test tests/integration/rls-coverage).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ════════════════════════════════════════════════════════════════
+// ENUMS
+// ════════════════════════════════════════════════════════════════
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
+enum ModuleKind {
+  CORE
+  STANDARD
+  EXTENSION
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum ModuleSource {
+  PLAN
+  OVERRIDE
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+enum DemoRequestStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  DEMO_SCHEDULED
+  WON
+  LOST
+}
+
+// ════════════════════════════════════════════════════════════════
+// IDENTITÉ (globale, hors tenant)
+// ════════════════════════════════════════════════════════════════
+
+model User {
+  id               String     @id @default(uuid()) @db.Uuid
+  email            String     @unique
+  name             String
+  phone            String?
+  passwordHash     String
+  emailVerifiedAt  DateTime?
+  status           UserStatus @default(ACTIVE)
+  isPlatformAdmin  Boolean    @default(false)
+  locale           String     @default("fr")
+  failedLoginCount Int        @default(0)
+  lockedUntil      DateTime?
+  lastLoginAt      DateTime?
+  // 2FA TOTP : secret chiffré (AES-256-GCM), codes de secours hachés
+  totpSecretEnc    String?
+  totpEnabledAt    DateTime?
+  recoveryCodes    String[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  deletedAt        DateTime?
+
+  memberships CompanyMembership[]
+  sessions    UserSession[]
+  tokens      AuthToken[]
+
+  @@index([status])
+}
+
+model UserSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  userAgent  String?
+  ip         String?
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+}
+
+model AuthToken {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String?       @db.Uuid
+  email     String
+  type      AuthTokenType
+  tokenHash String        @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, type])
+}
+
+// ════════════════════════════════════════════════════════════════
+// ENTREPRISES & MEMBERSHIPS
+// ════════════════════════════════════════════════════════════════
+
+model Company {
+  id                    String        @id @default(uuid()) @db.Uuid
+  legalName             String
+  tradeName             String?
+  slug                  String        @unique
+  email                 String?
+  phone                 String?
+  address               String?
+  city                  String?
+  country               String        @default("CI") // ISO 3166-1 alpha-2
+  currency              String        @default("XOF") // ISO 4217
+  timezone              String        @default("Africa/Abidjan")
+  legalForm             String?
+  rccm                  String?
+  taxId                 String?
+  sector                String?
+  size                  String?
+  logoUrl               String?
+  fiscalYearStartMonth  Int           @default(1)
+  status                CompanyStatus @default(ACTIVE)
+  suspendedAt           DateTime?
+  suspendedReason       String?
+  onboardingCompletedAt DateTime?
+  allowNegativeStock    Boolean       @default(false)
+  createdById           String?       @db.Uuid
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  deletedAt             DateTime?
+
+  memberships           CompanyMembership[]
+  invitations           Invitation[]
+  roles                 Role[]
+  rolePermissions       RolePermission[]
+  subscription          Subscription?
+  modules               CompanyModule[]
+  usageLimits           UsageLimit[]
+  branches              Branch[]
+  sites                 Site[]
+  departments           Department[]
+  costCenters           CostCenter[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+  taxes                 Tax[]
+  numberSequences       NumberSequence[]
+  numberingConfigs      NumberingConfig[]
+  customers             Customer[]
+  contacts              Contact[]
+  leads                 Lead[]
+  pipelineStages        PipelineStage[]
+  opportunities         Opportunity[]
+  activities            Activity[]
+  productCategories     ProductCategory[]
+  products              Product[]
+  warehouses            Warehouse[]
+  stockLevels           StockLevel[]
+  stockMovements        StockMovement[]
+  quotes                Quote[]
+  quoteLines            QuoteLine[]
+  salesOrders           SalesOrder[]
+  orderLines            OrderLine[]
+  deliveries            Delivery[]
+  deliveryLines         DeliveryLine[]
+  invoices              Invoice[]
+  invoiceLines          InvoiceLine[]
+  invoiceInstallments   InvoiceInstallment[]
+  creditNotes           CreditNote[]
+  creditNoteLines       CreditNoteLine[]
+  payments              Payment[]
+  reminders             Reminder[]
+  suppliers             Supplier[]
+  purchaseRequests      PurchaseRequest[]
+  purchaseRequestLines  PurchaseRequestLine[]
+  purchaseOrders        PurchaseOrder[]
+  purchaseOrderLines    PurchaseOrderLine[]
+  goodsReceipts         GoodsReceipt[]
+  goodsReceiptLines     GoodsReceiptLine[]
+  supplierBills         SupplierBill[]
+  supplierBillLines     SupplierBillLine[]
+  approvalPolicies      ApprovalPolicy[]
+  approvalRequests      ApprovalRequest[]
+  financeAccounts       FinanceAccount[]
+  financeCategories     FinanceCategory[]
+  financialTransactions FinancialTransaction[]
+  expenses              Expense[]
+  budgets               Budget[]
+  fiscalYears           FiscalYear[]
+  accountingPeriods     AccountingPeriod[]
+  journals              Journal[]
+  ledgerAccounts        LedgerAccount[]
+  accountMappings       AccountMapping[]
+  journalEntries        JournalEntry[]
+  journalLines          JournalLine[]
+  employees             Employee[]
+  employmentContracts   EmploymentContract[]
+  leaveTypes            LeaveType[]
+  leaveRequests         LeaveRequest[]
+  attendances           Attendance[]
+  evaluations           Evaluation[]
+  trainings             Training[]
+  payrollItems          PayrollItem[]
+  employeePayrollItems  EmployeePayrollItem[]
+  payrollRuns           PayrollRun[]
+  payslips              Payslip[]
+  payslipLines          PayslipLine[]
+  dashboardPreferences  DashboardPreference[]
+  projects              Project[]
+  projectTasks          ProjectTask[]
+  timeEntries           TimeEntry[]
+  docFolders            DocFolder[]
+  documents             Document[]
+  documentVersions      DocumentVersion[]
+  documentLinks         DocumentLink[]
+  documentShares        DocumentShare[]
+  approvalRules         ApprovalRule[]
+  approvalRuleSteps     ApprovalRuleStep[]
+  approvalDecisions     ApprovalDecision[]
+  importJobs            ImportJob[]
+  vehicles              Vehicle[]
+  drivers               Driver[]
+  vehicleAssignments    VehicleAssignment[]
+  trips                 Trip[]
+  fuelLogs              FuelLog[]
+  maintenanceRecords    MaintenanceRecord[]
+  vehicleCompliances    VehicleCompliance[]
+  trafficFines          TrafficFine[]
+  constructionSites     ConstructionSite[]
+  siteBudgetLines       SiteBudgetLine[]
+  siteMembers           SiteMember[]
+  siteEquipments        SiteEquipment[]
+  siteMaterialPlans     SiteMaterialPlan[]
+  siteMaterialIssues    SiteMaterialIssue[]
+  siteSubcontracts      SiteSubcontract[]
+  siteReports           SiteReport[]
+
+  @@index([status])
+}
+
+model CompanyMembership {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  companyId String           @db.Uuid
+  roleId    String           @db.Uuid
+  status    MembershipStatus @default(ACTIVE)
+  isOwner   Boolean          @default(false)
+  joinedAt  DateTime         @default(now())
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role    Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, companyId])
+  @@index([companyId, status])
+  @@index([roleId])
+}
+
+model Invitation {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String    @db.Uuid
+  email       String
+  roleId      String    @db.Uuid
+  tokenHash   String    @unique
+  invitedById String?   @db.Uuid
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role    Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, email])
+}
+
+// ════════════════════════════════════════════════════════════════
+// RBAC
+// ════════════════════════════════════════════════════════════════
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  name        String
+  description String?
+  templateKey String?
+  isAdmin     Boolean  @default(false)
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company       Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  permissions   RolePermission[]
+  memberships   CompanyMembership[]
+  invitations   Invitation[]
+  ruleRequester ApprovalRule[]      @relation("RuleRequesterRole")
+  ruleSteps     ApprovalRuleStep[]  @relation("StepApproverRole")
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+model Permission {
+  id        String @id @default(uuid()) @db.Uuid
+  key       String @unique // ex. finance.invoice.read
+  moduleKey String
+  resource  String
+  action    String
+  label     String
+
+  roles RolePermission[]
+
+  @@index([moduleKey])
+}
+
+model RolePermission {
+  roleId       String @db.Uuid
+  permissionId String @db.Uuid
+  companyId    String @db.Uuid
+
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@index([companyId])
+}
+
+// ════════════════════════════════════════════════════════════════
+// MODULES, OFFRES, ABONNEMENTS
+// ════════════════════════════════════════════════════════════════
+
+model Module {
+  id          String     @id @default(uuid()) @db.Uuid
+  key         String     @unique
+  name        String
+  description String?
+  kind        ModuleKind @default(STANDARD)
+  icon        String?
+  sortOrder   Int        @default(0)
+  isActive    Boolean    @default(true) // interrupteur global plateforme
+  createdAt   DateTime   @default(now())
+
+  planModules    PlanModule[]
+  companyModules CompanyModule[]
+}
+
+model Plan {
+  id           String   @id @default(uuid()) @db.Uuid
+  code         String   @unique
+  name         String
+  description  String?
+  priceMonthly Decimal  @default(0) @db.Decimal(18, 2)
+  priceYearly  Decimal  @default(0) @db.Decimal(18, 2)
+  currency     String   @default("XOF")
+  trialDays    Int      @default(14)
+  isPublic     Boolean  @default(true)
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  modules       PlanModule[]
+  limits        PlanLimit[]
+  subscriptions Subscription[]
+}
+
+model PlanModule {
+  planId   String @db.Uuid
+  moduleId String @db.Uuid
+
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@id([planId, moduleId])
+}
+
+// value = -1 → illimité
+model PlanLimit {
+  planId String @db.Uuid
+  key    String
+  value  Int
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@id([planId, key])
+}
+
+model Subscription {
+  id                 String             @id @default(uuid()) @db.Uuid
+  companyId          String             @unique @db.Uuid
+  planId             String             @db.Uuid
+  status             SubscriptionStatus @default(TRIALING)
+  billingCycle       BillingCycle       @default(MONTHLY)
+  priceAmount        Decimal            @default(0) @db.Decimal(18, 2)
+  currency           String             @default("XOF")
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime
+  trialEndsAt        DateTime?
+  canceledAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan    Plan    @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([planId])
+  @@index([status])
+}
+
+// État EFFECTIF des modules d'une entreprise (hérité du plan, surchargeable par le Super Admin)
+model CompanyModule {
+  id        String       @id @default(uuid()) @db.Uuid
+  companyId String       @db.Uuid
+  moduleId  String       @db.Uuid
+  enabled   Boolean      @default(true)
+  source    ModuleSource @default(PLAN)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  module  Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, moduleId])
+}
+
+// Surcharge de limite par entreprise (prioritaire sur PlanLimit). value = -1 → illimité
+model UsageLimit {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  key       String
+  value     Int
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, key])
+}
+
+// ════════════════════════════════════════════════════════════════
+// STRUCTURE ORGANISATIONNELLE
+// ════════════════════════════════════════════════════════════════
+
+model Branch {
+  id             String    @id @default(uuid()) @db.Uuid
+  companyId      String    @db.Uuid
+  name           String
+  code           String?
+  address        String?
+  city           String?
+  isHeadquarters Boolean   @default(false)
+  isActive       Boolean   @default(true)
+  createdById    String?   @db.Uuid
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sites     Site[]
+  expenses  Expense[]
+  employees Employee[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model Site {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String    @db.Uuid
+  branchId    String?   @db.Uuid
+  name        String
+  type        String? // dépôt, chantier, bureau…
+  address     String?
+  isActive    Boolean   @default(true)
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branch  Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([branchId])
+}
+
+model Department {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String    @db.Uuid
+  parentId    String?   @db.Uuid
+  name        String
+  code        String?
+  isActive    Boolean   @default(true)
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent        Department?    @relation("DepartmentTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children      Department[]   @relation("DepartmentTree")
+  employees     Employee[]
+  approvalRules ApprovalRule[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model CostCenter {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String    @db.Uuid
+  code        String
+  name        String
+  isActive    Boolean   @default(true)
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+// ════════════════════════════════════════════════════════════════
+// NOTIFICATIONS, AUDIT, DEMANDES DE DÉMO
+// ════════════════════════════════════════════════════════════════
+
+model Notification {
+  id           String             @id @default(uuid()) @db.Uuid
+  companyId    String             @db.Uuid
+  userId       String             @db.Uuid
+  type         String
+  title        String
+  body         String?
+  link         String?
+  status       NotificationStatus @default(UNREAD)
+  readAt       DateTime?
+  // Canal e-mail : file d'attente transactionnelle, distribuée par la tâche planifiée (jamais pendant la transaction métier)
+  emailPending Boolean            @default(false)
+  emailedAt    DateTime?
+  createdAt    DateTime           @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, userId, status, createdAt])
+  @@index([emailPending])
+}
+
+model NotificationPreference {
+  id        String  @id @default(uuid()) @db.Uuid
+  companyId String  @db.Uuid
+  userId    String  @db.Uuid
+  type      String
+  inApp     Boolean @default(true)
+  email     Boolean @default(false)
+
+  @@unique([companyId, userId, type])
+}
+
+// Append-only : le rôle applicatif n'a que INSERT/SELECT (voir migration RLS).
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String?  @db.Uuid
+  userId     String?  @db.Uuid
+  userLabel  String?
+  action     String // ex. invoice.update
+  resource   String // ex. Invoice
+  resourceId String?
+  summary    String?
+  before     Json?
+  after      Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([companyId, resource, resourceId])
+  @@index([userId])
+}
+
+model DemoRequest {
+  id          String            @id @default(uuid()) @db.Uuid
+  fullName    String
+  email       String
+  phone       String?
+  companyName String
+  country     String?
+  sector      String?
+  companySize String?
+  message     String?
+  source      String?
+  status      DemoRequestStatus @default(NEW)
+  notes       String?
+  handledById String?           @db.Uuid
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([status, createdAt])
+}

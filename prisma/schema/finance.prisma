@@ -1,0 +1,160 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 3E — Finance : comptes, mouvements de trésorerie, dépenses, budgets
+// ════════════════════════════════════════════════════════════════
+
+enum FinanceAccountType {
+  BANK
+  CASH
+  MOBILE_MONEY
+}
+
+enum FinanceCategoryKind {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionType {
+  IN
+  OUT
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+enum TransactionStatus {
+  VALID
+  CANCELLED
+}
+
+enum ExpenseStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PAID
+  CANCELLED
+}
+
+model FinanceAccount {
+  id             String             @id @default(uuid()) @db.Uuid
+  companyId      String             @db.Uuid
+  name           String
+  type           FinanceAccountType
+  currency       String
+  bankName       String?
+  accountNumber  String?
+  openingBalance Decimal            @default(0) @db.Decimal(18, 2)
+  isDefault      Boolean            @default(false)
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  deletedAt      DateTime?
+
+  company      Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions FinancialTransaction[]
+  payments     Payment[]
+  expenses     Expense[]
+
+  @@unique([companyId, name])
+  @@index([companyId, type])
+}
+
+model FinanceCategory {
+  id         String              @id @default(uuid()) @db.Uuid
+  companyId  String              @db.Uuid
+  name       String
+  kind       FinanceCategoryKind
+  // Compte comptable des écritures automatiques (ex. 622 Locations pour « Loyer »)
+  ledgerCode String?
+  isActive   Boolean             @default(true)
+  createdAt  DateTime            @default(now())
+
+  company      Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions FinancialTransaction[]
+  expenses     Expense[]
+  budgets      Budget[]
+
+  @@unique([companyId, kind, name])
+}
+
+// Mouvement de trésorerie (montant toujours positif ; le sens est porté par `type`).
+// Les mouvements issus d'un document (paiement, dépense) pointent vers lui via sourceType/sourceId.
+model FinancialTransaction {
+  id              String            @id @default(uuid()) @db.Uuid
+  companyId       String            @db.Uuid
+  accountId       String            @db.Uuid
+  type            TransactionType
+  status          TransactionStatus @default(VALID)
+  date            DateTime
+  amount          Decimal           @db.Decimal(18, 2)
+  currency        String
+  categoryId      String?           @db.Uuid
+  description     String
+  reference       String?
+  sourceType      String?
+  sourceId        String?           @db.Uuid
+  transferGroupId String?           @db.Uuid
+  reconciledAt    DateTime?
+  createdById     String?           @db.Uuid
+  createdAt       DateTime          @default(now())
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  account  FinanceAccount   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, accountId, date])
+  @@index([companyId, sourceType, sourceId])
+  @@index([companyId, transferGroupId])
+}
+
+model Expense {
+  id           String        @id @default(uuid()) @db.Uuid
+  companyId    String        @db.Uuid
+  number       String
+  date         DateTime
+  categoryId   String        @db.Uuid
+  supplierId   String?       @db.Uuid
+  description  String
+  amount       Decimal       @db.Decimal(18, 2)
+  currency     String
+  method       PaymentMethod @default(CASH)
+  accountId    String?       @db.Uuid
+  reference    String?
+  notes        String?
+  branchId     String?       @db.Uuid
+  costCenterId String?       @db.Uuid
+  status       ExpenseStatus @default(DRAFT)
+  createdById  String        @db.Uuid
+  paidById     String?       @db.Uuid
+  paidAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  company    Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category   FinanceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier   Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  account    FinanceAccount? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  branch     Branch?         @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  costCenter CostCenter?     @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  projectId  String?         @db.Uuid
+  project    Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, number])
+  @@index([companyId, status, date])
+  @@index([companyId, categoryId])
+}
+
+// Budget mensuel par catégorie de dépenses
+model Budget {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  year       Int
+  month      Int
+  categoryId String   @db.Uuid
+  amount     Decimal  @db.Decimal(18, 2)
+  updatedAt  DateTime @updatedAt
+
+  company  Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category FinanceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, year, month, categoryId])
+}

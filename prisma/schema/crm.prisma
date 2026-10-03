@@ -1,0 +1,242 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 3A — Briques communes & CRM
+// ════════════════════════════════════════════════════════════════
+
+enum PartyType {
+  COMPANY
+  INDIVIDUAL
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  LOST
+  CONVERTED
+}
+
+enum StageKind {
+  OPEN
+  WON
+  LOST
+}
+
+enum OpportunityStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum ActivityType {
+  CALL
+  MEETING
+  EMAIL
+  NOTE
+  TASK
+}
+
+// Taux configurables par entreprise (jamais codés en dur)
+model Tax {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  name      String
+  rate      Decimal  @db.Decimal(7, 4) // en %, ex. 18.0000
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+// Compteur atomique par (entreprise, type de document, année)
+model NumberSequence {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  key       String
+  year      Int // 0 si la numérotation n'est pas remise à zéro chaque année
+  last      Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, key, year])
+}
+
+// Format de numérotation configurable : PREFIXE-ANNEE-00001
+model NumberingConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  key         String
+  prefix      String
+  padding     Int      @default(5)
+  withYear    Boolean  @default(true)
+  resetYearly Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, key])
+}
+
+model Customer {
+  id               String    @id @default(uuid()) @db.Uuid
+  companyId        String    @db.Uuid
+  code             String
+  type             PartyType @default(COMPANY)
+  name             String
+  email            String?
+  phone            String?
+  address          String?
+  city             String?
+  country          String?
+  taxId            String?
+  rccm             String?
+  website          String?
+  paymentTermsDays Int       @default(30)
+  creditLimit      Decimal?  @db.Decimal(18, 2)
+  ownerId          String?   @db.Uuid
+  branchId         String?   @db.Uuid
+  notes            String?
+  isActive         Boolean   @default(true)
+  createdById      String?   @db.Uuid
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contacts      Contact[]
+  opportunities Opportunity[]
+  activities    Activity[]
+  quotes        Quote[]
+  salesOrders   SalesOrder[]
+  deliveries    Delivery[]
+  invoices      Invoice[]
+  payments      Payment[]
+  projects      Project[]
+
+  @@unique([companyId, code])
+  @@index([companyId, name])
+  @@index([companyId, deletedAt])
+}
+
+model Contact {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  customerId String?  @db.Uuid
+  supplierId String?  @db.Uuid
+  name       String
+  title      String?
+  email      String?
+  phone      String?
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, customerId])
+  @@index([companyId, supplierId])
+}
+
+model Lead {
+  id                  String     @id @default(uuid()) @db.Uuid
+  companyId           String     @db.Uuid
+  name                String
+  companyName         String?
+  email               String?
+  phone               String?
+  source              String?
+  status              LeadStatus @default(NEW)
+  estimatedValue      Decimal?   @db.Decimal(18, 2)
+  ownerId             String?    @db.Uuid
+  notes               String?
+  convertedCustomerId String?    @db.Uuid
+  convertedAt         DateTime?
+  createdById         String?    @db.Uuid
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  deletedAt           DateTime?
+
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+  activities    Activity[]
+
+  @@index([companyId, status])
+}
+
+// Pipeline commercial configurable
+model PipelineStage {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String    @db.Uuid
+  name        String
+  position    Int
+  probability Int       @default(0)
+  kind        StageKind @default(OPEN)
+  createdAt   DateTime  @default(now())
+
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+
+  @@unique([companyId, name])
+  @@index([companyId, position])
+}
+
+model Opportunity {
+  id                String            @id @default(uuid()) @db.Uuid
+  companyId         String            @db.Uuid
+  title             String
+  customerId        String?           @db.Uuid
+  leadId            String?           @db.Uuid
+  stageId           String            @db.Uuid
+  status            OpportunityStatus @default(OPEN)
+  amount            Decimal           @default(0) @db.Decimal(18, 2)
+  expectedCloseDate DateTime?
+  ownerId           String?           @db.Uuid
+  lostReason        String?
+  notes             String?
+  closedAt          DateTime?
+  createdById       String?           @db.Uuid
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
+
+  company    Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer   Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  lead       Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  stage      PipelineStage @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  activities Activity[]
+
+  @@index([companyId, stageId])
+  @@index([companyId, status])
+}
+
+model Activity {
+  id            String       @id @default(uuid()) @db.Uuid
+  companyId     String       @db.Uuid
+  type          ActivityType
+  subject       String
+  notes         String?
+  dueAt         DateTime?
+  doneAt        DateTime?
+  ownerId       String?      @db.Uuid
+  customerId    String?      @db.Uuid
+  leadId        String?      @db.Uuid
+  opportunityId String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer    Customer?    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  lead        Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, customerId])
+  @@index([companyId, dueAt])
+}

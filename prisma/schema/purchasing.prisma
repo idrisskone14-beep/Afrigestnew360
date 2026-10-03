@@ -1,0 +1,377 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 3D — Fournisseurs, achats & approbations
+// Parcours : demande → validation → commande → réception → facture → paiement
+// ════════════════════════════════════════════════════════════════
+
+enum PurchaseRequestStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  ORDERED
+  CANCELLED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  BILLED
+  CANCELLED
+}
+
+enum ReceiptStatus {
+  DRAFT
+  RECEIVED
+  CANCELLED
+}
+
+enum SupplierBillStatus {
+  DRAFT
+  POSTED
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model Supplier {
+  id               String    @id @default(uuid()) @db.Uuid
+  companyId        String    @db.Uuid
+  code             String
+  name             String
+  email            String?
+  phone            String?
+  address          String?
+  city             String?
+  country          String?
+  taxId            String?
+  rccm             String?
+  paymentTermsDays Int       @default(30)
+  notes            String?
+  isActive         Boolean   @default(true)
+  createdById      String?   @db.Uuid
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  company  Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contacts Contact[]
+  orders   PurchaseOrder[]
+  receipts GoodsReceipt[]
+  bills    SupplierBill[]
+  payments Payment[]
+  expenses Expense[]
+
+  @@unique([companyId, code])
+  @@index([companyId, name])
+}
+
+model PurchaseRequest {
+  id           String                @id @default(uuid()) @db.Uuid
+  companyId    String                @db.Uuid
+  number       String
+  requesterId  String                @db.Uuid
+  departmentId String?               @db.Uuid
+  status       PurchaseRequestStatus @default(DRAFT)
+  neededBy     DateTime?
+  reason       String?
+  estimate     Decimal               @default(0) @db.Decimal(18, 2)
+  currency     String
+  orderId      String?               @db.Uuid
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  company Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lines   PurchaseRequestLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+}
+
+model PurchaseRequestLine {
+  id             String  @id @default(uuid()) @db.Uuid
+  companyId      String  @db.Uuid
+  requestId      String  @db.Uuid
+  position       Int
+  productId      String? @db.Uuid
+  description    String
+  unit           String  @default("unité")
+  quantity       Decimal @db.Decimal(18, 3)
+  estimatedPrice Decimal @default(0) @db.Decimal(18, 2)
+
+  company Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  request PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+model PurchaseOrder {
+  id            String              @id @default(uuid()) @db.Uuid
+  companyId     String              @db.Uuid
+  number        String
+  supplierId    String              @db.Uuid
+  requestId     String?             @db.Uuid
+  status        PurchaseOrderStatus @default(DRAFT)
+  orderDate     DateTime            @default(now())
+  expectedDate  DateTime?
+  warehouseId   String?             @db.Uuid
+  currency      String
+  subtotal      Decimal             @default(0) @db.Decimal(18, 2)
+  discountTotal Decimal             @default(0) @db.Decimal(18, 2)
+  taxTotal      Decimal             @default(0) @db.Decimal(18, 2)
+  total         Decimal             @default(0) @db.Decimal(18, 2)
+  notes         String?
+  createdById   String?             @db.Uuid
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  company  Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  lines    PurchaseOrderLine[]
+  receipts GoodsReceipt[]
+  bills    SupplierBill[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, supplierId])
+}
+
+model PurchaseOrderLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  companyId   String  @db.Uuid
+  orderId     String  @db.Uuid
+  position    Int
+  productId   String? @db.Uuid
+  description String
+  unit        String  @default("unité")
+  quantity    Decimal @db.Decimal(18, 3)
+  receivedQty Decimal @default(0) @db.Decimal(18, 3)
+  billedQty   Decimal @default(0) @db.Decimal(18, 3)
+  unitPrice   Decimal @db.Decimal(18, 2)
+  discountPct Decimal @default(0) @db.Decimal(5, 2)
+  taxId       String? @db.Uuid
+  taxRate     Decimal @default(0) @db.Decimal(7, 4)
+  netAmount   Decimal @db.Decimal(18, 2)
+  taxAmount   Decimal @db.Decimal(18, 2)
+  total       Decimal @db.Decimal(18, 2)
+
+  company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  order   PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model GoodsReceipt {
+  id          String        @id @default(uuid()) @db.Uuid
+  companyId   String        @db.Uuid
+  number      String
+  orderId     String        @db.Uuid
+  supplierId  String        @db.Uuid
+  warehouseId String?       @db.Uuid
+  status      ReceiptStatus @default(DRAFT)
+  receiptDate DateTime      @default(now())
+  notes       String?
+  createdById String?       @db.Uuid
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  company  Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  order    PurchaseOrder      @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  supplier Supplier           @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  lines    GoodsReceiptLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, orderId])
+}
+
+model GoodsReceiptLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  companyId   String  @db.Uuid
+  receiptId   String  @db.Uuid
+  orderLineId String  @db.Uuid
+  productId   String? @db.Uuid
+  description String
+  unit        String  @default("unité")
+  quantity    Decimal @db.Decimal(18, 3)
+  // coût unitaire net (HT, remise déduite) repris de la commande : alimente le coût moyen pondéré
+  unitCost    Decimal @default(0) @db.Decimal(18, 4)
+
+  company Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  receipt GoodsReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+
+  @@index([receiptId])
+}
+
+model SupplierBill {
+  id            String             @id @default(uuid()) @db.Uuid
+  companyId     String             @db.Uuid
+  // numéro interne (FF-…) attribué à la comptabilisation
+  number        String?
+  // numéro de la facture reçue du fournisseur
+  supplierRef   String?
+  supplierId    String             @db.Uuid
+  orderId       String?            @db.Uuid
+  status        SupplierBillStatus @default(DRAFT)
+  billDate      DateTime           @default(now())
+  dueDate       DateTime?
+  currency      String
+  subtotal      Decimal            @default(0) @db.Decimal(18, 2)
+  discountTotal Decimal            @default(0) @db.Decimal(18, 2)
+  taxTotal      Decimal            @default(0) @db.Decimal(18, 2)
+  total         Decimal            @default(0) @db.Decimal(18, 2)
+  amountPaid    Decimal            @default(0) @db.Decimal(18, 2)
+  notes         String?
+  costCenterId  String?            @db.Uuid
+  branchId      String?            @db.Uuid
+  postedAt      DateTime?
+  createdById   String?            @db.Uuid
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier  Supplier           @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  order     PurchaseOrder?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  lines     SupplierBillLine[]
+  payments  Payment[]
+  projectId String?            @db.Uuid
+  project   Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, number])
+  @@index([companyId, status, dueDate])
+  @@index([companyId, supplierId])
+}
+
+model SupplierBillLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  companyId   String  @db.Uuid
+  billId      String  @db.Uuid
+  position    Int
+  orderLineId String? @db.Uuid
+  productId   String? @db.Uuid
+  description String
+  unit        String  @default("unité")
+  quantity    Decimal @db.Decimal(18, 3)
+  unitPrice   Decimal @db.Decimal(18, 2)
+  discountPct Decimal @default(0) @db.Decimal(5, 2)
+  taxId       String? @db.Uuid
+  taxRate     Decimal @default(0) @db.Decimal(7, 4)
+  netAmount   Decimal @db.Decimal(18, 2)
+  taxAmount   Decimal @db.Decimal(18, 2)
+  total       Decimal @db.Decimal(18, 2)
+
+  company Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  bill    SupplierBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@index([billId])
+}
+
+// Règle d'approbation : au-delà du seuil, une validation d'un tiers habilité est exigée.
+model ApprovalPolicy {
+  id           String   @id @default(uuid()) @db.Uuid
+  companyId    String   @db.Uuid
+  resourceType String // purchase_request | purchase_order | expense
+  isEnabled    Boolean  @default(false)
+  threshold    Decimal  @default(0) @db.Decimal(18, 2)
+  updatedAt    DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, resourceType])
+}
+
+model ApprovalRequest {
+  id            String         @id @default(uuid()) @db.Uuid
+  companyId     String         @db.Uuid
+  resourceType  String
+  resourceId    String         @db.Uuid
+  title         String
+  amount        Decimal        @default(0) @db.Decimal(18, 2)
+  currency      String
+  status        ApprovalStatus @default(PENDING)
+  requestedById String         @db.Uuid
+  decidedById   String?        @db.Uuid
+  decidedAt     DateTime?
+  comment       String?
+  createdAt     DateTime       @default(now())
+
+  company       Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // Chaîne de validation : règle appliquée, étape courante (1..totalSteps), rôle attendu à cette étape
+  ruleId        String?            @db.Uuid
+  currentStep   Int                @default(1)
+  totalSteps    Int                @default(1)
+  currentRoleId String?            @db.Uuid
+  currentLabel  String?
+  decisions     ApprovalDecision[]
+  rule          ApprovalRule?      @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, status, createdAt])
+  @@index([companyId, resourceType, resourceId])
+}
+
+// Règle de validation : s'applique à un type d'opération selon le montant, le département du demandeur et son rôle.
+// La règle applicable la plus prioritaire (puis la plus spécifique) gagne ; sans règle, la politique à seuil simple s'applique.
+model ApprovalRule {
+  id              String   @id @default(uuid()) @db.Uuid
+  companyId       String   @db.Uuid
+  resourceType    String
+  name            String
+  minAmount       Decimal  @default(0) @db.Decimal(18, 2)
+  maxAmount       Decimal? @db.Decimal(18, 2)
+  departmentId    String?  @db.Uuid
+  requesterRoleId String?  @db.Uuid
+  priority        Int      @default(100)
+  isActive        Boolean  @default(true)
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company       Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  department    Department?        @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  requesterRole Role?              @relation("RuleRequesterRole", fields: [requesterRoleId], references: [id], onDelete: Restrict)
+  steps         ApprovalRuleStep[]
+  requests      ApprovalRequest[]
+
+  @@index([companyId, resourceType, isActive])
+}
+
+model ApprovalRuleStep {
+  id        String @id @default(uuid()) @db.Uuid
+  companyId String @db.Uuid
+  ruleId    String @db.Uuid
+  stepOrder Int
+  label     String
+  roleId    String @db.Uuid
+
+  company Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  rule    ApprovalRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  role    Role         @relation("StepApproverRole", fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@unique([ruleId, stepOrder])
+}
+
+// Journal des décisions étape par étape (séparation des tâches : un même utilisateur ne valide pas deux étapes d'une demande)
+model ApprovalDecision {
+  id          String         @id @default(uuid()) @db.Uuid
+  companyId   String         @db.Uuid
+  requestId   String         @db.Uuid
+  step        Int
+  decidedById String         @db.Uuid
+  decision    ApprovalStatus
+  comment     String?
+  decidedAt   DateTime       @default(now())
+
+  company Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  request ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, step])
+  @@index([companyId, requestId])
+}

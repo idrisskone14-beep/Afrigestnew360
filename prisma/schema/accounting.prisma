@@ -1,0 +1,162 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 3F — Comptabilité (plan compatible SYSCOHADA, paramétrable)
+// ════════════════════════════════════════════════════════════════
+
+enum FiscalYearStatus {
+  OPEN
+  CLOSED
+}
+
+enum PeriodStatus {
+  OPEN
+  LOCKED
+}
+
+enum JournalType {
+  SALES
+  PURCHASES
+  BANK
+  CASH
+  MISC
+  OPENING
+}
+
+enum EntryStatus {
+  DRAFT
+  POSTED
+}
+
+model FiscalYear {
+  id         String           @id @default(uuid()) @db.Uuid
+  companyId  String           @db.Uuid
+  name       String
+  startDate  DateTime         @db.Date
+  endDate    DateTime         @db.Date
+  status     FiscalYearStatus @default(OPEN)
+  closedAt   DateTime?
+  closedById String?          @db.Uuid
+  createdAt  DateTime         @default(now())
+
+  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  periods AccountingPeriod[]
+  entries JournalEntry[]
+
+  @@unique([companyId, name])
+  @@index([companyId, startDate])
+}
+
+// Périodes mensuelles : une période verrouillée refuse toute nouvelle écriture
+model AccountingPeriod {
+  id           String       @id @default(uuid()) @db.Uuid
+  companyId    String       @db.Uuid
+  fiscalYearId String       @db.Uuid
+  startDate    DateTime     @db.Date
+  endDate      DateTime     @db.Date
+  status       PeriodStatus @default(OPEN)
+
+  company    Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  fiscalYear FiscalYear     @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+  entries    JournalEntry[]
+
+  @@unique([fiscalYearId, startDate])
+  @@index([companyId, startDate])
+}
+
+model Journal {
+  id        String      @id @default(uuid()) @db.Uuid
+  companyId String      @db.Uuid
+  code      String
+  name      String
+  type      JournalType
+  isActive  Boolean     @default(true)
+
+  company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  entries JournalEntry[]
+
+  @@unique([companyId, code])
+}
+
+model LedgerAccount {
+  id        String  @id @default(uuid()) @db.Uuid
+  companyId String  @db.Uuid
+  code      String
+  name      String
+  // Classe SYSCOHADA (1 à 8) = premier chiffre du code
+  class     Int
+  isActive  Boolean @default(true)
+  // Comptes créés par défaut : supprimables seulement s'ils n'ont aucune écriture (jamais ici : on les désactive)
+  isSystem  Boolean @default(false)
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lines    JournalLine[]
+  mappings AccountMapping[]
+
+  @@unique([companyId, code])
+  @@index([companyId, class])
+}
+
+// Comptes utilisés par les écritures automatiques (clients, ventes, TVA, trésorerie…)
+model AccountMapping {
+  id              String @id @default(uuid()) @db.Uuid
+  companyId       String @db.Uuid
+  key             String
+  ledgerAccountId String @db.Uuid
+
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, key])
+}
+
+model JournalEntry {
+  id           String      @id @default(uuid()) @db.Uuid
+  companyId    String      @db.Uuid
+  number       String
+  journalId    String      @db.Uuid
+  fiscalYearId String      @db.Uuid
+  periodId     String      @db.Uuid
+  date         DateTime    @db.Date
+  reference    String?
+  description  String
+  status       EntryStatus @default(DRAFT)
+  // Écritures générées par un document : "invoice", "payment", "invoice:reversal"… (une seule écriture par document et par type)
+  sourceType   String?
+  sourceId     String?     @db.Uuid
+  reversalOfId String?     @db.Uuid
+  createdById  String?     @db.Uuid
+  postedById   String?     @db.Uuid
+  postedAt     DateTime?
+  createdAt    DateTime    @default(now())
+
+  company    Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journal    Journal          @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  fiscalYear FiscalYear       @relation(fields: [fiscalYearId], references: [id], onDelete: Restrict)
+  period     AccountingPeriod @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  lines      JournalLine[]
+
+  @@unique([companyId, number])
+  @@unique([companyId, sourceType, sourceId])
+  @@index([companyId, date])
+  @@index([companyId, journalId, date])
+}
+
+model JournalLine {
+  id              String  @id @default(uuid()) @db.Uuid
+  companyId       String  @db.Uuid
+  entryId         String  @db.Uuid
+  position        Int
+  ledgerAccountId String  @db.Uuid
+  label           String
+  debit           Decimal @default(0) @db.Decimal(18, 2)
+  credit          Decimal @default(0) @db.Decimal(18, 2)
+  // Tiers (auxiliaire) : "customer" | "supplier"
+  partyType       String?
+  partyId         String? @db.Uuid
+
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  entry         JournalEntry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, ledgerAccountId])
+  @@index([entryId])
+}

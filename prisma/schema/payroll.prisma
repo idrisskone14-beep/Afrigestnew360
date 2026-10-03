@@ -1,0 +1,167 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 4C — Paie : rubriques paramétrables (versionnées par date d'effet), campagnes mensuelles, bulletins
+// Aucun taux ni barème légal n'est codé en dur : tout est en base, modifiable par l'entreprise.
+// ════════════════════════════════════════════════════════════════
+
+enum PayrollItemType {
+  EARNING
+  DEDUCTION
+  EMPLOYER
+}
+
+enum PayrollCalcMode {
+  FIXED
+  RATE
+  BRACKETS
+}
+
+enum PayrollBase {
+  BASE
+  GROSS
+  TAXABLE
+}
+
+enum PayrollCategory {
+  SOCIAL
+  TAX
+  OTHER
+}
+
+enum PayrollRunStatus {
+  DRAFT
+  VALIDATED
+  PAID
+  CANCELLED
+}
+
+// Rubrique de paie. Plusieurs versions d'un même code peuvent coexister : la version applicable est
+// celle dont la période d'effet couvre la fin du mois payé.
+model PayrollItem {
+  id               String          @id @default(uuid()) @db.Uuid
+  companyId        String          @db.Uuid
+  code             String
+  name             String
+  type             PayrollItemType
+  category         PayrollCategory @default(OTHER)
+  mode             PayrollCalcMode
+  base             PayrollBase     @default(GROSS)
+  // FIXED : montant ; RATE : pourcentage
+  value            Decimal         @default(0) @db.Decimal(18, 4)
+  // Plafond de l'assiette (RATE)
+  ceiling          Decimal?        @db.Decimal(18, 2)
+  // BRACKETS : [{ "upTo": 75000, "rate": 0 }, { "upTo": null, "rate": 15 }] (taux en %, tranche marginale)
+  brackets         Json?
+  // Gain : entre dans l'assiette imposable ? Retenue : vient en déduction de l'assiette imposable ?
+  taxable          Boolean         @default(true)
+  deductibleForTax Boolean         @default(false)
+  sortOrder        Int             @default(100)
+  effectiveFrom    DateTime        @db.Date
+  effectiveTo      DateTime?       @db.Date
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, code, effectiveFrom])
+  @@index([companyId, isActive])
+}
+
+// Prime ou retenue récurrente propre à un salarié (prime de panier, remboursement d'avance…)
+model EmployeePayrollItem {
+  id         String          @id @default(uuid()) @db.Uuid
+  companyId  String          @db.Uuid
+  employeeId String          @db.Uuid
+  name       String
+  type       PayrollItemType
+  category   PayrollCategory @default(OTHER)
+  amount     Decimal         @db.Decimal(18, 2)
+  taxable    Boolean         @default(true)
+  startDate  DateTime        @db.Date
+  endDate    DateTime?       @db.Date
+  isActive   Boolean         @default(true)
+  createdAt  DateTime        @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId])
+}
+
+model PayrollRun {
+  id              String           @id @default(uuid()) @db.Uuid
+  companyId       String           @db.Uuid
+  year            Int
+  month           Int
+  status          PayrollRunStatus @default(DRAFT)
+  currency        String
+  totalGross      Decimal          @default(0) @db.Decimal(18, 2)
+  totalDeductions Decimal          @default(0) @db.Decimal(18, 2)
+  totalNet        Decimal          @default(0) @db.Decimal(18, 2)
+  totalEmployer   Decimal          @default(0) @db.Decimal(18, 2)
+  accountId       String?          @db.Uuid
+  calculatedAt    DateTime?
+  validatedAt     DateTime?
+  validatedById   String?          @db.Uuid
+  paidAt          DateTime?
+  paidById        String?          @db.Uuid
+  notes           String?
+  createdById     String?          @db.Uuid
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payslips Payslip[]
+
+  @@index([companyId, year, month])
+}
+
+model Payslip {
+  id              String   @id @default(uuid()) @db.Uuid
+  companyId       String   @db.Uuid
+  runId           String   @db.Uuid
+  employeeId      String   @db.Uuid
+  // Attribué à la validation de la campagne (numérotation sans trou)
+  number          String?
+  baseSalary      Decimal  @db.Decimal(18, 2)
+  // Fraction du mois travaillée et payée (entrée/sortie en cours de mois, congés non payés)
+  prorata         Decimal  @default(1) @db.Decimal(7, 6)
+  unpaidDays      Decimal  @default(0) @db.Decimal(5, 1)
+  gross           Decimal  @db.Decimal(18, 2)
+  taxableGross    Decimal  @db.Decimal(18, 2)
+  totalDeductions Decimal  @db.Decimal(18, 2)
+  netPay          Decimal  @db.Decimal(18, 2)
+  employerCharges Decimal  @default(0) @db.Decimal(18, 2)
+  employerCost    Decimal  @db.Decimal(18, 2)
+  payoutMethod    String?
+  payoutReference String?
+  createdAt       DateTime @default(now())
+
+  company  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  run      PayrollRun    @relation(fields: [runId], references: [id], onDelete: Cascade)
+  employee Employee      @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  lines    PayslipLine[]
+
+  @@unique([runId, employeeId])
+  @@unique([companyId, number])
+  @@index([companyId, employeeId])
+}
+
+model PayslipLine {
+  id        String          @id @default(uuid()) @db.Uuid
+  companyId String          @db.Uuid
+  payslipId String          @db.Uuid
+  position  Int
+  code      String
+  label     String
+  type      PayrollItemType
+  category  PayrollCategory @default(OTHER)
+  // Assiette et taux affichés sur le bulletin (informatifs)
+  base      Decimal?        @db.Decimal(18, 2)
+  rate      Decimal?        @db.Decimal(9, 4)
+  amount    Decimal         @db.Decimal(18, 2)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payslip Payslip @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+
+  @@index([payslipId])
+}

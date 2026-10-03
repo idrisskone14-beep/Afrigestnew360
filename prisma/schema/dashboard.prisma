@@ -1,0 +1,16 @@
+// ════════════════════════════════════════════════════════════════
+// PHASE 3G — Tableau de bord : disposition personnalisée par utilisateur
+// ════════════════════════════════════════════════════════════════
+
+// Ordre et visibilité des widgets d'un utilisateur dans une entreprise : [{ "key": "revenue", "visible": true }, …]
+model DashboardPreference {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  userId    String   @db.Uuid
+  layout    Json
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+}
