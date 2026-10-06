@@ -131,7 +131,7 @@ Les écritures inter-modules passent par des **services de domaine** (jamais par
 | 5 | Analytics/Reporting, Notifications, Workflows, Audit UI, Import/Export, Recherche globale | **livrée** (359 tests ; voir §13) |
 | 6 | Transport & Flotte, Contraventions, Chantiers | **livrée** (395 tests ; voir §14) |
 | 7 | AfriGest Intelligence | à faire |
-| 8 | Durcissement, perfs, responsive, documentation | à faire |
+| 8 | Durcissement, perfs, accessibilité, documentation | **livrée** (420 tests ; voir §15) |
 
 ## 11. Phase 3 — Cœur ERP (livré)
 
@@ -241,5 +241,28 @@ GED (liens véhicule, chauffeur, PV, chantier, rapport), recherche globale, noti
 
 ### Limites déclarées
 Pas de GPS/télématique ni de cartes carburant ; pas de facturation automatique des missions ; pas de circuit de validation des budgets de chantier ; les absences de dossier d'assurance/visite produisent une alerte et non un blocage.
+
+## 15. Phase 8 — Durcissement, performances, documentation (livré)
+
+### Sécurité
+* **CSP à nonce** (`core/security/csp.ts`, posée par `src/proxy.ts` sur toutes les pages) : le proxy génère un nonce par requête, le transmet à Next (qui marque ses scripts) et via `x-nonce` (script de thème). Production : `script-src 'self' 'nonce-…' 'strict-dynamic'`. Les requêtes de préchargement sont exclues du proxy (pattern documenté par Next).
+* **Limiteur de débit partagé** (`core/security/rate-limit.ts`) : `UPSERT` atomique sur `RateLimitBucket` (fenêtre fixe), testé sous concurrence (20 appels simultanés, limite 5 → 5 autorisés) ; purge par la tâche planifiée ; repli en mémoire.
+* `core/env.ts` : `checkEnv()` (noms seulement), utilisée par `instrumentation.ts` et `/api/health`. `global-error.tsx` en dernier filet.
+* Prisma : `transactionOptions` {maxWait 10 s, timeout 20 s}, pool paramétrable (`DATABASE_POOL_MAX`).
+
+### Performances — le coût d'une requête
+Mesure (build de production, base locale + proxy ajoutant 30 ms d'aller-retour) : une requête applicative `ctx.db` = **≈ 4 allers-retours** (BEGIN, `set_config` du contexte RLS, requête, COMMIT) ; N requêtes dans une même transaction = **N + 3**. Conséquences appliquées :
+* **Contexte en une étape** (`core/tenant/access-data.ts` + `context.ts`) : session, appartenances, droits, modules et abonnements en 5 lectures parallèles (droits/modules/abonnements lus pour toutes les entreprises de l'utilisateur, filtrés ensuite sur l'active ; rien n'est utilisé avant validation de la session). Équivalence avec les lectures d'origine prouvée par `context-queries.test.ts`.
+* **Compteurs de la barre latérale** hors du chemin critique : `/api/nav/counts` + `NavCountsProvider` (rafraîchi à chaque navigation, au retour sur l'onglet et chaque minute).
+* **Tableau de bord** (`modules/dashboard/load.ts`) : widgets répartis en 5 transactions parallèles ; en cas d'erreur SQL dans un lot, les widgets restants sont rechargés individuellement (l'échec d'un widget n'affecte pas les autres).
+* Graphiques en `next/dynamic` (`lazy-charts.tsx`), offres publiques en `unstable_cache` (60 s), **41 index** sur clés étrangères (`phase8_indexes`), garde-fou `db-hygiene.test.ts`.
+* Alternative non retenue : lier le contexte d'entreprise à la **connexion** (une réserve de connexions par entreprise, paramètre de démarrage) ramènerait chaque requête à 1 aller-retour ; écartée pour l'instant car elle multiplie les connexions et exclut PgBouncer en mode transaction.
+* Résultats (30 ms de latence base) : listes ≈ 1,0 s → ≈ 0,5 s ; tableau de bord ≈ 3,2 s → ≈ 1,7 s. **Le levier le plus fort reste de rapprocher la base de l'application** (`docs/EXPLOITATION.md` §2).
+
+### Accessibilité
+Audit axe-core (règles WCAG 2.0/2.1 A et AA) : contraste du vert de marque (4,0 → 5,1:1), structure `<ol>`/`<li>` (composant `Reveal as="li"`), `role="status"` sur les squelettes de chargement. Les faux positifs liés à un volet de navigateur masqué sont écartés (vérification manuelle des couleurs réelles).
+
+### Documentation
+`docs/DEPLOIEMENT.md`, `SECURITE.md`, `EXPLOITATION.md`, `CONTRIBUER.md`, `PERMISSIONS.md` (généré par `npm run docs:gen` depuis le catalogue, **comparé au code par un test** : la documentation ne peut pas dériver), `CHANGELOG.md`.
 
 Les modèles Prisma sont ajoutés **par phase** (une migration par phase) ; la liste cible figure dans la consigne produit et est couverte par les dépendances ci-dessus.

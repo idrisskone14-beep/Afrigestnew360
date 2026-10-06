@@ -4,7 +4,7 @@
 
 Plateforme SaaS ERP multi-entreprises pour le marché africain : finance, comptabilité, ventes, CRM, achats, stocks, RH, paie, projets, GED, reporting, extensions Transport & Chantiers, administration SaaS.
 
-**État : Phases 1 (fondations), 2 (site public, démo, onboarding), 3 (cœur ERP : CRM, ventes, achats, stock, finance, comptabilité, tableau de bord), 4 (RH, paie, projets, GED, organisation) 5 (pilotage : rapports, workflows, notifications, audit, import/export, recherche) et 6 (extensions : Transport & Flotte, Contraventions, Chantiers) livrées — 395 tests** — voir [le plan](docs/ARCHITECTURE.md#10-plan-dimplémentation). Les modules métier arrivent phase par phase ; aucune fonctionnalité n'est simulée : un module dont les écrans ne sont pas livrés l'indique explicitement (et son contrôle d'accès est déjà actif et testé).
+**État : Phases 1 à 6 et 8 livrées — 420 tests** (fondations, site public, cœur ERP, RH/paie/projets/GED, pilotage, extensions Flotte et Chantiers, durcissement/performances/documentation). Reste à venir : **Phase 7 — AfriGest Intelligence**. Voir [le plan](docs/ARCHITECTURE.md#10-plan-dimplémentation). Aucune fonctionnalité n'est simulée : un module dont les écrans ne sont pas livrés l'indique explicitement (et son contrôle d'accès est déjà actif et testé).
 
 ## Ce qui fonctionne aujourd'hui
 
@@ -45,7 +45,24 @@ Plateforme SaaS ERP multi-entreprises pour le marché africain : finance, compta
 | **Contraventions** (P6) | PV (n° unique), chauffeur déduit automatiquement de la mission ou de l'affectation à la date de l'infraction, statuts À payer → Payée / Contestée / Annulée (états finaux), échéances, analyse des récidives par chauffeur et par véhicule, justificatifs via la GED |
 | **Chantiers** (P6) | Chantier = projet associé (créé automatiquement) : budget par catégorie, équipe, engins (jours × tarif, liés à la flotte), matériaux **sortis réellement du stock**, sous-traitants (factures fournisseur), rapports journaliers (un par jour, l'avancement suit le dernier rapport), budget prévu / réel / consommé, documents |
 
-À venir : AfriGest Intelligence (P7), durcissement (P8).
+| **Sécurité** (P8) | CSP à nonce par requête (aucun `unsafe-inline`/`unsafe-eval` côté scripts), en-têtes COOP/CORP/HSTS, **limitation de débit partagée en base** (efficace sur serverless), vérification de configuration au démarrage, `/api/health` sans fuite de valeur — voir [docs/SECURITE.md](docs/SECURITE.md) |
+| **Performances** (P8) | contexte chargé en une étape parallèle, compteurs de la barre latérale différés, widgets en transactions groupées, graphiques à la demande, 41 index sur clés étrangères + garde-fou de test : pages de liste ≈ 2× plus rapides, tableau de bord ≈ 1,9× (mesuré à 30 ms de latence base) |
+| **Accessibilité** (P8) | audit axe-core WCAG 2.1 AA sur les pages publiques et 4 écrans de l'application ; mouvements réduits respectés |
+| **Documentation** (P8) | guides de déploiement, d'exploitation, de sécurité, de contribution, matrice des 148 permissions **générée et vérifiée par test** |
+
+À venir : AfriGest Intelligence (P7).
+
+## Documentation
+
+| Document | Pour qui | Contenu |
+|---|---|---|
+| [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md) | exploitant | mise en production pas à pas (Vercel + PostgreSQL managé), variables, e-mails, vérifications |
+| [docs/EXPLOITATION.md](docs/EXPLOITATION.md) | exploitant | surveillance, performances, sauvegardes, migrations, rotation des secrets, incidents |
+| [docs/SECURITE.md](docs/SECURITE.md) | direction, auditeur | modèle de menace, protections en place **et ce qui n'est pas couvert** |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | développeur | architecture, isolation, événements, règles métier par phase |
+| [docs/CONTRIBUER.md](docs/CONTRIBUER.md) | développeur | conventions, recettes (table, permission, module, action), tests, pièges |
+| [docs/PERMISSIONS.md](docs/PERMISSIONS.md) | administrateur | modules, 148 permissions, rôles modèles (généré) |
+| [CHANGELOG.md](CHANGELOG.md) | tous | journal des changements par phase |
 
 ## Démarrage rapide
 
@@ -89,6 +106,7 @@ Les entreprises ont des offres différentes (Enterprise / Business / Starter) : 
 | `npm run db:start` | PostgreSQL de développement (données dans `.pgdata/`) |
 | `npm run db:migrate` · `db:deploy` | Migrations (dev · production) |
 | `npm run db:app-role` | Active la connexion du rôle applicatif |
+| `npm run docs:gen` | Régénère `docs/PERMISSIONS.md` depuis le catalogue de permissions (un test vérifie qu'il est à jour) |
 | `npm run db:seed` | Seed idempotent (`SEED_DEMO=false` pour ne charger que le catalogue). Les données de démonstration passent par les **vrais services** (numérotation, stock, écritures comptables) : chiffres cohérents entre modules |
 | `GET /api/cron/alerts` | Génère les alertes d'échéances et de stock (toutes entreprises). Désactivée sans `CRON_SECRET` ; appeler avec `Authorization: Bearer <secret>` (ex. une fois par jour) |
 
@@ -106,13 +124,11 @@ Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Points essentiels :
 
 ### Production
 
-* PostgreSQL managé ; créer `afrigest_app` via la migration, définir son mot de passe (`ALTER ROLE afrigest_app LOGIN PASSWORD …`), puis `DATABASE_URL` = `afrigest_app`, `DIRECT_URL` = propriétaire (migrations uniquement).
-* `REQUIRE_EMAIL_VERIFICATION=true`, `RESEND_API_KEY`, `APP_URL`, secrets forts. Ne jamais commiter `.env`.
-* Le seed ne doit charger que le catalogue (`SEED_DEMO=false`) ; changer immédiatement le mot de passe du propriétaire.
+Guide complet : **[docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)**. En bref : PostgreSQL managé avec **deux rôles** (`DATABASE_URL` = `afrigest_app` pour l'application, `DIRECT_URL` = propriétaire pour les migrations), SSL, variables d'environnement sur Vercel, `REQUIRE_EMAIL_VERIFICATION=true` avec Resend, `SEED_DEMO=false`, puis vérifier `/api/health`. Le script `vercel-build` applique les migrations avant chaque construction.
 
 ## Limites connues
 
-* Limitation de débit en mémoire (par instance) sur connexion, inscription, mot de passe oublié et démo/contact ; à remplacer par Redis en déploiement multi-instances.
+* Limitation de débit : compteurs partagés en base (par adresse IP) sur connexion, inscription, mot de passe oublié et démo/contact ; repli en mémoire si la base est indisponible. Pas de CAPTCHA.
 * Les « témoignages » de la landing sont des profils illustratifs (aucun client réel à ce jour) : à remplacer avant mise en production.
 * La palette ⌘K navigue entre modules/paramètres/entreprises ; la recherche d'entités est assurée par la palette (voir « Recherche globale »).
 * Le compteur d'usage ne couvre que les utilisateurs ; les autres compteurs (produits, clients…) s'ajoutent avec leurs tables.
@@ -133,4 +149,7 @@ Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Points essentiels :
 * **Recherche globale** : recherche par sous-chaîne (pas de classement par pertinence ni de tolérance aux fautes) ; véhicules et chantiers inclus (selon modules actifs et droits).
 * **Flotte** : le blocage de mission ne s'applique que lorsqu'une assurance ou une visite technique **expirée est enregistrée** (l'absence de dossier produit une alerte, pas un blocage) ; la correction d'un kilométrage passe par la fiche véhicule (tracée) ; pas de télématique/GPS ni de lecture de cartes carburant ; pas de génération automatique de facture depuis une mission (le produit de la mission est un montant saisi) ; coûts de flotte comptés une fois (une dépense créée depuis un coût de flotte n'est pas recomptée) ; les photos et pièces jointes passent par le module Documents.
 * **Chantiers** : exige le module Projets ; les budgets n'ont pas de circuit de validation ; les engins de type véhicule dépendent du module Flotte ; pas de planning de chantier propre (utiliser les tâches du projet associé) ; pas de métrés ni de situations de travaux.
-* Stockage de fichiers : implémentation disque (`UPLOAD_DIR`) derrière une interface `StorageProvider` ; un fournisseur S3-compatible reste à brancher pour la production.
+* **Stockage de fichiers** : implémentation disque (`UPLOAD_DIR`) derrière une interface `StorageProvider` ; **un fournisseur S3-compatible reste à brancher avant la production** (sur Vercel le disque est éphémère : logos et documents disparaîtraient).
+* **Sécurité** : aucun test d'intrusion indépendant à ce jour ; pas d'antivirus sur les fichiers, pas de WAF ni de SIEM ; 6 avis `npm audit` sans effet à l'exécution, documentés dans `docs/SECURITE.md`.
+* **Performances** : chaque requête applicative coûte ≈ 4 allers-retours vers la base ; une base distante de plus de ~10 ms ralentit nettement chaque page (mesurer avec `/api/health`, voir `docs/EXPLOITATION.md` §2). Le plan gratuit de Render supprime la base après 30 jours.
+* **E-mails** : sans `RESEND_API_KEY`, aucun e-mail de vérification ni d'invitation ne part.

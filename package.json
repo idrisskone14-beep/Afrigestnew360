@@ -17,6 +17,8 @@
     "db:seed": "tsx --conditions=react-server prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
     "db:app-role": "tsx scripts/db-app-role.ts",
+    "docs:gen": "tsx scripts/gen-docs.ts",
+    "vercel-build": "prisma migrate deploy && next build",
     "postinstall": "prisma generate"
   },
   "dependencies": {
