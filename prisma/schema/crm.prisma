@@ -214,6 +214,9 @@ model Opportunity {
 
   @@index([companyId, stageId])
   @@index([companyId, status])
+
+  @@index([companyId, customerId])
+  @@index([companyId, leadId])
 }
 
 model Activity {
@@ -239,4 +242,7 @@ model Activity {
 
   @@index([companyId, customerId])
   @@index([companyId, dueAt])
+
+  @@index([companyId, leadId])
+  @@index([companyId, opportunityId])
 }

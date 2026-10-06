@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, Landmark, TrendingUp } from "lucide-react";
-import { CashflowChart } from "@/components/app/cashflow-chart";
+import { CashflowChart } from "@/components/app/lazy-charts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireTenantContext } from "@/core/tenant/guards";
 import { formatMoney } from "@/lib/reference-data";

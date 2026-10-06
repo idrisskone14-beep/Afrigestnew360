@@ -132,6 +132,8 @@ model AuthToken {
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([email, type])
+
+  @@index([userId])
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -311,6 +313,8 @@ model Invitation {
   role    Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([companyId, email])
+
+  @@index([companyId, roleId])
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -413,6 +417,8 @@ model PlanModule {
   module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@id([planId, moduleId])
+
+  @@index([moduleId])
 }
 
 // value = -1 → illimité
@@ -544,6 +550,8 @@ model Department {
 
   @@unique([companyId, code])
   @@index([companyId])
+
+  @@index([companyId, parentId])
 }
 
 model CostCenter {
@@ -641,4 +649,13 @@ model DemoRequest {
   updatedAt   DateTime          @updatedAt
 
   @@index([status, createdAt])
+}
+
+/// Compteurs du limiteur de débit des formulaires publics (partagés entre instances serverless). Non tenant, sans RLS.
+model RateLimitBucket {
+  key         String   @id
+  count       Int
+  windowStart DateTime @default(now())
+
+  @@index([windowStart])
 }

@@ -7,6 +7,7 @@ import { Bell, ClipboardCheck, HelpCircle, LayoutDashboard, Settings } from "luc
 import { Logo } from "@/components/brand/logo";
 import { ModuleIcon } from "./icons";
 import { Badge } from "@/components/ui/badge";
+import { useNavCounts } from "./nav-counts";
 import { cn } from "@/lib/utils";
 import type { NavModule } from "@/core/tenant/navigation";
 
@@ -47,7 +48,9 @@ function NavLink({ href, icon, children, active, onNavigate, trailing, index = 0
   );
 }
 
-export function SidebarContent({ modules, canSeeSettings, unreadCount, validations, onNavigate }: SidebarProps) {
+export function SidebarContent({ modules, canSeeSettings, validations, onNavigate }: SidebarProps) {
+  const counts = useNavCounts(); // compteurs chargés après l'affichage (voir nav-counts.tsx)
+  const unreadCount = counts.unread;
   const pathname = usePathname();
   const is = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const standard = modules.filter((m) => m.kind === "STANDARD");
@@ -91,7 +94,7 @@ export function SidebarContent({ modules, canSeeSettings, unreadCount, validatio
             icon={<ClipboardCheck className="size-4" />}
             active={is("/app/validations")}
             onNavigate={onNavigate}
-            trailing={validations.pending > 0 ? <Badge className="h-5 min-w-5 justify-center animate-pulse-glow bg-brand-2 px-1.5 text-[11px] text-[#1a1405]">{validations.pending > 99 ? "99+" : validations.pending}</Badge> : null}
+            trailing={counts.pending > 0 ? <Badge className="h-5 min-w-5 justify-center animate-pulse-glow bg-brand-2 px-1.5 text-[11px] text-[#1a1405]">{counts.pending > 99 ? "99+" : counts.pending}</Badge> : null}
           >
             Validations
           </NavLink>

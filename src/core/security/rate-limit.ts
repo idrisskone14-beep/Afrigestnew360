@@ -1,11 +1,14 @@
 import "server-only";
 import { headers } from "next/headers";
+import { platformDb } from "@/core/db/client";
 import { AppError } from "@/core/errors";
 
 /**
- * Limiteur à fenêtre glissante, en mémoire (par instance). Protège les formulaires publics
- * (inscription, mot de passe oublié, démo, contact) contre l'abus simple. Pour un déploiement
- * multi-instances, remplacer le store par Redis sans changer l'API.
+ * Limiteur de débit des formulaires publics (connexion, inscription, mot de passe oublié, démo, contact).
+ *  - `checkRateLimitShared` : compteurs en base (table RateLimitBucket), PARTAGÉS entre toutes les instances serverless —
+ *    c'est celui qu'utilise `enforceRateLimit`. Fenêtre fixe, incrément atomique (un seul UPSERT).
+ *  - `checkRateLimit` : variante en mémoire (fenêtre glissante), utilisée en repli si la base est indisponible et dans les
+ *    tests unitaires.
  */
 const hits = new Map<string, number[]>();
 const MAX_KEYS = 10_000;
@@ -45,8 +48,34 @@ export async function clientIp(): Promise<string> {
 /** Lève RATE_LIMITED si l'IP appelante dépasse la limite pour `scope`. */
 export async function enforceRateLimit(scope: string, options: RateLimitOptions) {
   const ip = await clientIp();
-  const res = checkRateLimit(`${scope}:${ip}`, options);
+  const key = `${scope}:${ip}`;
+  let res: { ok: boolean; retryAfterSec: number };
+  try {
+    res = await checkRateLimitShared(key, options);
+  } catch (e) {
+    console.error("[rate-limit] compteur partagé indisponible, repli en mémoire", e);
+    res = checkRateLimit(key, options);
+  }
   if (!res.ok) {
     throw new AppError("RATE_LIMITED", `Trop de tentatives. Réessayez dans ${Math.ceil(res.retryAfterSec / 60)} min.`);
   }
+}
+
+/** Incrément atomique du compteur partagé ; la fenêtre se réarme d'elle-même une fois écoulée. */
+export async function checkRateLimitShared(key: string, { limit, windowMs }: RateLimitOptions): Promise<{ ok: boolean; retryAfterSec: number }> {
+  const secs = windowMs / 1000;
+  const rows = await platformDb.$queryRaw<{ count: number; retry: number }[]>`
+    INSERT INTO "RateLimitBucket" ("key", "count", "windowStart") VALUES (${key}, 1, now())
+    ON CONFLICT ("key") DO UPDATE SET
+      "count" = CASE WHEN "RateLimitBucket"."windowStart" < now() - make_interval(secs => ${secs}::float8) THEN 1 ELSE "RateLimitBucket"."count" + 1 END,
+      "windowStart" = CASE WHEN "RateLimitBucket"."windowStart" < now() - make_interval(secs => ${secs}::float8) THEN now() ELSE "RateLimitBucket"."windowStart" END
+    RETURNING "count", GREATEST(1, ceil(extract(epoch FROM ("RateLimitBucket"."windowStart" + make_interval(secs => ${secs}::float8) - now()))))::int AS retry`;
+  const row = rows[0];
+  if (!row) throw new Error("Compteur de limitation introuvable.");
+  return row.count > limit ? { ok: false, retryAfterSec: row.retry } : { ok: true, retryAfterSec: 0 };
+}
+
+/** Supprime les compteurs périmés (appelé par la tâche planifiée). */
+export async function purgeRateLimits(): Promise<number> {
+  return platformDb.$executeRaw`DELETE FROM "RateLimitBucket" WHERE "windowStart" < now() - interval '1 day'`;
 }

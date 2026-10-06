@@ -1,28 +1,25 @@
 import { NextResponse } from "next/server";
-import { getPublicPlans } from "@/modules/platform/demo";
+import { checkEnv } from "@/core/env";
+import { databaseLatency } from "@/modules/platform/demo";
 
 /**
  * Point de contrôle de déploiement : indique si la configuration est complète et si la base répond.
- * Ne révèle AUCUNE valeur : seulement les NOMS des variables manquantes ou invalides et un booléen pour la base.
+ * Ne révèle AUCUNE valeur : seulement les NOMS des variables manquantes ou invalides, un booléen pour la base et sa latence
+ * (utile pour juger si la base est « proche » de l'application : au-delà de ~10 ms par aller-retour, chaque page ralentit).
  */
-const REQUIRED = ["DATABASE_URL", "AUTH_SECRET", "ENCRYPTION_KEY", "APP_URL"] as const;
-
 export async function GET() {
-  const problems: string[] = [];
-  for (const name of REQUIRED) if (!process.env[name]) problems.push(`${name} manquante`);
-  if (process.env.ENCRYPTION_KEY && !/^[0-9a-fA-F]{64}$/.test(process.env.ENCRYPTION_KEY)) problems.push("ENCRYPTION_KEY invalide (64 caractères hexadécimaux attendus)");
-  if (process.env.AUTH_SECRET && process.env.AUTH_SECRET.length < 16) problems.push("AUTH_SECRET trop courte");
-  if (process.env.REQUIRE_EMAIL_VERIFICATION === "true" && !process.env.RESEND_API_KEY) problems.push("RESEND_API_KEY absente : les e-mails de vérification ne partiront pas");
-  if (!process.env.CRON_SECRET) problems.push("CRON_SECRET manquante : tâche planifiée désactivée");
-
-  let database: "ok" | "indisponible" = "indisponible";
-  try {
-    await getPublicPlans();
-    database = "ok";
-  } catch (e) {
-    console.error("[health] base de données", e);
-  }
-
-  const ok = problems.filter((p) => !p.startsWith("RESEND") && !p.startsWith("CRON")).length === 0 && database === "ok";
-  return NextResponse.json({ ok, database, problems }, { status: ok ? 200 : 503, headers: { "Cache-Control": "no-store" } });
+  const issues = checkEnv();
+  const latency = await databaseLatency();
+  const database = latency ? "ok" : "indisponible";
+  const ok = !issues.some((i) => i.level === "blocking") && latency !== null;
+  return NextResponse.json(
+    {
+      ok,
+      database,
+      // 1 requête simple (≈ 1 aller-retour), puis 1 requête applicative complète (≈ 4 allers-retours) : l'écart donne la latence réseau
+      ...(latency ? { latencyMs: { simpleQuery: latency.simpleMs, appQuery: latency.appQueryMs, region: process.env.VERCEL_REGION ?? null } } : {}),
+      problems: issues.map((i) => (i.level === "warning" ? `(avertissement) ${i.message}` : i.message)),
+    },
+    { status: ok ? 200 : 503, headers: { "Cache-Control": "no-store" } },
+  );
 }

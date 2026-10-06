@@ -219,6 +219,11 @@ export async function listApprovals(ctx: Ctx, p: { status?: "PENDING" | "APPROVE
 }
 
 /** Nombre de demandes en attente dont l'étape courante est décidable par l'utilisateur (badge de la barre latérale). */
+/** La page « Validations » existe-t-elle pour cet utilisateur ? (droit de lecture + au moins un module concerné actif) */
+export function canSeeValidations(ctx: Ctx): boolean {
+  return ctx.can("workflow.request.read") && Object.values(APPROVAL_TYPES).some((t) => ctx.hasModule(t.module));
+}
+
 export async function pendingDecisionCount(ctx: Ctx): Promise<number> {
   if (!ctx.can("workflow.request.approve")) return 0;
   const types = APPROVAL_TYPE_KEYS.filter((t) => canDecide(ctx, t));

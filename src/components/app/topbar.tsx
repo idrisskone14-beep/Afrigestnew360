@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CommandPalette } from "./command-palette";
 import { CompanySwitcher } from "./company-switcher";
+import { useNavCounts } from "./nav-counts";
 import { SidebarContent, type SidebarProps } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
@@ -19,6 +20,7 @@ export function Topbar({ nav, companies, activeCompanyId, user }: {
   user: { name: string; email: string; isPlatformAdmin: boolean };
 }) {
   const [drawer, setDrawer] = useState(false);
+  const { unread } = useNavCounts();
   return (
     <header className="glass sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border px-3 sm:px-5">
       <Sheet open={drawer} onOpenChange={setDrawer}>
@@ -38,8 +40,8 @@ export function Topbar({ nav, companies, activeCompanyId, user }: {
         <CommandPalette modules={nav.modules} companies={companies} activeCompanyId={activeCompanyId} canSeeSettings={nav.canSeeSettings} />
         <Button variant="ghost" size="icon" asChild className="relative" aria-label="Notifications">
           <Link href="/app/notifications">
-            <Bell className={nav.unreadCount > 0 ? "size-4 origin-top animate-[wiggle_1.4s_ease-in-out_1.8s_3]" : "size-4"} />
-            {nav.unreadCount > 0 && <span className="absolute right-1.5 top-1.5 size-2 rounded-full animate-pulse-glow bg-brand-2 ring-2 ring-background" />}
+            <Bell className={unread > 0 ? "size-4 origin-top animate-[wiggle_1.4s_ease-in-out_1.8s_3]" : "size-4"} />
+            {unread > 0 && <span className="absolute right-1.5 top-1.5 size-2 rounded-full animate-pulse-glow bg-brand-2 ring-2 ring-background" />}
           </Link>
         </Button>
         <ThemeToggle />

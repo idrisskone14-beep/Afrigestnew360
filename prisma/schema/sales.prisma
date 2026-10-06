@@ -198,6 +198,8 @@ model Delivery {
 
   @@unique([companyId, number])
   @@index([companyId, orderId])
+
+  @@index([companyId, customerId])
 }
 
 model DeliveryLine {
@@ -259,6 +261,9 @@ model Invoice {
   @@unique([companyId, number])
   @@index([companyId, status, dueDate])
   @@index([companyId, customerId])
+
+  @@index([companyId, orderId])
+  @@index([companyId, projectId])
 }
 
 model InvoiceLine {
@@ -386,6 +391,10 @@ model Payment {
   @@index([companyId, status, date])
   @@index([companyId, invoiceId])
   @@index([companyId, customerId])
+
+  @@index([companyId, accountId])
+  @@index([companyId, billId])
+  @@index([companyId, supplierId])
 }
 
 model Reminder {

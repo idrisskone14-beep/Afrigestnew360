@@ -215,6 +215,8 @@ model FuelLog {
   driver  Driver? @relation(fields: [driverId], references: [id], onDelete: SetNull)
 
   @@index([companyId, vehicleId, date])
+
+  @@index([companyId, driverId])
 }
 
 model MaintenanceRecord {

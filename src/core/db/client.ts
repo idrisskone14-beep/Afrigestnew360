@@ -12,7 +12,13 @@ function createBase(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL est requis.");
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    adapter: new PrismaPg({
+      connectionString,
+      // Le parallélisme des requêtes compense la latence réseau vers la base : ne pas descendre trop bas (DATABASE_POOL_MAX).
+      max: Number(process.env.DATABASE_POOL_MAX) || 10,
+      idleTimeoutMillis: 30_000, // une connexion TLS vers une base distante coûte cher à rétablir : on la garde au chaud
+      connectionTimeoutMillis: 10_000,
+    }),
     // Défauts de Prisma (attente 2 s, exécution 5 s) trop justes : première compilation en développement, base distante
     // ou pic de charge faisaient échouer des requêtes pourtant correctes (« Unable to start a transaction in the given time »).
     transactionOptions: { maxWait: 10_000, timeout: 20_000 },

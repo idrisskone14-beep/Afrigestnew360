@@ -28,6 +28,8 @@ model ProductCategory {
   products Product[]
 
   @@unique([companyId, name])
+
+  @@index([companyId, parentId])
 }
 
 model Product {
@@ -60,6 +62,8 @@ model Product {
   @@unique([companyId, sku])
   @@index([companyId, name])
   @@index([companyId, barcode])
+
+  @@index([companyId, categoryId])
 }
 
 model Warehouse {

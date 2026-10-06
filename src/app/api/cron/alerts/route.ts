@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { purgeRateLimits } from "@/core/security/rate-limit";
 import { generateAllAlerts } from "@/modules/platform/alerts";
 
 const safeEqual = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -14,7 +15,9 @@ async function run(req: NextRequest) {
   const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
   if (!safeEqual(token, secret)) return new NextResponse(null, { status: 401, headers: { "Cache-Control": "no-store" } });
   try {
-    return NextResponse.json(await generateAllAlerts(), { headers: { "Cache-Control": "no-store" } });
+    const result = await generateAllAlerts();
+    await purgeRateLimits().catch((e) => console.error("[cron:rate-limit]", e)); // ménage des compteurs périmés
+    return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     console.error("[cron:alerts]", e);
     return NextResponse.json({ error: "Échec de la génération des alertes." }, { status: 500 });

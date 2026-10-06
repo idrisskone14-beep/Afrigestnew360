@@ -3,13 +3,13 @@ import Link from "next/link";
 import {
   Activity, AlertTriangle, ArrowLeftRight, BarChart3, BookOpenCheck, Boxes, CalendarClock, HandCoins, HardHat, KanbanSquare, Landmark, Receipt, Target, TrendingUp, Truck, Users, UsersRound, Wallet, type LucideIcon,
 } from "lucide-react";
-import { BarsChart } from "@/components/app/bars-chart";
-import { CashflowChart } from "@/components/app/cashflow-chart";
+import { BarsChart, CashflowChart } from "@/components/app/lazy-charts";
 import { AnimatedValue } from "@/components/app/animated-value";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireTenantContext } from "@/core/tenant/guards";
 import { cn } from "@/lib/utils";
 import { getLayout } from "@/modules/dashboard/layout";
+import { loadWidgets } from "@/modules/dashboard/load";
 import { CustomizeDialog } from "@/modules/dashboard/ui/customize-dialog";
 import { WIDGET_BY_KEY, type ListItem, type WidgetData, type WidgetDef } from "@/modules/dashboard/widgets";
 
@@ -32,11 +32,8 @@ export default async function DashboardPage() {
   const ctx = await requireTenantContext();
   const layout = await getLayout(ctx);
   const visible = layout.filter((l) => l.visible).map((l) => WIDGET_BY_KEY.get(l.key)!).filter(Boolean);
-  // chaque widget se charge indépendamment : l'échec de l'un n'empêche pas l'affichage des autres
-  const loaded = await Promise.all(visible.map(async (w) => {
-    try { return { w, data: await w.load(ctx), error: false as const }; }
-    catch (e) { console.error(`[dashboard:${w.key}]`, e); return { w, data: null, error: true as const }; }
-  }));
+  // widgets regroupés en 5 transactions parallèles (voir load.ts) ; l'échec de l'un n'empêche pas l'affichage des autres
+  const loaded = await loadWidgets(ctx, visible);
   const kpis = loaded.filter((x) => x.w.size === "kpi");
   const panels = loaded.filter((x) => x.w.size !== "kpi");
   const name = ctx.company.tradeName ?? ctx.company.legalName;

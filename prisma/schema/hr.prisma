@@ -90,6 +90,8 @@ model Employee {
   @@index([companyId, status])
   @@index([companyId, departmentId])
   @@index([companyId, branchId])
+
+  @@index([companyId, managerId])
 }
 
 model EmploymentContract {
@@ -149,6 +151,8 @@ model LeaveRequest {
 
   @@index([companyId, employeeId, startDate])
   @@index([companyId, status])
+
+  @@index([companyId, typeId])
 }
 
 model Attendance {

@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { platformDb } from "@/core/db/client";
 import { appUrl, sendMail } from "@/core/mail";
 import { normalizeEmail } from "@/core/auth/login";
@@ -70,8 +71,33 @@ export async function recordDemoRequest(input: DemoRequestData) {
   return { id: created.id, duplicate: false };
 }
 
-/** Offres visibles publiquement (page Tarifs), avec modules et limites. */
-export async function getPublicPlans() {
+/**
+ * Offres visibles publiquement (page Tarifs), avec modules et limites.
+ * Lecture mise en cache 60 s : l'accueil et les tarifs sont les pages les plus visitées et ces données changent rarement ;
+ * une modification d'offre dans le Super Admin apparaît donc au plus une minute plus tard.
+ */
+export const getPublicPlans = unstable_cache(loadPublicPlans, ["public-plans"], { revalidate: 60 });
+
+/**
+ * Mesure la latence vers la base (point de contrôle de déploiement) : une requête brute (≈ 1 aller-retour) puis une requête
+ * applicative (≈ 4 allers-retours : BEGIN, contexte RLS, requête, COMMIT). Retourne null si la base ne répond pas. Jamais mis en cache.
+ */
+export async function databaseLatency(): Promise<{ simpleMs: number; appQueryMs: number } | null> {
+  try {
+    await platformDb.plan.count(); // établit la connexion (exclue de la mesure)
+    const t0 = performance.now();
+    await platformDb.$queryRaw`SELECT 1`;
+    const t1 = performance.now();
+    await platformDb.plan.count();
+    const t2 = performance.now();
+    return { simpleMs: Math.round(t1 - t0), appQueryMs: Math.round(t2 - t1) };
+  } catch (e) {
+    console.error("[health] base de données", e);
+    return null;
+  }
+}
+
+async function loadPublicPlans() {
   const plans = await platformDb.plan.findMany({
     where: { isPublic: true, isActive: true },
     orderBy: { sortOrder: "asc" },

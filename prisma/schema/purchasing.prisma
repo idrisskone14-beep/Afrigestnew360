@@ -191,6 +191,8 @@ model GoodsReceipt {
 
   @@unique([companyId, number])
   @@index([companyId, orderId])
+
+  @@index([companyId, supplierId])
 }
 
 model GoodsReceiptLine {
@@ -248,6 +250,9 @@ model SupplierBill {
   @@unique([companyId, number])
   @@index([companyId, status, dueDate])
   @@index([companyId, supplierId])
+
+  @@index([companyId, orderId])
+  @@index([companyId, projectId])
 }
 
 model SupplierBillLine {
@@ -315,6 +320,8 @@ model ApprovalRequest {
 
   @@index([companyId, status, createdAt])
   @@index([companyId, resourceType, resourceId])
+
+  @@index([companyId, ruleId])
 }
 
 // Règle de validation : s'applique à un type d'opération selon le montant, le département du demandeur et son rôle.
@@ -341,6 +348,9 @@ model ApprovalRule {
   requests      ApprovalRequest[]
 
   @@index([companyId, resourceType, isActive])
+
+  @@index([companyId, departmentId])
+  @@index([companyId, requesterRoleId])
 }
 
 model ApprovalRuleStep {
@@ -356,6 +366,8 @@ model ApprovalRuleStep {
   role    Role         @relation("StepApproverRole", fields: [roleId], references: [id], onDelete: Restrict)
 
   @@unique([ruleId, stepOrder])
+
+  @@index([companyId, roleId])
 }
 
 // Journal des décisions étape par étape (séparation des tâches : un même utilisateur ne valide pas deux étapes d'une demande)

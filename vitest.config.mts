@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "server-only": path.resolve(import.meta.dirname, "tests/stubs/empty.ts"),
+      "next/cache": path.resolve(import.meta.dirname, "tests/stubs/next-cache.ts"),
     },
   },
   test: {

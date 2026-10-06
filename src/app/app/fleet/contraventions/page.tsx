@@ -19,7 +19,7 @@ import { fineAnalytics, listFines } from "@/modules/fleet/fines";
 import { fleetOptions } from "@/modules/fleet/lists";
 import { FINE_STATUSES } from "@/modules/fleet/schemas";
 import { FineDialog } from "@/modules/fleet/ui/fleet-dialogs";
-import { BarsChart } from "@/components/app/bars-chart";
+import { BarsChart } from "@/components/app/lazy-charts";
 
 export const metadata: Metadata = { title: "Contraventions" };
 

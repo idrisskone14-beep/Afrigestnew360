@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, forbidden } from "next/navigation";
 import { Download } from "lucide-react";
-import { BarsChart } from "@/components/app/bars-chart";
+import { BarsChart } from "@/components/app/lazy-charts";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

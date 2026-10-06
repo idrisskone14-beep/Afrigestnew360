@@ -1,7 +1,8 @@
+import { NavCountsProvider } from "@/components/app/nav-counts";
 import { Topbar } from "@/components/app/topbar";
 import { SidebarContent } from "@/components/app/sidebar";
 import { loadContextState } from "@/core/tenant/context";
-import { APPROVAL_TYPES, pendingDecisionCount } from "@/core/approvals";
+import { canSeeValidations } from "@/core/approvals";
 import { visibleModules } from "@/core/tenant/navigation";
 import { redirect } from "next/navigation";
 
@@ -20,12 +21,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { ctx } = state;
   const modules = visibleModules(ctx);
   const canSeeSettings = ctx.can("settings.company.read") || ctx.can("users.member.read") || ctx.can("roles.role.read") || ctx.can("settings.billing.read");
-  const unreadCount = await ctx.db.notification.count({ where: { userId: ctx.user.id, status: "UNREAD" } });
-  const showValidations = ctx.can("workflow.request.read") && Object.values(APPROVAL_TYPES).some((t) => ctx.hasModule(t.module));
-  const validations = showValidations ? { pending: await pendingDecisionCount(ctx) } : null;
-  const nav = { modules, canSeeSettings, unreadCount, validations };
+  // Les compteurs (notifications non lues, validations en attente) ne sont PAS calculés ici : ils ralentiraient l'affichage
+  // de toutes les pages. Ils arrivent juste après, via /api/nav/counts (voir NavCountsProvider).
+  const nav = { modules, canSeeSettings, unreadCount: 0, validations: canSeeValidations(ctx) ? { pending: 0 } : null };
 
   return (
+    <NavCountsProvider>
     <div className="min-h-dvh lg:pl-64">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-sidebar-border lg:block">
         <SidebarContent {...nav} />
@@ -38,5 +39,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       />
       <main className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">{children}</main>
     </div>
+    </NavCountsProvider>
   );
 }

@@ -1,8 +1,9 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { getCurrentSession, type SessionUser } from "@/core/auth/session";
+import { acceptSessionRow, readJwtSession, type SessionUser } from "@/core/auth/session";
 import { platformDb } from "@/core/db/client";
+import { readAccessData } from "./access-data";
 import { AppError, unauthenticated } from "@/core/errors";
 import { buildAccess } from "@/core/rbac/access";
 import { createTenantContext, type ActiveCompany, type SwitcherItem, type TenantContext } from "./ctx-factory";
@@ -23,23 +24,19 @@ export type ContextState =
  * que si l'utilisateur en est membre actif (revérifié en base à chaque requête).
  */
 export const loadContextState = cache(async (): Promise<ContextState> => {
-  const current = await getCurrentSession();
+  const jwt = await readJwtSession();
+  if (!jwt) return { status: "unauthenticated" };
+
+  // UNE seule étape de lectures parallèles (au lieu de trois étapes successives : session → appartenances → droits).
+  // Rien n'est utilisé avant que la session soit validée (révoquée / expirée → on jette tout).
+  const [row, { memberships, allGrants, allModules, allSubscriptions }] = await Promise.all([
+    platformDb.userSession.findUnique({ where: { id: jwt.sid }, include: { user: true } }),
+    readAccessData(jwt.userId),
+  ]);
+
+  const current = await acceptSessionRow(row, jwt.userId, jwt.sid);
   if (!current) return { status: "unauthenticated" };
   const { user, sessionId } = current;
-
-  const memberships = await platformDb.companyMembership.findMany({
-    where: { userId: user.id, status: "ACTIVE", company: { deletedAt: null } },
-    include: {
-      company: {
-        select: {
-          id: true, legalName: true, tradeName: true, slug: true, currency: true, timezone: true,
-          country: true, logoUrl: true, status: true,
-        },
-      },
-      role: { select: { id: true, name: true, isAdmin: true } },
-    },
-    orderBy: { createdAt: "asc" },
-  });
 
   if (memberships.length === 0) return { status: "no_company", user, sessionId };
 
@@ -60,22 +57,9 @@ export const loadContextState = cache(async (): Promise<ContextState> => {
   const wanted = (await cookies()).get(ACTIVE_COMPANY_COOKIE)?.value;
   const active = usable.find((m) => m.company.id === wanted) ?? usable[0]!;
 
-  const [grants, companyModules, subscription] = await Promise.all([
-    active.role.isAdmin
-      ? Promise.resolve([] as { permission: { key: string } }[])
-      : platformDb.rolePermission.findMany({
-          where: { roleId: active.role.id },
-          select: { permission: { select: { key: true } } },
-        }),
-    platformDb.companyModule.findMany({
-      where: { companyId: active.company.id, enabled: true, module: { isActive: true } },
-      select: { module: { select: { key: true } } },
-    }),
-    platformDb.subscription.findUnique({
-      where: { companyId: active.company.id },
-      select: { status: true },
-    }),
-  ]);
+  const grants = active.role.isAdmin ? [] : allGrants.filter((g) => g.roleId === active.role.id);
+  const companyModules = allModules.filter((m) => m.companyId === active.company.id);
+  const subscription = allSubscriptions.find((s) => s.companyId === active.company.id);
 
   // Abonnement résilié : seul le cœur reste accessible (lecture/gestion de compte).
   const enabledModules = subscription?.status === "CANCELED" ? [] : companyModules.map((c) => c.module.key);

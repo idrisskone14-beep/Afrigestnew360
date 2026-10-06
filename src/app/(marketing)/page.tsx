@@ -123,12 +123,10 @@ export default async function LandingPage() {
       <Section tone="muted" eyebrow="Fonctionnement" title="Opérationnel en quatre étapes">
         <ol className="grid gap-6 md:grid-cols-4">
           {STEPS.map((s, i) => (
-            <Reveal key={s.n} delay={i * 0.06}>
-              <li className="relative h-full rounded-xl border bg-card p-6">
+            <Reveal as="li" key={s.n} delay={i * 0.06} className="relative h-full rounded-xl border bg-card p-6">
                 <span className="flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">{s.n}</span>
                 <h3 className="mt-4 font-semibold">{s.title}</h3>
                 <p className="mt-1.5 text-sm text-muted-foreground">{s.text}</p>
-              </li>
             </Reveal>
           ))}
         </ol>
@@ -263,7 +261,7 @@ export default async function LandingPage() {
           <p className="mx-auto mt-4 max-w-2xl text-lg text-primary-foreground/70">Un conseiller configure avec vous un environnement adapté à votre activité.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button size="lg" variant="secondary" asChild><Link href="#demo">Demander une démo</Link></Button>
-            <Button size="lg" variant="outline" asChild className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link href="/inscription">Créer un compte</Link></Button>
+            <Button size="lg" variant="outline" asChild className="border-primary-foreground/30 bg-primary text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link href="/inscription">Créer un compte</Link></Button>
           </div>
         </div>
       </section>

@@ -104,6 +104,8 @@ model FinancialTransaction {
   @@index([companyId, accountId, date])
   @@index([companyId, sourceType, sourceId])
   @@index([companyId, transferGroupId])
+
+  @@index([companyId, categoryId])
 }
 
 model Expense {
@@ -141,6 +143,12 @@ model Expense {
   @@unique([companyId, number])
   @@index([companyId, status, date])
   @@index([companyId, categoryId])
+
+  @@index([companyId, accountId])
+  @@index([companyId, branchId])
+  @@index([companyId, costCenterId])
+  @@index([companyId, projectId])
+  @@index([companyId, supplierId])
 }
 
 // Budget mensuel par catégorie de dépenses
@@ -157,4 +165,6 @@ model Budget {
   category FinanceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, year, month, categoryId])
+
+  @@index([companyId, categoryId])
 }
