@@ -67,11 +67,17 @@ export async function requestPasswordReset(emailRaw: string) {
   const user = await platformDb.user.findUnique({ where: { email: normalizeEmail(emailRaw) } });
   if (!user || user.status !== "ACTIVE" || user.deletedAt) return; // réponse identique dans tous les cas
   const token = await issueToken(user.email, user.id, "PASSWORD_RESET");
-  await sendMail({
-    to: user.email,
-    subject: "Réinitialisation de votre mot de passe — AfriGest 360",
-    text: `Pour choisir un nouveau mot de passe :\n${appUrl(`/reinitialiser-mot-de-passe?token=${token}`)}\n\nCe lien est valable 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.`,
-  });
+  try {
+    await sendMail({
+      to: user.email,
+      subject: "Réinitialisation de votre mot de passe — AfriGest 360",
+      text: `Pour choisir un nouveau mot de passe :\n${appUrl(`/reinitialiser-mot-de-passe?token=${token}`)}\n\nCe lien est valable 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.`,
+    });
+  } catch (e) {
+    // Un échec d'envoi (clé Resend absente ou invalide, domaine non vérifié…) ne doit PAS se voir côté utilisateur : une erreur
+    // affichée uniquement pour les adresses qui ont un compte révélerait lesquelles existent. On journalise pour l'exploitant.
+    console.error("[auth] lien de réinitialisation non envoyé (voir [mail] ci-dessus)", e);
+  }
 }
 
 export async function resetPassword(token: string, newPassword: string) {
