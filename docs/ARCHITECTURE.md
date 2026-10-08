@@ -131,7 +131,7 @@ Les écritures inter-modules passent par des **services de domaine** (jamais par
 | 5 | Analytics/Reporting, Notifications, Workflows, Audit UI, Import/Export, Recherche globale | **livrée** (359 tests ; voir §13) |
 | 6 | Transport & Flotte, Contraventions, Chantiers | **livrée** (395 tests ; voir §14) |
 | 7 | AfriGest Intelligence | à faire |
-| 8 | Durcissement, perfs, accessibilité, documentation | **livrée** (432 tests ; voir §15) |
+| 8 | Durcissement, perfs, accessibilité, documentation | **livrée** (437 tests ; voir §15) |
 
 ## 11. Phase 3 — Cœur ERP (livré)
 

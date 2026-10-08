@@ -7,8 +7,9 @@ import { approveRegistration, countPendingRegistrations, listPendingRegistration
 import { makeUser, uid } from "../helpers";
 
 const sent: { to: string; subject: string }[] = [];
+let failMail = false; // simule une panne d'envoi (clé Resend invalide, domaine non vérifié…)
 vi.mock("@/core/mail", () => ({
-  sendMail: async (m: { to: string; subject: string }) => { sent.push({ to: m.to, subject: m.subject }); },
+  sendMail: async (m: { to: string; subject: string }) => { if (failMail) throw new Error("Impossible d'envoyer l'e-mail."); sent.push({ to: m.to, subject: m.subject }); },
   appUrl: (p = "") => `http://test${p}`,
 }));
 const { registerUser } = await import("@/core/auth/service");
@@ -23,8 +24,9 @@ describe("inscription validée par le Super Admin", () => {
     owner = await makeUser();
     await platformDb.user.update({ where: { id: owner.id }, data: { isPlatformAdmin: true } });
   });
-  beforeEach(() => { sent.length = 0; });
+  beforeEach(() => { sent.length = 0; failMail = false; });
   afterAll(async () => {
+    vi.unstubAllEnvs();
     await platformDb.platformSetting.deleteMany({ where: { key: "signup_mode" } }); // ne pas contaminer les autres fichiers de test
   });
 
@@ -37,6 +39,63 @@ describe("inscription validée par le Super Admin", () => {
     const u = await platformDb.user.findUniqueOrThrow({ where: { email } });
     expect(u.status).toBe("ACTIVE");
     expect(sent.some((m) => m.to === email && /Confirmez/.test(m.subject))).toBe(true);
+  });
+
+  describe("mode « e-mail » : une panne d'envoi ne laisse jamais un compte inutilisable", () => {
+    beforeAll(async () => { await platformDb.platformSetting.deleteMany({ where: { key: "signup_mode" } }); });
+
+    it("l'e-mail ne part pas : pas d'erreur, le compte est mis en attente de validation et les administrateurs sont prévenus", async () => {
+      const email = newEmail();
+      failMail = true;
+      const res = await registerUser({ name: "Panne Mail", email, password: PASSWORD });
+      expect(res.mode).toBe("approval");
+      const u = await platformDb.user.findUniqueOrThrow({ where: { email } });
+      expect(u.status).toBe("PENDING");
+      expect((await listPendingRegistrations()).map((r) => r.email)).toContain(email);
+      expect(await reason(authenticateCredentials({ email, password: PASSWORD }))).toBe("account_pending");
+    });
+
+    it("même forme de réponse pour une adresse déjà connue (aucune divulgation), en panne comme en fonctionnement normal", async () => {
+      const known = await makeUser();
+      failMail = true;
+      expect((await registerUser({ name: "X Y", email: known.email, password: PASSWORD })).mode).toBe("approval");
+      failMail = false;
+      expect((await registerUser({ name: "X Y", email: known.email, password: PASSWORD })).mode).toBe("email");
+      expect((await registerUser({ name: "Nouveau Compte", email: newEmail(), password: PASSWORD })).mode).toBe("email");
+    });
+
+    it("sans clé d'envoi en production, le mode effectif passe tout seul en validation (le choix affiché reste « e-mail »)", async () => {
+      vi.stubEnv("NODE_ENV", "production");
+      vi.stubEnv("RESEND_API_KEY", "");
+      expect(await getSignupMode()).toBe("approval");
+      const email = newEmail();
+      expect((await registerUser({ name: "Sans Clé", email, password: PASSWORD })).mode).toBe("approval");
+      expect((await platformDb.user.findUniqueOrThrow({ where: { email } })).status).toBe("PENDING");
+      vi.stubEnv("RESEND_API_KEY", "re_test");
+      expect(await getSignupMode()).toBe("email");
+      vi.unstubAllEnvs();
+    });
+
+    it("un compte déjà bloqué (actif, adresse jamais confirmée, jamais connecté) apparaît dans la liste et se débloque en un clic", async () => {
+      const stuck = await makeUser();
+      await platformDb.user.update({ where: { id: stuck.id }, data: { emailVerifiedAt: null } });
+      const row = (await listPendingRegistrations()).find((r) => r.id === stuck.id);
+      expect(row?.kind).toBe("unverified");
+      await approveRegistration(stuck.id);
+      expect((await platformDb.user.findUniqueOrThrow({ where: { id: stuck.id } })).emailVerifiedAt).not.toBeNull();
+      expect((await listPendingRegistrations()).some((r) => r.id === stuck.id)).toBe(false);
+    });
+
+    it("la liste ne contient ni un compte vérifié, ni un compte déjà utilisé, ni un administrateur de plateforme", async () => {
+      const verified = await makeUser();
+      const used = await makeUser();
+      await platformDb.user.update({ where: { id: used.id }, data: { emailVerifiedAt: null, lastLoginAt: new Date() } });
+      const ids = (await listPendingRegistrations()).map((r) => r.id);
+      expect(ids).not.toContain(verified.id);
+      expect(ids).not.toContain(used.id);
+      expect(ids).not.toContain(owner.id);
+      await expect(approveRegistration(verified.id)).rejects.toMatchObject({ code: "CONFLICT" });
+    });
   });
 
   describe("mode « validation par le Super Admin »", () => {

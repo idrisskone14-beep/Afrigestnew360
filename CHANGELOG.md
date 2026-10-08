@@ -4,7 +4,7 @@ Format : une entrée par phase livrée, des changements les plus récents aux pl
 
 ## Phase 8 — Durcissement, performances, documentation (2026-10)
 
-**Inscriptions** : nouveau mode **validation par le Super Admin** (aucun e-mail requis), réglable sans redéploiement dans la console (Inscriptions) ; le compte reste en attente jusqu'à validation ou refus. « Mot de passe oublié » ne révèle plus l'existence d'un compte en cas d'échec d'envoi d'e-mail.
+**Inscriptions** : nouveau mode **validation par le Super Admin** (aucun e-mail requis), réglable sans redéploiement dans la console (Inscriptions) ; le compte reste en attente jusqu'à validation ou refus. Une panne d'envoi d'e-mail à l'inscription ne laisse plus de compte bloqué ni d'erreur : le compte passe en attente de validation, et les comptes déjà bloqués se débloquent depuis la console. « Mot de passe oublié » ne révèle plus l'existence d'un compte en cas d'échec d'envoi d'e-mail.
 
 **Sécurité**
 - CSP **à nonce par requête** (aucun `unsafe-inline`/`unsafe-eval` côté scripts en production), en-têtes COOP/CORP, `global-error`.

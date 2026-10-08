@@ -73,20 +73,33 @@ export async function registerUser(input: { name: string; email: string; passwor
     }
     return { mode };
   }
+  // Mode « e-mail ». Une panne d'envoi (clé Resend absente ou invalide, domaine non vérifié…) ne doit JAMAIS laisser un
+  // compte inutilisable ni afficher une erreur : l'inscription bascule alors en validation par le Super Admin.
+  // Les deux branches (adresse connue ou non) répondent exactement de la même façon, succès comme échec.
   if (existing) {
-    // Pas de divulgation de l'existence du compte : même réponse que l'inscription réussie.
-    await sendMail({
-      to: email,
-      subject: "Tentative d'inscription — AfriGest 360",
-      text: `Une inscription a été tentée avec cette adresse alors qu'un compte existe déjà.\nConnectez-vous : ${appUrl("/connexion")}\nMot de passe oublié : ${appUrl("/mot-de-passe-oublie")}`,
-    });
-    return { mode };
+    try {
+      await sendMail({
+        to: email,
+        subject: "Tentative d'inscription — AfriGest 360",
+        text: `Une inscription a été tentée avec cette adresse alors qu'un compte existe déjà.\nConnectez-vous : ${appUrl("/connexion")}\nMot de passe oublié : ${appUrl("/mot-de-passe-oublie")}`,
+      });
+      return { mode: "email" };
+    } catch (e) {
+      console.error("[inscription] e-mail d'information non envoyé", e);
+      return { mode: "approval" };
+    }
   }
-  const user = await platformDb.user.create({
-    data: { email, name: input.name.trim(), passwordHash: await hashPassword(input.password) },
-  });
-  await sendVerificationEmail(user.id);
-  return { mode };
+  const name = input.name.trim();
+  const user = await platformDb.user.create({ data: { email, name, passwordHash: await hashPassword(input.password) } });
+  try {
+    await sendVerificationEmail(user.id);
+    return { mode: "email" };
+  } catch (e) {
+    console.error("[inscription] e-mail de confirmation non envoyé : inscription mise en attente de validation", e);
+    await platformDb.user.update({ where: { id: user.id }, data: { status: "PENDING" } });
+    await notifyPlatformAdminsOfRegistration(name, email);
+    return { mode: "approval" };
+  }
 }
 
 export async function verifyEmail(token: string) {

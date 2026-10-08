@@ -4,7 +4,7 @@ import { ActionButton } from "@/components/app/action-button";
 import { EmptyState, PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSignupMode } from "@/core/platform-settings";
+import { getConfiguredSignupMode, getSignupMode } from "@/core/platform-settings";
 import { approveRegistrationAction, rejectRegistrationAction, setSignupModeAction } from "@/modules/platform/actions";
 import { listPendingRegistrations } from "@/modules/platform/registrations";
 
@@ -13,8 +13,9 @@ export const metadata: Metadata = { title: "Inscriptions" };
 const dt = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
 
 export default async function RegistrationsPage() {
-  const [mode, pending] = await Promise.all([getSignupMode(), listPendingRegistrations()]);
-  const approval = mode === "approval";
+  const [configured, effective, pending] = await Promise.all([getConfiguredSignupMode(), getSignupMode(), listPendingRegistrations()]);
+  const approval = configured === "approval";
+  const forced = effective === "approval" && configured === "email"; // e-mails non opérationnels : repli automatique
 
   return (
     <>
@@ -31,6 +32,11 @@ export default async function RegistrationsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
+          {forced && (
+            <p role="status" className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+              <strong>L&apos;envoi d&apos;e-mails n&apos;est pas configuré</strong> (clé Resend absente) : les nouvelles inscriptions sont <strong>automatiquement mises en attente de votre validation</strong>, même si le mode « confirmation par e-mail » est choisi. Ajoutez la clé Resend pour réactiver la confirmation par e-mail.
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className={`rounded-lg border p-4 ${!approval ? "border-brand bg-accent/50" : ""}`}>
               <p className="flex items-center gap-2 font-medium"><MailCheck className="size-4" /> Confirmation par e-mail</p>
@@ -61,13 +67,13 @@ export default async function RegistrationsPage() {
       </Card>
 
       <h2 className="mb-3 flex items-center gap-2 text-xl font-semibold">
-        En attente de validation
+        À traiter
         <Badge variant={pending.length > 0 ? "default" : "secondary"}>{pending.length}</Badge>
       </h2>
       {pending.length === 0 ? (
         <EmptyState
           icon={<UserCheck className="size-8" />}
-          title="Aucune inscription en attente"
+          title="Aucune inscription à traiter"
           description={approval ? "Les nouvelles inscriptions apparaîtront ici dès qu'elles seront envoyées." : "En mode « confirmation par e-mail », les inscriptions ne passent pas par cette liste."}
         />
       ) : (
@@ -76,7 +82,7 @@ export default async function RegistrationsPage() {
             <Card key={u.id} className="gap-3 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-medium">{u.name}</p>
+                  <p className="flex flex-wrap items-center gap-2 font-medium">{u.name}{u.kind === "unverified" && <Badge variant="outline" className="font-normal">Adresse e-mail non confirmée</Badge>}</p>
                   <p className="text-sm text-muted-foreground"><a href={`mailto:${u.email}`} className="hover:text-foreground">{u.email}</a> · inscrit le {dt.format(u.createdAt)}</p>
                 </div>
                 <div className="flex gap-2">

@@ -88,7 +88,9 @@ Console propriétaire → **Inscriptions** : deux modes, modifiables à tout mom
 | Confirmation par e-mail (défaut) | l'inscrit reçoit un lien et active son compte | e-mails configurés (Resend) |
 | **Validation par le Super Admin** | aucun e-mail requis : le compte reste « en attente » ; le Super Admin le **valide** ou le **refuse** depuis la même page | e-mails pas encore configurés, ou plateforme fermée / sur invitation |
 
-Le menu affiche une pastille avec le nombre d'inscriptions en attente ; les administrateurs reçoivent aussi un e-mail si l'envoi est configuré (sinon la pastille suffit). Un compte validé peut se connecter immédiatement puis créer son entreprise. Réglage de repli (si aucun réglage n'est enregistré) : variable `SIGNUP_MODE` = `email` ou `approval`.
+Le menu affiche une pastille avec le nombre d'inscriptions en attente ; les administrateurs reçoivent aussi un e-mail si l'envoi est configuré (sinon la pastille suffit). Un compte validé peut se connecter immédiatement puis créer son entreprise. **Aucune inscription ne reste bloquée** : si l'envoi d'e-mails n'est pas opérationnel (production sans clé Resend), le mode « e-mail » bascule automatiquement en validation par le Super Admin (un bandeau l'indique dans la console) ; et si un e-mail échoue en cours d'inscription (clé invalide, domaine non vérifié…), le compte est mis en attente de validation au lieu d'afficher une erreur. Les comptes déjà bloqués (adresse jamais confirmée, jamais connectés) apparaissent dans la même liste, repérés « Adresse e-mail non confirmée », et se débloquent en un clic.
+
+Réglage de repli (si aucun réglage n'est enregistré) : variable `SIGNUP_MODE` = `email` ou `approval`.
 
 ## 7. E-mails (Resend)
 
