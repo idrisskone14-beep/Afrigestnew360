@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, BarChart3, Building2, Inbox, LayoutGrid, Layers, Menu, Shield } from "lucide-react";
+import { ArrowLeft, BarChart3, Building2, Inbox, LayoutGrid, Layers, Menu, Shield, UserCheck } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/app/theme-toggle";
 import { UserMenu } from "@/components/app/user-menu";
@@ -17,10 +17,11 @@ const NAV = [
   { href: "/super-admin/entreprises", label: "Entreprises", icon: Building2 },
   { href: "/super-admin/offres", label: "Offres", icon: Layers },
   { href: "/super-admin/modules", label: "Modules", icon: LayoutGrid },
+  { href: "/super-admin/inscriptions", label: "Inscriptions", icon: UserCheck },
   { href: "/super-admin/demandes", label: "Demandes de démo", icon: Inbox },
 ];
 
-function Nav({ newDemos, onNavigate }: { newDemos: number; onNavigate?: () => void }) {
+function Nav({ newDemos, pendingRegistrations, onNavigate }: { newDemos: number; pendingRegistrations: number; onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <div className="flex h-full flex-col bg-primary text-primary-foreground dark:bg-sidebar dark:text-sidebar-foreground">
@@ -37,6 +38,7 @@ function Nav({ newDemos, onNavigate }: { newDemos: number; onNavigate?: () => vo
               <n.icon className="size-4" />
               {n.label}
               {n.href.endsWith("demandes") && newDemos > 0 && <Badge className="ml-auto h-5 bg-brand-green px-1.5 text-[11px] text-white hover:bg-brand-green">{newDemos}</Badge>}
+              {n.href.endsWith("inscriptions") && pendingRegistrations > 0 && <Badge className="ml-auto h-5 bg-brand-2 px-1.5 text-[11px] text-[#1a1405] hover:bg-brand-2">{pendingRegistrations}</Badge>}
             </Link>
           );
         })}
@@ -50,11 +52,11 @@ function Nav({ newDemos, onNavigate }: { newDemos: number; onNavigate?: () => vo
   );
 }
 
-export function PlatformShell({ user, newDemos, children }: { user: { name: string; email: string }; newDemos: number; children: React.ReactNode }) {
+export function PlatformShell({ user, newDemos, pendingRegistrations, children }: { user: { name: string; email: string }; newDemos: number; pendingRegistrations: number; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="min-h-dvh lg:pl-64">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 lg:block"><Nav newDemos={newDemos} /></aside>
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 lg:block"><Nav newDemos={newDemos} pendingRegistrations={pendingRegistrations} /></aside>
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/85 px-3 backdrop-blur sm:px-5">
         <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Ouvrir le menu" onClick={() => setOpen(true)}><Menu className="size-5" /></Button>
         <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Shield className="size-4 text-brand" /> Console propriétaire de la plateforme</span>
@@ -64,7 +66,7 @@ export function PlatformShell({ user, newDemos, children }: { user: { name: stri
         <SheetContent side="left" className="w-72 border-0 p-0">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SheetDescription className="sr-only">Navigation de la console plateforme</SheetDescription>
-          <Nav newDemos={newDemos} onNavigate={() => setOpen(false)} />
+          <Nav newDemos={newDemos} pendingRegistrations={pendingRegistrations} onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
       <main className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">{children}</main>

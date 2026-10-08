@@ -4,7 +4,7 @@
 
 Plateforme SaaS ERP multi-entreprises pour le marché africain : finance, comptabilité, ventes, CRM, achats, stocks, RH, paie, projets, GED, reporting, extensions Transport & Chantiers, administration SaaS.
 
-**État : Phases 1 à 6 et 8 livrées — 420 tests** (fondations, site public, cœur ERP, RH/paie/projets/GED, pilotage, extensions Flotte et Chantiers, durcissement/performances/documentation). Reste à venir : **Phase 7 — AfriGest Intelligence**. Voir [le plan](docs/ARCHITECTURE.md#10-plan-dimplémentation). Aucune fonctionnalité n'est simulée : un module dont les écrans ne sont pas livrés l'indique explicitement (et son contrôle d'accès est déjà actif et testé).
+**État : Phases 1 à 6 et 8 livrées — 432 tests** (fondations, site public, cœur ERP, RH/paie/projets/GED, pilotage, extensions Flotte et Chantiers, durcissement/performances/documentation). Reste à venir : **Phase 7 — AfriGest Intelligence**. Voir [le plan](docs/ARCHITECTURE.md#10-plan-dimplémentation). Aucune fonctionnalité n'est simulée : un module dont les écrans ne sont pas livrés l'indique explicitement (et son contrôle d'accès est déjà actif et testé).
 
 ## Ce qui fonctionne aujourd'hui
 
@@ -47,6 +47,7 @@ Plateforme SaaS ERP multi-entreprises pour le marché africain : finance, compta
 
 | **Sécurité** (P8) | CSP à nonce par requête (aucun `unsafe-inline`/`unsafe-eval` côté scripts), en-têtes COOP/CORP/HSTS, **limitation de débit partagée en base** (efficace sur serverless), vérification de configuration au démarrage, `/api/health` sans fuite de valeur — voir [docs/SECURITE.md](docs/SECURITE.md) |
 | **Performances** (P8) | contexte chargé en une étape parallèle, compteurs de la barre latérale différés, widgets en transactions groupées, graphiques à la demande, 41 index sur clés étrangères + garde-fou de test : pages de liste ≈ 2× plus rapides, tableau de bord ≈ 1,9× (mesuré à 30 ms de latence base) |
+| **Inscriptions** (P8) | deux modes réglables par le Super Admin sans redéploiement : confirmation par e-mail, ou **validation manuelle** (aucun e-mail requis) avec liste des inscriptions en attente, validation, refus et journal |
 | **Accessibilité** (P8) | audit axe-core WCAG 2.1 AA sur les pages publiques et 4 écrans de l'application ; mouvements réduits respectés |
 | **Documentation** (P8) | guides de déploiement, d'exploitation, de sécurité, de contribution, matrice des 148 permissions **générée et vérifiée par test** |
 

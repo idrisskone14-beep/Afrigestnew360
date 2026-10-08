@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { platformDb } from "@/core/db/client";
 import { AppError, businessRule, conflict } from "@/core/errors";
 import { appUrl, sendMail } from "@/core/mail";
+import { getSignupMode, type SignupMode } from "@/core/platform-settings";
 import { decryptSecret, encryptSecret, generateToken, hashToken } from "./crypto";
 import { normalizeEmail } from "./login";
 import { hashPassword, verifyPassword } from "./password";
@@ -40,9 +41,38 @@ export async function sendVerificationEmail(userId: string) {
   });
 }
 
-export async function registerUser(input: { name: string; email: string; password: string }) {
+/** Prévient les administrateurs de la plateforme qu'une inscription attend leur validation (au mieux : un échec n'annule rien). */
+async function notifyPlatformAdminsOfRegistration(name: string, email: string) {
+  try {
+    const admins = await platformDb.user.findMany({ where: { isPlatformAdmin: true, status: "ACTIVE", deletedAt: null }, select: { email: true } });
+    await Promise.all(admins.map((a) => sendMail({
+      to: a.email,
+      subject: "Nouvelle inscription à valider — AfriGest 360",
+      text: `${name} (${email}) vient de s'inscrire et attend votre validation :\n${appUrl("/super-admin/inscriptions")}`,
+    }).catch((e) => console.error("[inscription] notification non envoyée", e))));
+  } catch (e) {
+    console.error("[inscription] notification non envoyée", e);
+  }
+}
+
+/**
+ * Inscription. Deux modes (réglage plateforme, voir core/platform-settings.ts) :
+ *  - "email"    : compte actif, confirmation de l'adresse par e-mail ;
+ *  - "approval" : AUCUN e-mail requis ; le compte est créé « en attente » et n'ouvre qu'après validation par le Super Admin.
+ * Dans les deux modes la réponse est identique que l'adresse soit déjà connue ou non (pas de divulgation de comptes).
+ */
+export async function registerUser(input: { name: string; email: string; password: string }): Promise<{ mode: SignupMode }> {
   const email = normalizeEmail(input.email);
+  const mode = await getSignupMode();
   const existing = await platformDb.user.findUnique({ where: { email } });
+  if (mode === "approval") {
+    if (!existing) {
+      const name = input.name.trim();
+      await platformDb.user.create({ data: { email, name, passwordHash: await hashPassword(input.password), status: "PENDING" } });
+      await notifyPlatformAdminsOfRegistration(name, email);
+    }
+    return { mode };
+  }
   if (existing) {
     // Pas de divulgation de l'existence du compte : même réponse que l'inscription réussie.
     await sendMail({
@@ -50,12 +80,13 @@ export async function registerUser(input: { name: string; email: string; passwor
       subject: "Tentative d'inscription — AfriGest 360",
       text: `Une inscription a été tentée avec cette adresse alors qu'un compte existe déjà.\nConnectez-vous : ${appUrl("/connexion")}\nMot de passe oublié : ${appUrl("/mot-de-passe-oublie")}`,
     });
-    return;
+    return { mode };
   }
   const user = await platformDb.user.create({
     data: { email, name: input.name.trim(), passwordHash: await hashPassword(input.password) },
   });
   await sendVerificationEmail(user.id);
+  return { mode };
 }
 
 export async function verifyEmail(token: string) {

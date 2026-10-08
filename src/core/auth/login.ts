@@ -12,6 +12,7 @@ export type LoginFailure =
   | "invalid_credentials"
   | "account_locked"
   | "account_disabled"
+  | "account_pending"
   | "email_unverified"
   | "two_factor_required"
   | "invalid_two_factor";
@@ -61,6 +62,8 @@ export async function authenticateCredentials(input: LoginInput): Promise<LoginS
     await registerFailure(user.id, user.failedLoginCount + 1);
     throw new LoginError("invalid_credentials");
   }
+  // vérifié APRÈS le mot de passe : seul celui qui le connaît apprend que le compte attend sa validation
+  if (user.status === "PENDING") throw new LoginError("account_pending");
   if (user.status !== "ACTIVE") throw new LoginError("account_disabled");
   if (requireEmailVerification() && !user.emailVerifiedAt) throw new LoginError("email_unverified");
 

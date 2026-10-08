@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MailCheck } from "lucide-react";
+import { Hourglass, MailCheck } from "lucide-react";
 import type { z } from "zod";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -14,10 +14,10 @@ import { registerSchema } from "@/core/auth/schemas";
 
 type Values = z.input<typeof registerSchema>;
 
-export function RegisterForm() {
+export function RegisterForm({ mode }: { mode: "email" | "approval" }) {
   const [pending, start] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
-  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [sentTo, setSentTo] = useState<{ email: string; mode: "email" | "approval" } | null>(null);
   const { register, control, handleSubmit, setError, formState: { errors } } = useForm<Values>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: "", email: "", password: "", confirmPassword: "", acceptTerms: false as unknown as true },
@@ -28,8 +28,21 @@ export function RegisterForm() {
       setFormError(null);
       const res = await registerAction(values);
       if (!res.ok) return setFormError(applyServerErrors(res.error, setError));
-      setSentTo(res.data.email);
+      setSentTo({ email: res.data.email, mode: res.data.mode });
     });
+
+  if (sentTo?.mode === "approval") {
+    return (
+      <div className="rounded-xl border bg-card p-6 text-center">
+        <Hourglass className="mx-auto size-10 text-brand-2" />
+        <h2 className="mt-3 text-lg font-semibold">Inscription enregistrée</h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Votre demande pour <strong>{sentTo.email}</strong> a bien été reçue. L&apos;administrateur de la plateforme doit la valider : vous pourrez ensuite vous connecter avec votre mot de passe. Aucun e-mail de confirmation n&apos;est nécessaire.
+        </p>
+        <Link href="/connexion" className="mt-5 inline-block text-sm text-brand hover:underline">Aller à la connexion</Link>
+      </div>
+    );
+  }
 
   if (sentTo) {
     return (
@@ -37,7 +50,7 @@ export function RegisterForm() {
         <MailCheck className="mx-auto size-10 text-brand-green" />
         <h2 className="mt-3 text-lg font-semibold">Vérifiez votre boîte mail</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Si l'adresse <strong>{sentTo}</strong> est valide, un lien de confirmation vient de vous être envoyé.
+          Si l&apos;adresse <strong>{sentTo.email}</strong> est valide, un lien de confirmation vient de vous être envoyé.
         </p>
         <Link href="/connexion" className="mt-5 inline-block text-sm text-brand hover:underline">Aller à la connexion</Link>
       </div>
@@ -72,7 +85,7 @@ export function RegisterForm() {
         </label>
         {errors.acceptTerms && <p role="alert" className="text-xs text-destructive">{errors.acceptTerms.message}</p>}
       </div>
-      <SubmitButton pending={pending} className="w-full">Créer mon compte</SubmitButton>
+      <SubmitButton pending={pending} className="w-full">{mode === "approval" ? "Envoyer ma demande d'inscription" : "Créer mon compte"}</SubmitButton>
       <p className="text-center text-sm text-muted-foreground">
         Déjà inscrit ? <Link href="/connexion" className="text-brand hover:underline">Se connecter</Link>
       </p>

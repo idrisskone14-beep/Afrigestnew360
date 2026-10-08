@@ -18,6 +18,8 @@ datasource db {
 enum UserStatus {
   ACTIVE
   DISABLED
+  /// Inscription en attente de validation par le Super Admin (mode « approval »)
+  PENDING
 }
 
 enum CompanyStatus {
@@ -658,4 +660,13 @@ model RateLimitBucket {
   windowStart DateTime @default(now())
 
   @@index([windowStart])
+}
+
+/// Réglages globaux de la plateforme (clé → valeur), modifiables depuis le Super Admin. Non tenant, sans RLS.
+/// Clé connue : `signup_mode` = "email" (confirmation par e-mail) | "approval" (validation par le Super Admin).
+model PlatformSetting {
+  key         String   @id
+  value       String
+  updatedAt   DateTime @updatedAt
+  updatedById String?  @db.Uuid
 }

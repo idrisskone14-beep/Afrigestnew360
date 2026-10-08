@@ -4,6 +4,8 @@ Format : une entrée par phase livrée, des changements les plus récents aux pl
 
 ## Phase 8 — Durcissement, performances, documentation (2026-10)
 
+**Inscriptions** : nouveau mode **validation par le Super Admin** (aucun e-mail requis), réglable sans redéploiement dans la console (Inscriptions) ; le compte reste en attente jusqu'à validation ou refus. « Mot de passe oublié » ne révèle plus l'existence d'un compte en cas d'échec d'envoi d'e-mail.
+
 **Sécurité**
 - CSP **à nonce par requête** (aucun `unsafe-inline`/`unsafe-eval` côté scripts en production), en-têtes COOP/CORP, `global-error`.
 - **Limitation de débit partagée** en base (table `RateLimitBucket`) : efficace sur serverless, avec repli en mémoire.

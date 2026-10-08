@@ -23,6 +23,9 @@ export const platformUpdateCompanySchema = z.object({
   currency: z.string().refine((c) => CURRENCIES.some((x) => x.code === c), "Devise invalide"),
 });
 
+export const registrationIdSchema = z.object({ userId: uuid });
+export const signupModeSchema = z.object({ mode: z.enum(["email", "approval"]) });
+
 export const companyIdSchema = z.object({ companyId: uuid });
 export const suspendCompanySchema = z.object({ companyId: uuid, reason: z.string().trim().max(300).optional() });
 export const changePlanSchema = z.object({

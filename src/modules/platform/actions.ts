@@ -10,10 +10,12 @@ import {
   changeCompanyPlan, createCompanyByPlatform, resetCompanyModule, setCompanyLimit, setCompanyModule, setCompanyStatus,
   updateCompanyIdentity,
 } from "./companies";
+import { setSignupMode } from "@/core/platform-settings";
 import { updatePlan } from "./plans";
+import { approveRegistration, rejectRegistration } from "./registrations";
 import {
   changePlanSchema, companyLimitSchema, companyIdSchema, companyModuleSchema, platformCreateCompanySchema,
-  platformUpdateCompanySchema, resetModuleSchema, suspendCompanySchema, toggleModuleSchema, updateDemoRequestSchema, updatePlanSchema,
+  platformUpdateCompanySchema, registrationIdSchema, resetModuleSchema, signupModeSchema, suspendCompanySchema, toggleModuleSchema, updateDemoRequestSchema, updatePlanSchema,
 } from "./schemas";
 
 const name = (c: { legalName: string; tradeName: string | null }) => c.tradeName ?? c.legalName;
@@ -141,5 +143,45 @@ export const updateDemoRequestAction = definePlatformAction({
   handler: async ({ session, input }) => {
     await platformDb.demoRequest.update({ where: { id: input.id }, data: { status: input.status, notes: input.notes ?? null, handledById: session.user.id } });
     revalidatePath("/super-admin", "layout");
+  },
+});
+
+export const approveRegistrationAction = definePlatformAction({
+  input: registrationIdSchema,
+  handler: async ({ session, input }) => {
+    const user = await approveRegistration(input.userId);
+    await auditPlatform(session.user, {
+      action: "registration.approve", resource: "User", resourceId: user.id,
+      summary: `${session.user.name} a validé l'inscription de ${user.name} (${user.email}).`,
+      after: { email: user.email },
+    });
+    revalidatePath("/super-admin", "layout");
+  },
+});
+
+export const rejectRegistrationAction = definePlatformAction({
+  input: registrationIdSchema,
+  handler: async ({ session, input }) => {
+    const user = await rejectRegistration(input.userId);
+    await auditPlatform(session.user, {
+      action: "registration.reject", resource: "User", resourceId: user.id,
+      summary: `${session.user.name} a refusé l'inscription de ${user.name} (${user.email}).`,
+      after: { email: user.email },
+    });
+    revalidatePath("/super-admin", "layout");
+  },
+});
+
+export const setSignupModeAction = definePlatformAction({
+  input: signupModeSchema,
+  handler: async ({ session, input }) => {
+    await setSignupMode(input.mode, session.user.id);
+    await auditPlatform(session.user, {
+      action: "settings.signup_mode", resource: "PlatformSetting", resourceId: "signup_mode",
+      summary: `${session.user.name} a réglé les inscriptions sur « ${input.mode === "approval" ? "validation par le Super Admin" : "confirmation par e-mail"} ».`,
+      after: { signup_mode: input.mode },
+    });
+    revalidatePath("/super-admin", "layout");
+    revalidatePath("/inscription");
   },
 });

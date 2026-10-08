@@ -21,6 +21,7 @@ const LOGIN_MESSAGES: Record<string, string> = {
   invalid_credentials: "E-mail ou mot de passe incorrect.",
   account_locked: "Compte temporairement verrouillé après plusieurs échecs. Réessayez dans 15 minutes.",
   account_disabled: "Ce compte est désactivé. Contactez votre administrateur.",
+  account_pending: "Votre inscription est en attente de validation par l'administrateur de la plateforme. Vous pourrez vous connecter dès qu'elle sera validée.",
   email_unverified: "Veuillez d'abord confirmer votre adresse e-mail (lien envoyé à l'inscription).",
   two_factor_required: "Entrez le code de votre application d'authentification.",
   invalid_two_factor: "Code d'authentification incorrect.",
@@ -59,8 +60,8 @@ export const registerAction = definePublicAction({
   input: registerSchema,
   handler: async ({ input }) => {
     await enforceRateLimit("register", { limit: 5, windowMs: 3_600_000 });
-    await registerUser(input);
-    return { email: input.email };
+    const { mode } = await registerUser(input);
+    return { email: input.email, mode };
   },
 });
 

@@ -51,7 +51,8 @@ SEED_DEMO=false npm run db:seed  # catalogue (modules, offres, permissions) + co
 | `RESEND_API_KEY`, `MAIL_FROM` | si e-mails | clé Resend ; `MAIL_FROM="AfriGest 360 <no-reply@votre-domaine>"` sur un domaine **vérifié** |
 | `CRON_SECRET` | oui | `openssl rand -hex 24` (16 caractères minimum) — Vercel l'envoie automatiquement au cron |
 | `DATABASE_POOL_MAX` | non | connexions par instance serverless (défaut 5) ; ne dépassez pas `limite de la base ÷ nombre d'instances simultanées` |
-| `UPLOAD_DIR` | non | voir §6 (stockage de fichiers) |
+| `SIGNUP_MODE` | non | `email` (défaut) ou `approval` : mode d'inscription de repli (le réglage de la console prime) |
+| `UPLOAD_DIR` | non | voir §8 (stockage de fichiers) |
 
 Ne mettez **jamais** ces valeurs dans le dépôt. `.env`, `.env.*.local` et `uploads/` sont ignorés par git.
 
@@ -78,7 +79,18 @@ Puis : `/connexion` avec le compte propriétaire → `/super-admin` ; créer une
 
 Les erreurs affichées aux utilisateurs portent une **référence** (« Référence : 1234567890 ») : cherchez-la dans *Vercel → Logs* pour retrouver la cause exacte.
 
-## 6. E-mails (Resend)
+## 6. Inscriptions : confirmation par e-mail ou validation par le Super Admin
+
+Console propriétaire → **Inscriptions** : deux modes, modifiables à tout moment sans redéploiement.
+
+| Mode | Fonctionnement | Quand l'utiliser |
+|---|---|---|
+| Confirmation par e-mail (défaut) | l'inscrit reçoit un lien et active son compte | e-mails configurés (Resend) |
+| **Validation par le Super Admin** | aucun e-mail requis : le compte reste « en attente » ; le Super Admin le **valide** ou le **refuse** depuis la même page | e-mails pas encore configurés, ou plateforme fermée / sur invitation |
+
+Le menu affiche une pastille avec le nombre d'inscriptions en attente ; les administrateurs reçoivent aussi un e-mail si l'envoi est configuré (sinon la pastille suffit). Un compte validé peut se connecter immédiatement puis créer son entreprise. Réglage de repli (si aucun réglage n'est enregistré) : variable `SIGNUP_MODE` = `email` ou `approval`.
+
+## 7. E-mails (Resend)
 
 1. Créer un compte sur resend.com ; *Domains → Add Domain* (région Irlande) ; ajouter les enregistrements DNS (SPF, DKIM, MX) chez votre registrar ; *Verify*.
 2. *API Keys → Create* (permission *Sending access*) ; copier la clé `re_…` dans `RESEND_API_KEY` (Vercel uniquement).
@@ -86,15 +98,15 @@ Les erreurs affichées aux utilisateurs portent une **référence** (« Référe
 
 Les e-mails de notification passent par une file (`emailPending`) vidée par le cron : sans cron, ils ne partent pas.
 
-## 7. Fichiers téléversés — limite connue
+## 8. Fichiers téléversés — limite connue
 
 Logos, documents de la GED et justificatifs sont écrits via l'interface `StorageProvider`, dont **seule l'implémentation disque** (`UPLOAD_DIR`) existe. Sur Vercel le disque est **éphémère** : ces fichiers disparaîtraient. **Avant d'ouvrir à de vrais clients**, brancher un stockage objet compatible S3 (Cloudflare R2, S3…) derrière la même interface (`src/core/storage`). Tant que ce n'est pas fait, n'utilisez pas la GED en production.
 
-## 8. Retour arrière
+## 9. Retour arrière
 
 - Application : *Vercel → Deployments →* version précédente → *Promote to Production*.
 - Base : les migrations ne sont pas réversibles automatiquement. Avant toute migration destructive (suppression de colonne/table), faire une sauvegarde (`docs/EXPLOITATION.md` §3). Les migrations de la phase 8 ne font qu'ajouter (index, une table).
 
-## 9. Domaine personnalisé
+## 10. Domaine personnalisé
 
 *Vercel → Settings → Domains* ; mettre `APP_URL` à jour ; redéployer ; mettre à jour `MAIL_FROM` si le domaine d'envoi change.

@@ -37,6 +37,7 @@ Garde-fous automatiques : `rls-coverage` (toute table à `companyId` a la RLS ac
 - **Sessions révocables** : le JWT ne suffit pas, la ligne `UserSession` est relue en base à chaque requête (révoquée, expirée ou utilisateur désactivé → refusé immédiatement). Liste et révocation depuis les paramètres de sécurité ; durée maximale 30 jours.
 - **2FA TOTP** (RFC 6238) + codes de secours ; secret chiffré en AES-256-GCM (`ENCRYPTION_KEY`), jetons de vérification et de réinitialisation **stockés hachés**.
 - E-mail vérifié obligatoire en production (`REQUIRE_EMAIL_VERIFICATION=true`).
+- **Deux modes d'inscription**, réglables par le Super Admin (Console → Inscriptions, sans redéploiement) : *confirmation par e-mail* (défaut) ou *validation par le Super Admin* (aucun e-mail requis). En validation manuelle, le compte est créé `PENDING` : **aucune session ne peut être ouverte** tant que le Super Admin n'a pas validé ; la connexion n'indique « en attente » qu'à celui qui connaît le bon mot de passe ; une adresse déjà connue reçoit la même réponse qu'une nouvelle (aucune divulgation) ; une inscription ne se traite qu'une fois (deux validations simultanées : une seule l'emporte) ; le refus désactive le compte ; chaque décision est journalisée.
 - **Limitation de débit partagée** (table `RateLimitBucket`, efficace sur serverless) : connexion 30 / 15 min, inscription 5 / h, mot de passe oublié 5 / h, demande de démo 5 / h, par adresse IP. Repli en mémoire si la base est indisponible.
 
 ## 5. Navigateur : CSP et en-têtes
@@ -80,6 +81,6 @@ Garde-fous automatiques : `rls-coverage` (toute table à `companyId` a la RLS ac
 - **Pas d'antivirus** sur les fichiers téléversés (le type est vérifié, pas l'innocuité du contenu).
 - **Pas de test d'intrusion indépendant** ni d'audit de sécurité externe à ce jour : à faire avant une exploitation à grande échelle.
 - Pas de WAF, de CAPTCHA, de détection d'anomalies ni de SIEM ; la limitation de débit repose sur l'adresse IP transmise par le proxy (`x-forwarded-for`).
-- Le stockage de fichiers de production (S3 compatible) n'est pas encore branché (`docs/DEPLOIEMENT.md` §7).
+- Le stockage de fichiers de production (S3 compatible) n'est pas encore branché (`docs/DEPLOIEMENT.md` §8).
 - Sauvegardes, supervision et astreinte relèvent de l'exploitant (`docs/EXPLOITATION.md`).
 - Conformité réglementaire (protection des données personnelles selon le pays, rétention, droit à l'effacement) : non évaluée ; le journal d'audit et les exports facilitent mais ne remplacent pas un avis juridique.
