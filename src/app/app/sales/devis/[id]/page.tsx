@@ -8,12 +8,13 @@ import { Status } from "@/components/app/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AppError } from "@/core/errors";
-import { num } from "@/core/money";
 import { requirePagePermission } from "@/core/tenant/guards";
 import { fmtDate } from "@/lib/format";
 import { convertQuoteToInvoiceAction, convertQuoteToOrderAction, deleteQuoteAction, setQuoteStatusAction } from "@/modules/sales/actions";
 import { effectiveQuoteStatus, getQuote } from "@/modules/sales/quotes";
-import { DocHeader, LinesView, PdfLinks, TotalsView } from "@/modules/sales/ui/doc-kit";
+import { DocHeader, PdfLinks } from "@/modules/sales/ui/doc-kit";
+import { DocumentPreview } from "@/modules/sales/ui/document-preview";
+import { quotePreview } from "@/modules/sales/ui/quote-editor-data";
 
 export const metadata: Metadata = { title: "Devis" };
 
@@ -58,19 +59,9 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
       {q.convertedOrderId && <p className="text-sm text-muted-foreground">Converti en <Link className="text-brand hover:underline" href={`/app/sales/commandes/${q.convertedOrderId}`}>commande</Link>.</p>}
       {q.convertedInvoiceId && <p className="text-sm text-muted-foreground">Converti en <Link className="text-brand hover:underline" href={`/app/sales/factures/${q.convertedInvoiceId}`}>facture</Link>.</p>}
 
-      <LinesView lines={q.lines} currency={q.currency} />
-      <TotalsView currency={q.currency} rows={[
-        { label: "Total HT", value: num(q.subtotal) },
-        ...(num(q.discountTotal) ? [{ label: "Remises", value: -num(q.discountTotal) }] : []),
-        { label: "TVA / taxes", value: q.taxTotal },
-        { label: "Total TTC", value: q.total, bold: true },
-      ]} />
-      {(q.notes || q.terms) && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {q.notes && <Card><CardContent className="p-4 text-sm"><p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Notes</p>{q.notes}</CardContent></Card>}
-          {q.terms && <Card><CardContent className="p-4 text-sm"><p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Conditions</p>{q.terms}</CardContent></Card>}
-        </div>
-      )}
+      <section aria-label="Document" className="rounded-xl bg-muted/70 p-3 sm:p-6">
+        <DocumentPreview data={await quotePreview(ctx, q)} />
+      </section>
     </div>
   );
 }

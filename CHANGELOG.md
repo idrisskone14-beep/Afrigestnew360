@@ -25,6 +25,9 @@ Format : une entrée par phase livrée, des changements les plus récents aux pl
 
 **Déploiement** : script `vercel-build` (migrations automatiques avant la construction), `vercel.json` (région, cron des alertes).
 
+## Devis : nouvelle présentation (2026-10)
+Éditeur en deux volets (onglets En-tête / Produits / Paiement et mentions / Options, aperçu « papier » en direct) ; page de détail qui montre le document tel qu'il sera imprimé ; PDF refondu pour tous les documents commerciaux (logo, émetteur/client, tableau à en-tête orange, détail de TVA, récapitulatif avec « Net à payer », cadre « Bon pour accord »).
+
 ## Palette « Orange & Bleu », style corporate (2026-10)
 Orange vif (action, accent) nuancé de bleu marine et de bleu vif, fond blanc, **aucun motif décoratif** (aplats unis, un simple filet orange), contrastes AA, mode sombre assorti ; série de graphiques bleu / orange. Précédemment : refonte « Terre d'Afrique » (vert forêt / terracotta / ocre) avec titres en serif, motifs de tissu (retirés depuis), ombres décalées ; barre de navigation tissée, transition de thème en cercle, animations (désactivées si l'utilisateur demande moins de mouvement).
 
