@@ -29,7 +29,7 @@ export function PricingTable({ plans }: { plans: PublicPlan[] }) {
     <div>
       <div className="mx-auto flex w-fit items-center gap-1 rounded-full border bg-card p-1 text-sm" role="group" aria-label="Période de facturation">
         <button type="button" onClick={() => setYearly(false)} aria-pressed={!yearly} className={cn("rounded-full px-4 py-1.5 font-medium transition-colors", !yearly ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>Mensuel</button>
-        <button type="button" onClick={() => setYearly(true)} aria-pressed={yearly} className={cn("rounded-full px-4 py-1.5 font-medium transition-colors", yearly ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>Annuel <span className="text-brand-green">2 mois offerts</span></button>
+        <button type="button" onClick={() => setYearly(true)} aria-pressed={yearly} className={cn("rounded-full px-4 py-1.5 font-medium transition-colors", yearly ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>Annuel <span className="text-brand-blue">2 mois offerts</span></button>
       </div>
       <div className="mt-10 grid gap-6 lg:grid-cols-3">
         {plans.map((p) => {
@@ -50,8 +50,8 @@ export function PricingTable({ plans }: { plans: PublicPlan[] }) {
                 <div>
                   <p className="mb-2 font-medium">Inclus</p>
                   <ul className="space-y-1.5">
-                    <li className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-green" />Tableau de bord, utilisateurs, rôles, audit</li>
-                    {p.modules.map((m) => <li key={m.key} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-green" />{m.name}{m.kind === "EXTENSION" && <span className="text-xs text-muted-foreground">(extension)</span>}</li>)}
+                    <li className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-blue" />Tableau de bord, utilisateurs, rôles, audit</li>
+                    {p.modules.map((m) => <li key={m.key} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-blue" />{m.name}{m.kind === "EXTENSION" && <span className="text-xs text-muted-foreground">(extension)</span>}</li>)}
                   </ul>
                 </div>
                 <div>

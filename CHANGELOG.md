@@ -25,8 +25,8 @@ Format : une entrée par phase livrée, des changements les plus récents aux pl
 
 **Déploiement** : script `vercel-build` (migrations automatiques avant la construction), `vercel.json` (région, cron des alertes).
 
-## Refonte visuelle « Terre d'Afrique » (2026-10)
-Palette ivoire/vert forêt/terracotta/ocre, fond blanc, titres en serif, motifs de tissu, ombres décalées ; barre de navigation tissée, transition de thème en cercle, animations (désactivées si l'utilisateur demande moins de mouvement).
+## Palette « Orange & Bleu » (2026-10)
+Orange vif (action, accent) nuancé de bleu marine et de bleu vif, fond blanc, contrastes AA, mode sombre assorti ; série de graphiques bleu / orange. Précédemment : refonte « Terre d'Afrique » (vert forêt / terracotta / ocre) avec titres en serif, motifs de tissu, ombres décalées ; barre de navigation tissée, transition de thème en cercle, animations (désactivées si l'utilisateur demande moins de mouvement).
 
 ## Phase 6 — Extensions : Flotte, Contraventions, Chantiers (2026-10)
 Véhicules, chauffeurs, missions, carburant, entretiens, assurances et visites, coûts et rentabilité ; contraventions avec déduction du chauffeur et analyse des récidives ; chantiers (budget, équipe, engins, matériaux sortis du stock réel, sous-traitants, rapports journaliers). 395 tests.

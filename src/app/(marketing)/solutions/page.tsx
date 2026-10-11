@@ -24,7 +24,7 @@ export default function SolutionsPage() {
               <h2 className="text-xl font-semibold">{s.title}</h2>
               <p className="mt-1 text-brand">{s.pain}</p>
               <ul className="mt-4 flex-1 space-y-2 text-sm text-muted-foreground">
-                {s.points.map((p) => <li key={p} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-green" />{p}</li>)}
+                {s.points.map((p) => <li key={p} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-blue" />{p}</li>)}
               </ul>
               <div className="mt-5 flex flex-wrap gap-1.5">
                 {s.modules.map((k) => <Badge key={k} variant="secondary">{MODULE_BY_KEY.get(k)?.name ?? k}</Badge>)}

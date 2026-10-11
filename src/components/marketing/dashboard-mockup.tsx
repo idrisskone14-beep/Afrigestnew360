@@ -38,14 +38,14 @@ export function DashboardMockup() {
               <div className="rounded-lg border bg-background p-3">
                 <p className="text-[11px] font-medium">Évolution du chiffre d'affaires</p>
                 <div className="mt-3 flex h-24 items-end gap-1.5">
-                  {BARS.map((h, i) => <div key={i} className="flex-1 origin-bottom animate-[grow-y_0.9s_cubic-bezier(0.22,1,0.36,1)_backwards] rounded-t-sm bg-forest dark:bg-brand-green" style={{ height: `${h}%`, opacity: 0.55 + i / 26, animationDelay: `${0.3 + i * 0.06}s` }} />)}
+                  {BARS.map((h, i) => <div key={i} className="flex-1 origin-bottom animate-[grow-y_0.9s_cubic-bezier(0.22,1,0.36,1)_backwards] rounded-t-sm bg-navy dark:bg-brand-blue" style={{ height: `${h}%`, opacity: 0.55 + i / 26, animationDelay: `${0.3 + i * 0.06}s` }} />)}
                 </div>
               </div>
               <div className="rounded-lg border bg-background p-3">
                 <p className="text-[11px] font-medium">Trésorerie</p>
                 <svg viewBox="0 0 250 80" className="mt-3 h-24 w-full" preserveAspectRatio="none" aria-hidden="true">
-                  <path d={`${LINE} L250,80 L0,80 Z`} fill="var(--brand-green)" opacity="0.15" />
-                  <path d={LINE} fill="none" stroke="var(--brand-green)" strokeWidth="2.5" strokeLinecap="round" pathLength={1} strokeDasharray={1} className="animate-[draw-line_1.6s_ease-out_0.5s_backwards]" />
+                  <path d={`${LINE} L250,80 L0,80 Z`} fill="var(--brand-blue)" opacity="0.15" />
+                  <path d={LINE} fill="none" stroke="var(--brand-blue)" strokeWidth="2.5" strokeLinecap="round" pathLength={1} strokeDasharray={1} className="animate-[draw-line_1.6s_ease-out_0.5s_backwards]" />
                 </svg>
               </div>
             </div>

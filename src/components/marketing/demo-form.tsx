@@ -33,7 +33,7 @@ export function DemoForm({ source = "demo", plan, submitLabel = "Demander ma dé
   if (done) {
     return (
       <div role="status" className="rounded-2xl border bg-card p-8 text-center">
-        <CheckCircle2 className="mx-auto size-12 text-brand-green" />
+        <CheckCircle2 className="mx-auto size-12 text-brand-blue" />
         <h3 className="mt-4 text-xl font-semibold">Merci, votre demande est enregistrée</h3>
         <p className="mt-2 text-sm text-muted-foreground">Un conseiller AfriGest 360 vous recontacte très prochainement. Une confirmation vous a été envoyée par e-mail.</p>
       </div>

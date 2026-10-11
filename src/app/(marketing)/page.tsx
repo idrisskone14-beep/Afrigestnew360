@@ -37,7 +37,7 @@ export default async function LandingPage() {
       {/* 2. Hero */}
       <section className="relative overflow-hidden">
         <div className="motif-strip" aria-hidden />
-        <div className="pointer-events-none absolute right-0 top-[10px] -z-10 hidden h-[34rem] w-1/2 bg-forest pattern-mudcloth lg:block" aria-hidden />
+        <div className="pointer-events-none absolute right-0 top-[10px] -z-10 hidden h-[34rem] w-1/2 bg-navy pattern-mudcloth lg:block" aria-hidden />
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1fr_1.1fr] lg:gap-8 lg:px-8 lg:pb-24">
           <Reveal>
             <p className="eyebrow mb-5 flex items-center gap-2"><Sparkles className="size-3.5" /> La plateforme de gestion pensée pour l'Afrique</p>
@@ -48,7 +48,7 @@ export default async function LandingPage() {
               <Button size="lg" variant="outline" className="h-12 px-7 text-base" asChild><Link href="#presentation">Découvrir AfriGest 360</Link></Button>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              {["FCFA & multi-devises", "Multi-entreprises", "Données isolées et auditées"].map((t) => <li key={t} className="flex items-center gap-1.5"><Check className="size-4 text-brand-green" />{t}</li>)}
+              {["FCFA & multi-devises", "Multi-entreprises", "Données isolées et auditées"].map((t) => <li key={t} className="flex items-center gap-1.5"><Check className="size-4 text-brand-blue" />{t}</li>)}
             </ul>
           </Reveal>
           <Reveal delay={0.1}><DashboardMockup /></Reveal>
@@ -137,7 +137,7 @@ export default async function LandingPage() {
         <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
           {BENEFITS.map((b) => (
             <div key={b.title} className="flex gap-3">
-              <Check className="mt-1 size-5 shrink-0 text-brand-green" />
+              <Check className="mt-1 size-5 shrink-0 text-brand-blue" />
               <div><h3 className="font-semibold">{b.title}</h3><p className="mt-1 text-sm text-muted-foreground">{b.text}</p></div>
             </div>
           ))}
@@ -181,7 +181,7 @@ export default async function LandingPage() {
           <div className="space-y-4 text-muted-foreground">
             <p>Vous dirigez une société, conseillez une autre et consultez une troisième ? Basculez de l'une à l'autre en un clic : le tableau de bord, les permissions, les modules et les données changent immédiatement — et en toute sécurité.</p>
             <ul className="space-y-2 text-sm">
-              {["Entreprise A — Administrateur", "Entreprise B — Responsable commercial", "Entreprise C — Consultation uniquement"].map((t) => <li key={t} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-green" />{t}</li>)}
+              {["Entreprise A — Administrateur", "Entreprise B — Responsable commercial", "Entreprise C — Consultation uniquement"].map((t) => <li key={t} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-blue" />{t}</li>)}
             </ul>
             <p className="text-sm">Chaque entreprise garde ses propres utilisateurs, rôles, clients, finances, stocks, documents, paramètres et abonnement. Agences, sites, départements et centres de coûts permettent d'analyser par implantation.</p>
           </div>
@@ -206,7 +206,7 @@ export default async function LandingPage() {
           <div className="rounded-2xl border bg-card p-7">
             <h3 className="flex items-center gap-2 font-semibold"><BarChart3 className="size-5 text-brand" /> Pilotage</h3>
             <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-              {["Chiffre d'affaires, dépenses, résultat, trésorerie", "Factures à encaisser et échues, dettes fournisseurs", "Stocks critiques, projets en retard, validations en attente", "Analyses par agence, département, projet, centre de coûts", "Exports PDF et Excel"].map((t) => <li key={t} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-green" />{t}</li>)}
+              {["Chiffre d'affaires, dépenses, résultat, trésorerie", "Factures à encaisser et échues, dettes fournisseurs", "Stocks critiques, projets en retard, validations en attente", "Analyses par agence, département, projet, centre de coûts", "Exports PDF et Excel"].map((t) => <li key={t} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-blue" />{t}</li>)}
             </ul>
           </div>
           <div className="rounded-2xl border bg-card p-7">

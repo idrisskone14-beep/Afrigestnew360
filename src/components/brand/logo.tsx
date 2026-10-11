@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 
-/** Marque : carré vert forêt, ligne de croissance ivoire, pastille ocre — un « A » stylisé qui monte. */
+/** Marque : carré bleu marine, ligne de croissance blanche, barre et pastille orange — un « A » stylisé qui monte. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={cn("size-8", className)} aria-hidden="true">
-      <rect width="32" height="32" rx="7" fill="#0F3D2E" />
-      <path d="M6 24 16 7l10 17" fill="none" stroke="#F5EEDF" strokeWidth="2.6" strokeLinecap="square" strokeLinejoin="miter" />
-      <path d="M10.5 18h11" fill="none" stroke="#C4572B" strokeWidth="2.6" strokeLinecap="square" />
-      <circle cx="16" cy="7" r="2.6" fill="#E3A72F" />
+      <rect width="32" height="32" rx="7" fill="#0B2A5B" />
+      <path d="M6 24 16 7l10 17" fill="none" stroke="#FFFFFF" strokeWidth="2.6" strokeLinecap="square" strokeLinejoin="miter" />
+      <path d="M10.5 18h11" fill="none" stroke="#F97316" strokeWidth="2.6" strokeLinecap="square" />
+      <circle cx="16" cy="7" r="2.6" fill="#FDBA74" />
     </svg>
   );
 }

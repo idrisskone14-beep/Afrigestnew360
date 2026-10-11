@@ -94,7 +94,7 @@ export function SidebarContent({ modules, canSeeSettings, validations, onNavigat
             icon={<ClipboardCheck className="size-4" />}
             active={is("/app/validations")}
             onNavigate={onNavigate}
-            trailing={counts.pending > 0 ? <Badge className="h-5 min-w-5 justify-center animate-pulse-glow bg-brand-2 px-1.5 text-[11px] text-[#1a1405]">{counts.pending > 99 ? "99+" : counts.pending}</Badge> : null}
+            trailing={counts.pending > 0 ? <Badge className="h-5 min-w-5 justify-center animate-pulse-glow bg-brand-2 px-1.5 text-[11px] text-[#0b1f44]">{counts.pending > 99 ? "99+" : counts.pending}</Badge> : null}
           >
             Validations
           </NavLink>
@@ -104,7 +104,7 @@ export function SidebarContent({ modules, canSeeSettings, validations, onNavigat
           icon={<Bell className="size-4" />}
           active={is("/app/notifications")}
           onNavigate={onNavigate}
-          trailing={unreadCount > 0 ? <Badge className="h-5 min-w-5 justify-center bg-brand px-1.5 text-[11px] text-white">{unreadCount > 99 ? "99+" : unreadCount}</Badge> : null}
+          trailing={unreadCount > 0 ? <Badge className="h-5 min-w-5 justify-center bg-brand px-1.5 text-[11px] text-brand-foreground">{unreadCount > 99 ? "99+" : unreadCount}</Badge> : null}
         >
           Notifications
         </NavLink>

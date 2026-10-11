@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 /**
- * Fine barre tissée (ocre / terracotta) en haut de l'écran pendant un changement de page : le clic sur un lien interne la
+ * Fine barre tissée (orange / bleu) en haut de l'écran pendant un changement de page : le clic sur un lien interne la
  * lance, l'arrivée sur la nouvelle page la termine. Purement visuelle ; aucune donnée n'est lue ni envoyée.
  */
 export function RouteProgress() {

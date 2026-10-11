@@ -18,12 +18,12 @@ export const metadata: Metadata = { title: "Tableau de bord" };
 const ICONS: Record<string, LucideIcon> = { Activity, AlertTriangle, ArrowLeftRight, BarChart3, BookOpenCheck, Boxes, CalendarClock, HandCoins, HardHat, KanbanSquare, Landmark, Receipt, Target, TrendingUp, Truck, Users, UsersRound, Wallet };
 // Palette des pastilles d'icônes : une couleur par indicateur, stable d'une visite à l'autre
 const CHIPS = [
-  { rule: "bg-forest", icon: "text-forest dark:text-brand-green" },
+  { rule: "bg-navy", icon: "text-navy dark:text-brand-blue" },
+  { rule: "bg-brand-2", icon: "text-brand" },
+  { rule: "bg-brand-blue", icon: "text-brand-blue" },
   { rule: "bg-brand", icon: "text-brand" },
-  { rule: "bg-brand-2", icon: "text-warning" },
-  { rule: "bg-brand-green", icon: "text-brand-green" },
-  { rule: "bg-[#7a4a7c]", icon: "text-[#7a4a7c] dark:text-[#c08ac2]" },
-  { rule: "bg-[#1f6b8f]", icon: "text-[#1f6b8f] dark:text-[#6bb6d9]" },
+  { rule: "bg-[#0ea5e9]", icon: "text-[#0369a1] dark:text-[#7dd3fc]" },
+  { rule: "bg-[#64748b]", icon: "text-[#475569] dark:text-[#94a3b8]" },
 ] as const;
 const chip = (i: number) => CHIPS[i % CHIPS.length]!;
 const TONE = { danger: "text-destructive", warning: "text-warning", success: "text-success" } as const;
@@ -40,14 +40,14 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <section className="relative mb-8 overflow-hidden rounded-xl border border-foreground/20 bg-forest text-[#f5eedf] shadow-offset-lg">
+      <section className="relative mb-8 overflow-hidden rounded-xl border border-foreground/20 bg-navy text-[#eef3ff] shadow-offset-lg">
         <div className="motif-strip" aria-hidden />
         <div className="pattern-mudcloth pattern-drift pointer-events-none absolute inset-x-0 bottom-0 top-[10px] opacity-90" aria-hidden />
         <div className="relative flex flex-wrap items-end justify-between gap-4 p-6 sm:p-8">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-2">{new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
             <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight sm:text-5xl">Bonjour, <span className="italic text-brand-2">{ctx.user.name.split(" ")[0]}</span></h1>
-            <p className="mt-3 max-w-xl text-sm text-[#f5eedf]/80">Vue d'ensemble de <span className="font-semibold text-white">{name}</span> — indicateurs selon vos modules et vos droits.</p>
+            <p className="mt-3 max-w-xl text-sm text-[#eef3ff]/80">Vue d'ensemble de <span className="font-semibold text-white">{name}</span> — indicateurs selon vos modules et vos droits.</p>
           </div>
           <CustomizeDialog initial={layout.map((l) => ({ key: l.key, title: WIDGET_BY_KEY.get(l.key)!.title, visible: l.visible }))} />
         </div>

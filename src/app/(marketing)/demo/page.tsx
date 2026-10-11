@@ -20,7 +20,7 @@ export default async function DemoPage({ searchParams }: { searchParams: Promise
           <h1 className="mt-2 text-4xl font-semibold tracking-tight">Voyez AfriGest 360 sur vos propres cas d'usage</h1>
           <p className="mt-4 text-lg text-muted-foreground">En 30 minutes, un conseiller vous montre comment centraliser vos finances, ventes, stocks, RH et projets.</p>
           <ul className="mt-6 space-y-3 text-sm">
-            {["Environnement adapté à votre secteur", "Réponse sous 24 h ouvrées", "Sans engagement", "Vos données ne sont jamais partagées"].map((t) => <li key={t} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-green" />{t}</li>)}
+            {["Environnement adapté à votre secteur", "Réponse sous 24 h ouvrées", "Sans engagement", "Vos données ne sont jamais partagées"].map((t) => <li key={t} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-blue" />{t}</li>)}
           </ul>
         </div>
         <DemoForm source={plan ? "tarifs" : "demo"} plan={plan} />

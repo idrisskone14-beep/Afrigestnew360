@@ -47,7 +47,7 @@ export function RegisterForm({ mode }: { mode: "email" | "approval" }) {
   if (sentTo) {
     return (
       <div className="rounded-xl border bg-card p-6 text-center">
-        <MailCheck className="mx-auto size-10 text-brand-green" />
+        <MailCheck className="mx-auto size-10 text-brand-blue" />
         <h2 className="mt-3 text-lg font-semibold">Vérifiez votre boîte mail</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
           Si l&apos;adresse <strong>{sentTo.email}</strong> est valide, un lien de confirmation vient de vous être envoyé.

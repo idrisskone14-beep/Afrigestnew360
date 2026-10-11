@@ -27,7 +27,7 @@ function Nav({ newDemos, pendingRegistrations, onNavigate }: { newDemos: number;
     <div className="flex h-full flex-col bg-primary text-primary-foreground dark:bg-sidebar dark:text-sidebar-foreground">
       <div className="flex h-14 items-center gap-2 px-5">
         <Logo />
-        <Badge className="ml-1 bg-brand/90 text-[10px] text-white hover:bg-brand/90">ADMIN</Badge>
+        <Badge className="ml-1 bg-brand/90 text-[10px] text-brand-foreground hover:bg-brand/90">ADMIN</Badge>
       </div>
       <nav aria-label="Console plateforme" className="flex-1 space-y-0.5 px-3 py-3">
         {NAV.map((n) => {
@@ -37,8 +37,8 @@ function Nav({ newDemos, pendingRegistrations, onNavigate }: { newDemos: number;
               className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors", active ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white")}>
               <n.icon className="size-4" />
               {n.label}
-              {n.href.endsWith("demandes") && newDemos > 0 && <Badge className="ml-auto h-5 bg-brand-green px-1.5 text-[11px] text-white hover:bg-brand-green">{newDemos}</Badge>}
-              {n.href.endsWith("inscriptions") && pendingRegistrations > 0 && <Badge className="ml-auto h-5 bg-brand-2 px-1.5 text-[11px] text-[#1a1405] hover:bg-brand-2">{pendingRegistrations}</Badge>}
+              {n.href.endsWith("demandes") && newDemos > 0 && <Badge className="ml-auto h-5 bg-brand-blue px-1.5 text-[11px] text-white hover:bg-brand-blue dark:text-[#0a1020]">{newDemos}</Badge>}
+              {n.href.endsWith("inscriptions") && pendingRegistrations > 0 && <Badge className="ml-auto h-5 bg-brand-2 px-1.5 text-[11px] text-[#0b1f44] hover:bg-brand-2">{pendingRegistrations}</Badge>}
             </Link>
           );
         })}

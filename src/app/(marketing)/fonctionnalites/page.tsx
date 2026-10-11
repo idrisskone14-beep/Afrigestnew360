@@ -32,7 +32,7 @@ export default function FeaturesPage() {
         <div className="mb-10 rounded-2xl border bg-card p-6 sm:p-8">
           <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-semibold">Fondations</h2><Badge className="bg-success/15 text-success hover:bg-success/15">Disponible</Badge></div>
           <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-            {FOUNDATIONS.map((f) => <li key={f} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-green" />{f}</li>)}
+            {FOUNDATIONS.map((f) => <li key={f} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-blue" />{f}</li>)}
           </ul>
         </div>
 
@@ -50,7 +50,7 @@ export default function FeaturesPage() {
                   </span>
                 </header>
                 <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                  {g.bullets.map((b) => <li key={b} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-green" />{b}</li>)}
+                  {g.bullets.map((b) => <li key={b} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-blue" />{b}</li>)}
                 </ul>
               </article>
             );

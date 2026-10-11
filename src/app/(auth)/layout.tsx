@@ -11,25 +11,25 @@ const POINTS = [
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-forest text-[#f5eedf] lg:flex">
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-navy text-[#eef3ff] lg:flex">
         <div className="motif-strip" aria-hidden />
         <div className="pattern-mudcloth pattern-drift pointer-events-none absolute inset-0 top-[10px]" aria-hidden />
         <div className="relative z-10 flex flex-1 flex-col justify-between p-12">
-          <Link href="/" className="animate-fade-in text-[#f5eedf]"><Logo /></Link>
+          <Link href="/" className="animate-fade-in text-[#eef3ff]"><Logo /></Link>
           <div className="max-w-md space-y-9">
             <h2 className="animate-fade-up font-display text-5xl font-semibold leading-[1.05] tracking-tight">
               Toute votre entreprise. <span className="italic text-brand-2">Une seule plateforme.</span>
             </h2>
-            <ul className="stagger space-y-4 text-sm text-[#f5eedf]/85">
+            <ul className="stagger space-y-4 text-sm text-[#eef3ff]/85">
               {POINTS.map(({ icon: Icon, text }) => (
-                <li key={text} className="flex items-start gap-4 border-t border-[#f5eedf]/20 pt-4">
+                <li key={text} className="flex items-start gap-4 border-t border-[#eef3ff]/20 pt-4">
                   <Icon className="mt-0.5 size-5 shrink-0 text-brand-2" />
                   <span>{text}</span>
                 </li>
               ))}
             </ul>
           </div>
-          <p className="text-xs text-[#f5eedf]/55">© {new Date().getFullYear()} AfriGest 360</p>
+          <p className="text-xs text-[#eef3ff]/55">© {new Date().getFullYear()} AfriGest 360</p>
         </div>
       </aside>
       <main className="flex min-h-dvh flex-col justify-center px-5 py-10 sm:px-10">
