@@ -57,8 +57,7 @@ export function SidebarContent({ modules, canSeeSettings, validations, onNavigat
   const extensions = modules.filter((m) => m.kind === "EXTENSION");
 
   return (
-    <div className="pattern-mudcloth relative flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-sidebar via-sidebar/90 to-sidebar" aria-hidden />
+    <div className="relative flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground">
       <div className="relative z-10 flex h-16 shrink-0 items-center border-b border-sidebar-border px-5">
         <Link href="/app/dashboard" onClick={onNavigate} className="text-white transition-transform hover:scale-[1.02]"><Logo /></Link>
       </div>

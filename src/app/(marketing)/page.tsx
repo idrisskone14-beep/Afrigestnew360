@@ -36,8 +36,8 @@ export default async function LandingPage() {
     <>
       {/* 2. Hero */}
       <section className="relative overflow-hidden">
-        <div className="motif-strip" aria-hidden />
-        <div className="pointer-events-none absolute right-0 top-[10px] -z-10 hidden h-[34rem] w-1/2 bg-navy pattern-mudcloth lg:block" aria-hidden />
+        <div className="accent-line" aria-hidden />
+        <div className="pointer-events-none absolute right-0 top-[3px] -z-10 hidden h-[34rem] w-1/2 bg-secondary lg:block" aria-hidden />
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1fr_1.1fr] lg:gap-8 lg:px-8 lg:pb-24">
           <Reveal>
             <p className="eyebrow mb-5 flex items-center gap-2"><Sparkles className="size-3.5" /> La plateforme de gestion pensée pour l'Afrique</p>

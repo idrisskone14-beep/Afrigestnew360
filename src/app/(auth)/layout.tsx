@@ -12,8 +12,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-navy text-[#eef3ff] lg:flex">
-        <div className="motif-strip" aria-hidden />
-        <div className="pattern-mudcloth pattern-drift pointer-events-none absolute inset-0 top-[10px]" aria-hidden />
+        <div className="accent-line" aria-hidden />
         <div className="relative z-10 flex flex-1 flex-col justify-between p-12">
           <Link href="/" className="animate-fade-in text-[#eef3ff]"><Logo /></Link>
           <div className="max-w-md space-y-9">
