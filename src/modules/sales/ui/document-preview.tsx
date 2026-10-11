@@ -9,6 +9,8 @@ export interface PreviewLine { description: string; quantity: number; unit: stri
 export interface PreviewData {
   title: string;
   number: string | null;
+  /** Texte affiché à la place du numéro tant qu'il n'est pas attribué. */
+  numberPlaceholder?: string;
   currency: string;
   issuer: { name: string; lines: string[]; legal: string[]; logoUrl: string | null };
   recipient: { name: string; lines: string[] } | null;
@@ -36,7 +38,7 @@ export function DocumentPreview({ data }: { data: PreviewData }) {
         </div>
         <div className="text-right">
           <h2 className="font-display text-3xl font-semibold leading-none sm:text-4xl">{data.title}</h2>
-          <p className="mt-2 text-xs text-[#51607a]">N° {data.number ?? "attribué à l'enregistrement"}</p>
+          <p className="mt-2 text-xs text-[#51607a]">N° {data.number ?? data.numberPlaceholder ?? "attribué à l'enregistrement"}</p>
         </div>
       </header>
 

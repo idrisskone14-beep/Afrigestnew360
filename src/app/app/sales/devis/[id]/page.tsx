@@ -14,7 +14,7 @@ import { convertQuoteToInvoiceAction, convertQuoteToOrderAction, deleteQuoteActi
 import { effectiveQuoteStatus, getQuote } from "@/modules/sales/quotes";
 import { DocHeader, PdfLinks } from "@/modules/sales/ui/doc-kit";
 import { DocumentPreview } from "@/modules/sales/ui/document-preview";
-import { quotePreview } from "@/modules/sales/ui/quote-editor-data";
+import { quotePreview } from "@/modules/sales/ui/sales-editor-data";
 
 export const metadata: Metadata = { title: "Devis" };
 

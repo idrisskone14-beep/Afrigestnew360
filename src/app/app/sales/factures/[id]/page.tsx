@@ -16,7 +16,9 @@ import { fmtDate } from "@/lib/format";
 import { formatMoney } from "@/lib/reference-data";
 import { cancelInvoiceAction, deleteInvoiceAction } from "@/modules/sales/actions";
 import { customerBalance, getInvoice, invoiceBalance, isOverdue } from "@/modules/sales/invoices";
-import { DocHeader, LinesView, PdfLinks, TotalsView } from "@/modules/sales/ui/doc-kit";
+import { DocHeader, PdfLinks } from "@/modules/sales/ui/doc-kit";
+import { DocumentPreview } from "@/modules/sales/ui/document-preview";
+import { invoicePreview } from "@/modules/sales/ui/sales-editor-data";
 import { CreditNoteDialog, IssueInvoiceDialog, PaymentDialog, ReminderDialog } from "@/modules/sales/ui/invoice-dialogs";
 import { PaymentRowActions } from "@/modules/sales/ui/payment-row-actions";
 
@@ -72,16 +74,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         </CardContent>
       </Card>
 
-      <LinesView lines={i.lines} currency={cur} />
-      <TotalsView currency={cur} rows={[
-        { label: "Total HT", value: num(i.subtotal) },
-        ...(num(i.discountTotal) ? [{ label: "Remises", value: -num(i.discountTotal) }] : []),
-        { label: "TVA / taxes", value: i.taxTotal },
-        { label: "Total TTC", value: i.total, bold: !live },
-        ...(num(i.creditedAmount) ? [{ label: "Avoirs émis", value: -num(i.creditedAmount) }] : []),
-        ...(num(i.amountPaid) ? [{ label: "Déjà réglé", value: -num(i.amountPaid), tone: "success" as const }] : []),
-        ...(live ? [{ label: balance < 0 ? "Trop-perçu" : "Reste à payer", value: Math.abs(balance), bold: true, tone: overdue ? ("danger" as const) : undefined }] : []),
-      ]} />
+      <section aria-label="Document" className="rounded-xl bg-muted/70 p-3 sm:p-6">
+        <DocumentPreview data={await invoicePreview(ctx, i, balance)} />
+      </section>
 
       {i.installments.length > 1 && (
         <Card>
@@ -136,12 +131,6 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           </Card>
         )}
       </div>
-      {(i.notes || i.terms) && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {i.notes && <Card><CardContent className="p-4 text-sm"><p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Notes</p>{i.notes}</CardContent></Card>}
-          {i.terms && <Card><CardContent className="p-4 text-sm"><p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Conditions</p>{i.terms}</CardContent></Card>}
-        </div>
-      )}
       <EntityDocuments ctx={ctx} type="invoice" id={id} />
     </div>
   );

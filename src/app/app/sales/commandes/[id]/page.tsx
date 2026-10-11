@@ -7,6 +7,7 @@ import { ActionButton } from "@/components/app/action-button";
 import { Status } from "@/components/app/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AppError } from "@/core/errors";
 import { d, num } from "@/core/money";
 import { requirePagePermission } from "@/core/tenant/guards";
@@ -14,7 +15,9 @@ import { fmtDate } from "@/lib/format";
 import { formatMoney } from "@/lib/reference-data";
 import { cancelOrderAction, confirmOrderAction, deleteOrderAction, invoiceFromOrderAction } from "@/modules/sales/actions";
 import { getOrder } from "@/modules/sales/orders";
-import { DocHeader, LinesView, PdfLinks, TotalsView } from "@/modules/sales/ui/doc-kit";
+import { DocHeader, PdfLinks } from "@/modules/sales/ui/doc-kit";
+import { DocumentPreview } from "@/modules/sales/ui/document-preview";
+import { orderPreview } from "@/modules/sales/ui/sales-editor-data";
 import { CreateDeliveryDialog } from "@/modules/sales/ui/delivery-dialog";
 
 export const metadata: Metadata = { title: "Commande" };
@@ -61,8 +64,30 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </CardContent>
       </Card>
 
-      <LinesView lines={o.lines} currency={o.currency} showProgress />
-      <TotalsView currency={o.currency} rows={[{ label: "Total HT", value: num(o.subtotal) }, ...(num(o.discountTotal) ? [{ label: "Remises", value: -num(o.discountTotal) }] : []), { label: "TVA / taxes", value: o.taxTotal }, { label: "Total TTC", value: o.total, bold: true }]} />
+      <section aria-label="Document" className="rounded-xl bg-muted/70 p-3 sm:p-6">
+        <DocumentPreview data={await orderPreview(ctx, o)} />
+      </section>
+
+      {o.status !== "DRAFT" && (
+        <Card className="overflow-hidden">
+          <CardHeader><CardTitle className="text-base">Avancement par ligne</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader><TableRow><TableHead>Désignation</TableHead><TableHead className="text-right">Commandé</TableHead><TableHead className="text-right">Livré</TableHead><TableHead className="text-right">Facturé</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {o.lines.map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell className="max-w-xs whitespace-normal text-sm">{l.description}</TableCell>
+                    <TableCell className="text-right text-sm tabular">{num(l.quantity)} {l.unit}</TableCell>
+                    <TableCell className="text-right text-sm tabular">{num(l.deliveredQty)}</TableCell>
+                    <TableCell className="text-right text-sm tabular">{num(l.invoicedQty)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -84,7 +109,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </CardContent>
         </Card>
       </div>
-      {o.notes && <Card><CardContent className="p-4 text-sm"><p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Notes</p>{o.notes}</CardContent></Card>}
     </div>
   );
 }
