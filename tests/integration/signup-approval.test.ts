@@ -98,6 +98,53 @@ describe("inscription validée par le Super Admin", () => {
     });
   });
 
+  describe("exigence de confirmation d'e-mail à la connexion", () => {
+    const unverified = async () => {
+      const u = await makeUser();
+      await platformDb.user.update({ where: { id: u.id }, data: { emailVerifiedAt: null } });
+      return u;
+    };
+    beforeEach(async () => {
+      await platformDb.platformSetting.deleteMany({ where: { key: "signup_mode" } });
+      vi.stubEnv("REQUIRE_EMAIL_VERIFICATION", "true");
+    });
+    afterAll(() => { vi.unstubAllEnvs(); });
+
+    it("mode e-mail + exigence activée : un compte dont l'adresse n'est pas confirmée est refusé", async () => {
+      const u = await unverified();
+      expect(await reason(authenticateCredentials({ email: u.email, password: PASSWORD }))).toBe("email_unverified");
+    });
+
+    it("mode « validation par le Super Admin » : AUCUNE confirmation d'e-mail n'est exigée (c'est le Super Admin qui se porte garant)", async () => {
+      await setSignupMode("approval", owner.id);
+      const u = await unverified();
+      expect(await reason(authenticateCredentials({ email: u.email, password: PASSWORD }))).toBe("ok");
+    });
+
+    it("sans clé d'envoi en production : le mode passe en validation, la confirmation n'est plus exigée", async () => {
+      vi.stubEnv("NODE_ENV", "production");
+      vi.stubEnv("RESEND_API_KEY", "");
+      const u = await unverified();
+      expect(await reason(authenticateCredentials({ email: u.email, password: PASSWORD }))).toBe("ok");
+      vi.stubEnv("RESEND_API_KEY", "re_test");
+      const v = await unverified();
+      expect(await reason(authenticateCredentials({ email: v.email, password: PASSWORD }))).toBe("email_unverified");
+    });
+
+    it("exigence désactivée (REQUIRE_EMAIL_VERIFICATION≠true) : jamais exigée, quel que soit le mode", async () => {
+      vi.stubEnv("REQUIRE_EMAIL_VERIFICATION", "false");
+      const u = await unverified();
+      expect(await reason(authenticateCredentials({ email: u.email, password: PASSWORD }))).toBe("ok");
+    });
+
+    it("un compte en attente reste refusé même sans exigence d'e-mail (la validation du Super Admin prime)", async () => {
+      await setSignupMode("approval", owner.id);
+      const email = newEmail();
+      await registerUser({ name: "Toujours Attente", email, password: PASSWORD });
+      expect(await reason(authenticateCredentials({ email, password: PASSWORD }))).toBe("account_pending");
+    });
+  });
+
   describe("mode « validation par le Super Admin »", () => {
     beforeAll(async () => { await setSignupMode("approval", owner.id); });
 

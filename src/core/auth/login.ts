@@ -1,5 +1,6 @@
 import "server-only";
 import { platformDb } from "@/core/db/client";
+import { getSignupMode } from "@/core/platform-settings";
 import { decryptSecret, hashToken, safeEqual } from "./crypto";
 import { dummyVerify, verifyPassword } from "./password";
 import { verifyTotp } from "./totp";
@@ -42,8 +43,15 @@ export interface LoginSuccess {
   sessionId: string;
 }
 
-export function requireEmailVerification(): boolean {
-  return process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+/**
+ * La confirmation de l'adresse e-mail est-elle exigée à la connexion ?
+ * Oui seulement si REQUIRE_EMAIL_VERIFICATION=true ET que les inscriptions fonctionnent par e-mail. En mode « validation par le
+ * Super Admin » (choisi dans la console, ou imposé faute d'envoi d'e-mails opérationnel), c'est le Super Admin qui se porte garant
+ * des inscrits : on n'exige alors AUCUN e-mail, sinon des comptes resteraient bloqués par un message qui n'arrive jamais.
+ */
+export async function requireEmailVerification(): Promise<boolean> {
+  if (process.env.REQUIRE_EMAIL_VERIFICATION !== "true") return false;
+  return (await getSignupMode()) === "email";
 }
 
 /** Vérifie les identifiants, applique verrouillage + 2FA, et crée une session révocable. */
@@ -65,7 +73,7 @@ export async function authenticateCredentials(input: LoginInput): Promise<LoginS
   // vérifié APRÈS le mot de passe : seul celui qui le connaît apprend que le compte attend sa validation
   if (user.status === "PENDING") throw new LoginError("account_pending");
   if (user.status !== "ACTIVE") throw new LoginError("account_disabled");
-  if (requireEmailVerification() && !user.emailVerifiedAt) throw new LoginError("email_unverified");
+  if (!user.emailVerifiedAt && (await requireEmailVerification())) throw new LoginError("email_unverified");
 
   if (user.totpEnabledAt && user.totpSecretEnc) {
     const code = input.totp?.trim();

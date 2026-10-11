@@ -47,7 +47,7 @@ SEED_DEMO=false npm run db:seed  # catalogue (modules, offres, permissions) + co
 | `ENCRYPTION_KEY` | oui | `openssl rand -hex 32` (64 caractères hexadécimaux ; chiffre les secrets 2FA) |
 | `APP_URL` | oui | URL publique, `https://…` (liens des e-mails) |
 | `PLATFORM_OWNER_EMAIL` / `PLATFORM_OWNER_PASSWORD` | au premier seed | compte propriétaire de la plateforme (`/super-admin`) — mot de passe fort, à changer après la première connexion |
-| `REQUIRE_EMAIL_VERIFICATION` | recommandé | `true` (exige `RESEND_API_KEY`) |
+| `REQUIRE_EMAIL_VERIFICATION` | recommandé | `true` : la connexion exige une adresse e-mail confirmée — **sauf en mode « validation par le Super Admin »** (choisi dans la console, ou imposé faute d'envoi d'e-mails), où aucune confirmation n'est demandée. `false` : jamais exigée |
 | `RESEND_API_KEY`, `MAIL_FROM` | si e-mails | clé Resend ; `MAIL_FROM="AfriGest 360 <no-reply@votre-domaine>"` sur un domaine **vérifié** |
 | `CRON_SECRET` | oui | `openssl rand -hex 24` (16 caractères minimum) — Vercel l'envoie automatiquement au cron |
 | `DATABASE_POOL_MAX` | non | connexions par instance serverless (défaut 5) ; ne dépassez pas `limite de la base ÷ nombre d'instances simultanées` |
