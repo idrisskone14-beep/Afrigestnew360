@@ -3,8 +3,9 @@ import PDFDocument from "pdfkit";
 import { formatMoney } from "@/lib/reference-data";
 
 /** Les polices PDF standard (WinAnsi) n'ont pas l'espace fine insécable utilisée par Intl en français. */
-export const pdfMoney = (amount: number, currency: string) => formatMoney(amount, currency).replace(/[  ]/g, " ");
-const pdfNumber = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3 }).format(n).replace(/[  ]/g, " ");
+const WIDE_SPACES = /[  ]/g; // espace fine insécable (milliers) et espace insécable (avant « F CFA »)
+export const pdfMoney = (amount: number, currency: string) => formatMoney(amount, currency).replace(WIDE_SPACES, " ");
+const pdfNumber = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3 }).format(n).replace(WIDE_SPACES, " ");
 const pdfDate = (d: Date | null | undefined) => (d ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(d) : "—");
 
 export interface PdfParty { name: string; lines: string[] }
@@ -16,11 +17,15 @@ export interface PdfLine {
   unitPrice: number;
   discountPct: number;
   taxRate: number;
+  /** Total TTC de la ligne. */
   total: number;
+  /** Montant HT après remise et montant de taxe (valeurs enregistrées) : servent au tableau « Total HT » et au détail de TVA. */
+  net?: number;
+  tax?: number;
 }
 
 export interface BusinessDocument {
-  title: string; // FACTURE, DEVIS…
+  title: string; // Devis, Facture…
   number: string;
   status?: { label: string; color: string };
   dates: { label: string; value: Date | null }[];
@@ -37,12 +42,32 @@ export interface BusinessDocument {
   terms?: string | null;
   footer?: string;
   extraBlocks?: { heading: string; rows: string[][] }[];
+  /** Cadre de signature (« Bon pour accord » sur un devis). */
+  signatureLabel?: string;
 }
 
-const INK = "#0F172A";
-const MUTED = "#64748B";
-const BRAND = "#2563EB";
-const LINE = "#E2E8F0";
+const INK = "#0B1F44";
+const MUTED = "#51607A";
+const ORANGE = "#EA580C";
+const LINE = "#DFE6F1";
+
+/** « FACTURE PROFORMA » → « Facture proforma » : le titre s'affiche en minuscules, comme sur les devis de référence. */
+export const sentenceCase = (s: string) => {
+  const t = s.toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
+/** Détail de TVA : base HT et montant de taxe par taux (valeurs enregistrées par ligne, repli sur le calcul). */
+export function taxBreakdown(lines: PdfLine[]): { rate: number; base: number; tax: number }[] {
+  const byRate = new Map<number, { base: number; tax: number }>();
+  for (const l of lines) {
+    const net = l.net ?? l.quantity * l.unitPrice * (1 - l.discountPct / 100);
+    const tax = l.tax ?? (net * l.taxRate) / 100;
+    const cur = byRate.get(l.taxRate) ?? { base: 0, tax: 0 };
+    byRate.set(l.taxRate, { base: cur.base + net, tax: cur.tax + tax });
+  }
+  return [...byRate].map(([rate, v]) => ({ rate, ...v })).sort((a, b) => a.rate - b.rate);
+}
 
 /** Rend un document commercial A4 (devis, facture, avoir, bon de livraison, reçu) et renvoie le PDF. */
 export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
@@ -56,102 +81,127 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
     const left = 40;
     const right = pdf.page.width - 40;
     const width = right - left;
+    const bottomLimit = () => pdf.page.height - 70;
 
-    // ── En-tête : logo + émetteur, titre du document
+    // ── En-tête : logo à gauche, titre et numéro à droite
     let y = 40;
-    let textX = left;
     if (doc.logo) {
       try {
-        pdf.image(doc.logo, left, y, { fit: [70, 56] });
-        textX = left + 82;
+        pdf.image(doc.logo, left, y, { fit: [170, 72] });
       } catch {
         /* format non supporté par pdfkit : on continue sans logo */
       }
     }
-    pdf.fillColor(INK).font("Helvetica-Bold").fontSize(13).text(doc.issuer.name, textX, y, { width: 270 });
-    pdf.font("Helvetica").fontSize(8.5).fillColor(MUTED);
-    for (const l of doc.issuer.lines) pdf.text(l, textX, pdf.y, { width: 270 });
+    pdf.fillColor(INK).font("Helvetica-Bold").fontSize(28).text(sentenceCase(doc.title), left + width / 2, y, { width: width / 2, align: "right", lineBreak: false });
+    pdf.fillColor(MUTED).font("Helvetica").fontSize(10).text(`N° ${doc.number}`, left + width / 2, y + 36, { width: width / 2, align: "right" });
+    if (doc.status) pdf.fillColor(doc.status.color).font("Helvetica-Bold").fontSize(9).text(doc.status.label.toUpperCase(), left + width / 2, pdf.y + 3, { width: width / 2, align: "right" });
+    y = Math.max(pdf.y, y + 76) + 26;
 
-    pdf.fillColor(BRAND).font("Helvetica-Bold").fontSize(20).text(doc.title, left + width / 2, y, { width: width / 2, align: "right" });
-    pdf.fillColor(INK).fontSize(11).text(`N° ${doc.number}`, left + width / 2, pdf.y, { width: width / 2, align: "right" });
-    if (doc.status) pdf.fillColor(doc.status.color).fontSize(9).text(doc.status.label.toUpperCase(), left + width / 2, pdf.y + 2, { width: width / 2, align: "right" });
-    y = Math.max(pdf.y, y + 70) + 14;
-
-    // ── Dates et destinataire
-    pdf.moveTo(left, y).lineTo(right, y).strokeColor(LINE).lineWidth(1).stroke();
-    y += 12;
-    const colW = width / 2 - 10;
-    pdf.fillColor(MUTED).font("Helvetica-Bold").fontSize(8).text((doc.recipient.heading ?? "CLIENT").toUpperCase(), left, y);
-    pdf.fillColor(INK).font("Helvetica-Bold").fontSize(11).text(doc.recipient.name, left, pdf.y + 2, { width: colW });
-    pdf.font("Helvetica").fontSize(9).fillColor(INK);
-    for (const l of doc.recipient.lines) pdf.text(l, left, pdf.y, { width: colW });
+    // ── Émetteur (gauche) et destinataire (droite)
+    const colW = width / 2 - 14;
+    const rx = left + width / 2 + 14;
+    pdf.fillColor(ORANGE).font("Helvetica").fontSize(9).text("Émetteur", left, y);
+    pdf.fillColor(INK).font("Helvetica-Bold").fontSize(12).text(doc.issuer.name.toUpperCase(), left, pdf.y + 3, { width: colW });
+    pdf.font("Helvetica").fontSize(9).fillColor(MUTED);
+    for (const l of doc.issuer.lines) pdf.text(l, left, pdf.y + 1, { width: colW });
     const leftEnd = pdf.y;
 
-    let dy = y;
-    for (const d of doc.dates) {
-      pdf.fillColor(MUTED).font("Helvetica").fontSize(9).text(d.label, left + width / 2 + 20, dy, { width: 110 });
-      pdf.fillColor(INK).font("Helvetica-Bold").text(pdfDate(d.value), left + width / 2 + 130, dy, { width: width / 2 - 130, align: "right" });
-      dy += 15;
-    }
-    if (doc.reference) {
-      pdf.fillColor(MUTED).font("Helvetica").fontSize(9).text("Référence", left + width / 2 + 20, dy, { width: 110 });
-      pdf.fillColor(INK).font("Helvetica-Bold").text(doc.reference, left + width / 2 + 130, dy, { width: width / 2 - 130, align: "right" });
-      dy += 15;
-    }
-    y = Math.max(leftEnd, dy) + 18;
+    pdf.fillColor(ORANGE).font("Helvetica").fontSize(9).text(doc.recipient.heading ?? "Client", rx, y);
+    pdf.fillColor(INK).font("Helvetica-Bold").fontSize(12).text(doc.recipient.name, rx, pdf.y + 3, { width: colW });
+    pdf.font("Helvetica").fontSize(9).fillColor(MUTED);
+    for (const l of doc.recipient.lines) pdf.text(l, rx, pdf.y + 1, { width: colW });
+    y = Math.max(leftEnd, pdf.y) + 22;
 
-    // ── Tableau des lignes
+    // ── Dates (et référence), alignées à droite
+    const meta = [...doc.dates.map((d) => ({ label: d.label, value: pdfDate(d.value) })), ...(doc.reference ? [{ label: "Référence", value: doc.reference }] : [])];
+    if (meta.length) {
+      const mw = Math.min(130, width / meta.length);
+      meta.forEach((m, i) => {
+        const x = right - mw * (meta.length - i);
+        pdf.fillColor(ORANGE).font("Helvetica").fontSize(8.5).text(m.label, x, y, { width: mw - 8, align: "right" });
+        pdf.fillColor(INK).font("Helvetica-Bold").fontSize(11).text(m.value, x, y + 13, { width: mw - 8, align: "right" });
+      });
+      y += 44;
+    }
+
+    // ── Tableau des lignes (en-tête orange)
     const cols = doc.hidePrices
-      ? [{ k: "description", x: left, w: width - 130, a: "left" as const, h: "Désignation" }, { k: "qty", x: right - 130, w: 130, a: "right" as const, h: "Quantité" }]
+      ? [{ k: "description", x: left, w: width - 130, a: "left" as const, h: "Désignations" }, { k: "qty", x: right - 130, w: 130, a: "right" as const, h: "Quantité" }]
       : [
-          { k: "description", x: left, w: 205, a: "left" as const, h: "Désignation" },
-          { k: "qty", x: left + 205, w: 55, a: "right" as const, h: "Qté" },
-          { k: "price", x: left + 262, w: 70, a: "right" as const, h: "P.U. HT" },
-          { k: "disc", x: left + 334, w: 40, a: "right" as const, h: "Rem." },
-          { k: "tax", x: left + 376, w: 40, a: "right" as const, h: "TVA" },
-          { k: "total", x: left + 418, w: width - 418, a: "right" as const, h: "Total TTC" },
+          { k: "description", x: left, w: 215, a: "left" as const, h: "Désignations" },
+          { k: "qty", x: left + 215, w: 50, a: "right" as const, h: "Qté" },
+          { k: "price", x: left + 265, w: 90, a: "right" as const, h: "Prix u. HT" },
+          { k: "tax", x: left + 355, w: 60, a: "right" as const, h: "TVA (%)" },
+          { k: "total", x: left + 415, w: width - 415, a: "right" as const, h: "Total HT" },
         ];
     const header = () => {
-      pdf.rect(left, y, width, 20).fill(INK);
+      pdf.rect(left, y, width, 24).fill(ORANGE);
       pdf.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5);
-      for (const c of cols) pdf.text(c.h, c.x + 4, y + 6, { width: c.w - 8, align: c.a });
-      y += 24;
+      for (const c of cols) pdf.text(c.h, c.x + 6, y + 8, { width: c.w - 12, align: c.a });
+      y += 28;
     };
     header();
     pdf.font("Helvetica").fontSize(9);
-    doc.lines.forEach((l, i) => {
-      const desc = l.description;
-      const h = Math.max(pdf.heightOfString(desc, { width: cols[0]!.w - 8 }), 12) + 8;
-      if (y + h > pdf.page.height - 150) { pdf.addPage(); y = 40; header(); }
-      if (i % 2 === 1) pdf.rect(left, y - 2, width, h).fill("#F8FAFC");
+    doc.lines.forEach((l) => {
+      const desc = l.discountPct && !doc.hidePrices ? `${l.description}\nRemise ${pdfNumber(l.discountPct)} %` : l.description;
+      const h = Math.max(pdf.heightOfString(desc, { width: cols[0]!.w - 12 }), 12) + 10;
+      if (y + h > bottomLimit() - 160) { pdf.addPage(); y = 40; header(); }
       pdf.fillColor(INK).font("Helvetica").fontSize(9);
+      const net = l.net ?? l.quantity * l.unitPrice * (1 - l.discountPct / 100);
       const cells: Record<string, string> = {
-        description: desc, qty: `${pdfNumber(l.quantity)} ${l.unit}`.trim(), price: pdfMoney(l.unitPrice, doc.currency), disc: l.discountPct ? `${pdfNumber(l.discountPct)} %` : "—",
-        tax: l.taxRate ? `${pdfNumber(l.taxRate)} %` : "—", total: pdfMoney(l.total, doc.currency),
+        description: desc, qty: `${pdfNumber(l.quantity)} ${l.unit}`.trim(), price: pdfMoney(l.unitPrice, doc.currency),
+        tax: `${pdfNumber(l.taxRate)}%`, total: pdfMoney(net, doc.currency),
       };
-      for (const c of cols) pdf.text(cells[c.k]!, c.x + 4, y + 2, { width: c.w - 8, align: c.a });
+      for (const c of cols) pdf.text(cells[c.k]!, c.x + 6, y + 3, { width: c.w - 12, align: c.a });
       y += h;
       pdf.moveTo(left, y - 3).lineTo(right, y - 3).strokeColor(LINE).lineWidth(0.5).stroke();
     });
 
-    // ── Totaux
+    // ── Détail de TVA (gauche) et récapitulatif (droite)
     if (!doc.hidePrices && doc.totals?.length) {
-      y += 10;
-      if (y + doc.totals.length * 18 > pdf.page.height - 120) { pdf.addPage(); y = 40; }
-      const bx = left + width - 230;
-      for (const t of doc.totals) {
-        if (t.bold) pdf.rect(bx, y - 3, 230, 22).fill("#EFF6FF");
-        pdf.fillColor(t.bold ? BRAND : MUTED).font(t.bold ? "Helvetica-Bold" : "Helvetica").fontSize(t.bold ? 11 : 9.5).text(t.label, bx + 8, y + (t.bold ? 2 : 0), { width: 110 });
-        pdf.fillColor(INK).font(t.bold ? "Helvetica-Bold" : "Helvetica").text(pdfMoney(t.value, doc.currency), bx + 110, y + (t.bold ? 2 : 0), { width: 112, align: "right" });
-        y += t.bold ? 26 : 18;
+      y += 18;
+      const recapW = 240;
+      const recapX = right - recapW;
+      const breakdown = taxBreakdown(doc.lines);
+      const rows = doc.totals.map((t) => (t.label === "TVA" ? { ...t, label: "Total TVA" } : t));
+      const need = Math.max(28 + breakdown.length * 22, 28 + rows.length * 24) + 10;
+      if (y + need > bottomLimit()) { pdf.addPage(); y = 40; }
+      const top = y;
+
+      // détail par taux
+      const vw = [95, 55, 100];
+      let vx = left;
+      pdf.rect(left, top, vw[0]! + vw[1]! + vw[2]!, 24).fill(ORANGE);
+      pdf.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5);
+      ["Base", "Taux", "Montant TVA"].forEach((h, i) => { pdf.text(h, vx + 6, top + 8, { width: vw[i]! - 12, align: i === 0 ? "left" : "right" }); vx += vw[i]!; });
+      let vy = top + 28;
+      for (const b of breakdown) {
+        vx = left;
+        pdf.fillColor(INK).font("Helvetica").fontSize(9);
+        [pdfMoney(b.base, doc.currency), `${pdfNumber(b.rate)}%`, pdfMoney(b.tax, doc.currency)].forEach((v, i) => { pdf.text(v, vx + 6, vy + 2, { width: vw[i]! - 12, align: i === 0 ? "left" : "right" }); vx += vw[i]!; });
+        vy += 22;
+        pdf.moveTo(left, vy - 4).lineTo(left + vw[0]! + vw[1]! + vw[2]!, vy - 4).strokeColor(LINE).lineWidth(0.5).stroke();
       }
+
+      // récapitulatif
+      pdf.rect(recapX, top, recapW, 24).fill(ORANGE);
+      pdf.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5).text("Récapitulatif", recapX + 8, top + 8, { width: recapW - 16 });
+      let ry = top + 28;
+      for (const t of rows) {
+        pdf.fillColor(INK).font(t.bold ? "Helvetica-Bold" : "Helvetica").fontSize(t.bold ? 10.5 : 9.5);
+        pdf.text(t.label, recapX + 8, ry + 2, { width: 120 });
+        pdf.text(pdfMoney(t.value, doc.currency), recapX + 120, ry + 2, { width: recapW - 128, align: "right" });
+        ry += 24;
+        pdf.moveTo(recapX, ry - 4).lineTo(right, ry - 4).strokeColor(LINE).lineWidth(0.5).stroke();
+      }
+      y = Math.max(vy, ry) + 6;
     }
 
     // ── Blocs complémentaires (échéancier, paiements…)
     for (const b of doc.extraBlocks ?? []) {
       if (!b.rows.length) continue;
       y += 14;
-      if (y + 30 + b.rows.length * 14 > pdf.page.height - 100) { pdf.addPage(); y = 40; }
+      if (y + 30 + b.rows.length * 14 > bottomLimit()) { pdf.addPage(); y = 40; }
       pdf.fillColor(INK).font("Helvetica-Bold").fontSize(9.5).text(b.heading, left, y);
       y = pdf.y + 4;
       pdf.font("Helvetica").fontSize(8.5).fillColor(MUTED);
@@ -161,13 +211,23 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
       }
     }
 
-    // ── Notes et conditions
-    for (const [h, txt] of [["Notes", doc.notes], ["Conditions", doc.terms]] as const) {
+    // ── Notes et conditions (paiement et mentions)
+    for (const [h, txt] of [["Notes", doc.notes], ["Paiement et mentions", doc.terms]] as const) {
       if (!txt) continue;
       y += 14;
-      pdf.fillColor(MUTED).font("Helvetica-Bold").fontSize(8).text(h.toUpperCase(), left, y);
+      if (y + 40 > bottomLimit()) { pdf.addPage(); y = 40; }
+      pdf.fillColor(ORANGE).font("Helvetica").fontSize(9).text(h, left, y);
       pdf.fillColor(INK).font("Helvetica").fontSize(9).text(txt, left, pdf.y + 2, { width });
       y = pdf.y;
+    }
+
+    // ── Cadre de signature
+    if (doc.signatureLabel) {
+      y += 18;
+      if (y + 80 > bottomLimit()) { pdf.addPage(); y = 40; }
+      const bw = 250;
+      pdf.rect(right - bw, y, bw, 70).strokeColor(LINE).lineWidth(1).stroke();
+      pdf.fillColor(MUTED).font("Helvetica").fontSize(8.5).text(doc.signatureLabel, right - bw + 8, y + 8, { width: bw - 16 });
     }
 
     // ── Pied de page : mentions légales

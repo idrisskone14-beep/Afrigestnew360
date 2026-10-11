@@ -30,17 +30,18 @@ export const partyOf = (c: { name: string; address: string | null; city: string 
   name: c.name, lines: [c.address, [c.city, c.country ? countryName(c.country) : null].filter(Boolean).join(", "), c.phone, c.email, c.taxId ? `ID fiscal ${c.taxId}` : ""].filter((x): x is string => Boolean(x)),
 });
 
-type L = { description: string; quantity: unknown; unit: string; unitPrice: unknown; discountPct: unknown; taxRate: unknown; total: unknown };
-export const toLines = (lines: L[]): PdfLine[] => lines.map((l) => ({ description: l.description, quantity: num(l.quantity as number), unit: l.unit, unitPrice: num(l.unitPrice as number), discountPct: num(l.discountPct as number), taxRate: num(l.taxRate as number), total: num(l.total as number) }));
+type L = { description: string; quantity: unknown; unit: string; unitPrice: unknown; discountPct: unknown; taxRate: unknown; total: unknown; netAmount?: unknown; taxAmount?: unknown };
+export const toLines = (lines: L[]): PdfLine[] => lines.map((l) => ({ description: l.description, quantity: num(l.quantity as number), unit: l.unit, unitPrice: num(l.unitPrice as number), discountPct: num(l.discountPct as number), taxRate: num(l.taxRate as number), total: num(l.total as number), ...(l.netAmount !== undefined ? { net: num(l.netAmount as number) } : {}), ...(l.taxAmount !== undefined ? { tax: num(l.taxAmount as number) } : {}) }));
 
 type T = { subtotal: unknown; discountTotal?: unknown; taxTotal: unknown; total: unknown };
-export const standardTotals = (t: T) => {
+export const standardTotals = (t: T, opts: { netToPay?: boolean } = {}) => {
   const sub = num(t.subtotal as number), disc = t.discountTotal === undefined ? 0 : num(t.discountTotal as number);
   return [
     { label: "Total HT", value: sub },
     ...(disc ? [{ label: "Remises", value: -disc }, { label: "Net HT", value: sub - disc }] : []),
     { label: "TVA", value: num(t.taxTotal as number) },
-    { label: "Total TTC", value: num(t.total as number), bold: true },
+    { label: "Total TTC", value: num(t.total as number), bold: !opts.netToPay },
+    ...(opts.netToPay ? [{ label: "Net à payer", value: num(t.total as number), bold: true }] : []),
   ];
 };
 
@@ -54,9 +55,9 @@ export async function buildPdf(ctx: Ctx, kind: PdfKind, id: string): Promise<{ d
       const q = await getQuote(ctx, id);
       const st = effectiveQuoteStatus(q);
       doc = {
-        ...base, title: q.kind === "PROFORMA" ? "FACTURE PROFORMA" : "DEVIS", number: q.number, currency: q.currency, recipient: partyOf(q.customer),
+        ...base, title: q.kind === "PROFORMA" ? "Facture proforma" : "Devis", number: q.number, currency: q.currency, recipient: partyOf(q.customer),
         status: st === "ACCEPTED" ? { label: "Accepté", color: "#16A34A" } : st === "EXPIRED" ? { label: "Expiré", color: "#DC2626" } : undefined,
-        dates: [{ label: "Date d'émission", value: q.issueDate }, { label: "Valable jusqu'au", value: q.validUntil }], lines: toLines(q.lines), totals: standardTotals(q), notes: q.notes, terms: q.terms,
+        dates: [{ label: "Date d'émission", value: q.issueDate }, { label: "Valable jusqu'au", value: q.validUntil }], lines: toLines(q.lines), totals: standardTotals(q, { netToPay: true }), signatureLabel: "Bon pour accord — date, nom et signature du client :", notes: q.notes, terms: q.terms,
       };
       filename = q.number;
       break;
