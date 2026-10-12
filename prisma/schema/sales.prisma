@@ -499,6 +499,8 @@ model RecurringInvoice {
   frequency    RecurringFrequency
   // prochaine date de génération ; avancée à chaque génération
   nextRunDate  DateTime           @db.Date
+  // jour du mois visé (31 → fin de mois plus courts) : évite que les échéances dérivent d un mois court
+  anchorDay    Int                @default(1)
   endDate      DateTime?          @db.Date
   status       RecurringStatus    @default(ACTIVE)
   // émettre la facture tout de suite, puis l'envoyer au client

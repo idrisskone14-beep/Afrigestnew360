@@ -7,6 +7,8 @@ import * as ord from "./orders";
 import { businessRule } from "@/core/errors";
 import { ensureShareLink } from "@/core/share/service";
 import { createDepositInvoice, depositSchema } from "./deposits";
+import * as pl from "./price-lists";
+import * as rec from "./recurring";
 import { sendSalesDocument } from "./dispatch";
 import * as pay from "./payments";
 import * as qt from "./quotes";
@@ -27,12 +29,25 @@ export const deleteQuoteAction = defineTenantAction({ input: idSchema, module: M
 export const convertQuoteToOrderAction = defineTenantAction({ input: idSchema, module: M, permission: ["sales.quote.update", "sales.order.create"], handler: async ({ ctx, input }) => { const o = await qt.convertQuoteToOrder(ctx, input.id); bust(); return { id: o.id }; } });
 export const convertQuoteToInvoiceAction = defineTenantAction({ input: idSchema, module: M, permission: ["sales.quote.update", "finance.invoice.create"], handler: async ({ ctx, input }) => { const i = await qt.convertQuoteToInvoice(ctx, input.id); bust(); return { id: i.id }; } });
 
+// Listes de prix
+export const createPriceListAction = defineTenantAction({ input: pl.priceListSchema, module: M, permission: "sales.pricelist.manage", handler: async ({ ctx, input }) => { const l = await pl.createPriceList(ctx, input); bust(); return { id: l.id }; } });
+export const updatePriceListAction = defineTenantAction({ input: pl.updatePriceListSchema, module: M, permission: "sales.pricelist.manage", handler: async ({ ctx, input }) => { await pl.updatePriceList(ctx, input); bust(); } });
+export const setPriceListItemsAction = defineTenantAction({ input: pl.priceListItemsSchema, module: M, permission: "sales.pricelist.manage", handler: async ({ ctx, input }) => { await pl.setPriceListItems(ctx, input); bust(); } });
+export const deletePriceListAction = defineTenantAction({ input: idSchema, module: M, permission: "sales.pricelist.manage", handler: async ({ ctx, input }) => { await pl.deletePriceList(ctx, input.id); bust(); } });
+
 // Facture d'acompte (créée depuis un devis ou une commande ; lecture de la source exigée)
 export const createDepositInvoiceAction = defineTenantAction({ input: depositSchema, module: M, permission: "finance.invoice.create", handler: async ({ ctx, input }) => { ctx.assertCan(input.source === "quote" ? "sales.quote.read" : "sales.order.read"); const i = await createDepositInvoice(ctx, input); bust(); return { id: i.id }; } });
 
-// Envoi par e-mail et lien public (devis : droit de modification du devis ; facture : droit de modification de la facture)
-export const sendQuoteAction = defineTenantAction({ input: sendDocumentSchema, module: M, permission: "sales.quote.update", handler: async ({ ctx, input }) => { const r = await sendSalesDocument(ctx, { kind: "quote", ...input }); bust(); return { url: r.url }; } });
-export const sendInvoiceAction = defineTenantAction({ input: sendDocumentSchema, module: M, permission: "finance.invoice.update", handler: async ({ ctx, input }) => { const r = await sendSalesDocument(ctx, { kind: "invoice", ...input }); bust(); return { url: r.url }; } });
+// Factures récurrentes (droits de création / modification des factures)
+export const createRecurringFromInvoiceAction = defineTenantAction({ input: rec.recurringFromInvoiceSchema, module: M, permission: ["finance.invoice.create", "finance.invoice.read"], handler: async ({ ctx, input }) => { const r = await rec.createRecurringFromInvoice(ctx, input); bust(); return { id: r.id }; } });
+export const updateRecurringAction = defineTenantAction({ input: rec.updateRecurringSchema, module: M, permission: "finance.invoice.update", handler: async ({ ctx, input }) => { await rec.updateRecurring(ctx, input); bust(); } });
+export const setRecurringStatusAction = defineTenantAction({ input: rec.recurringStatusSchema, module: M, permission: "finance.invoice.update", handler: async ({ ctx, input }) => { await rec.setRecurringStatus(ctx, input); bust(); } });
+export const deleteRecurringAction = defineTenantAction({ input: idSchema, module: M, permission: "finance.invoice.delete", handler: async ({ ctx, input }) => { await rec.deleteRecurring(ctx, input.id); bust(); } });
+export const runRecurringNowAction = defineTenantAction({ input: idSchema, module: M, permission: "finance.invoice.create", handler: async ({ ctx, input }) => { const r = await rec.runRecurring(ctx, input.id, { manual: true }); bust(); if (r.error) throw businessRule(r.error); return { id: r.invoiceIds[0] }; } });
+
+// Envoi par e-mail et lien public (droits « envoyer » du devis et de la facture ; lien : droit de lecture)
+export const sendQuoteAction = defineTenantAction({ input: sendDocumentSchema, module: M, permission: "sales.quote.send", handler: async ({ ctx, input }) => { const r = await sendSalesDocument(ctx, { kind: "quote", ...input }); bust(); return { url: r.url }; } });
+export const sendInvoiceAction = defineTenantAction({ input: sendDocumentSchema, module: M, permission: "finance.invoice.send", handler: async ({ ctx, input }) => { const r = await sendSalesDocument(ctx, { kind: "invoice", ...input }); bust(); return { url: r.url }; } });
 export const quoteShareLinkAction = defineTenantAction({ input: shareLinkSchema, module: M, permission: "sales.quote.read", handler: async ({ ctx, input }) => { await qt.getQuote(ctx, input.id); return ensureShareLink(ctx, "QUOTE", input.id); } });
 export const invoiceShareLinkAction = defineTenantAction({ input: shareLinkSchema, module: M, permission: "finance.invoice.read", handler: async ({ ctx, input }) => { const i = await inv.getInvoice(ctx, input.id); if (i.status === "DRAFT") throw businessRule("Émettez la facture avant de la partager."); return ensureShareLink(ctx, "INVOICE", input.id); } });
 

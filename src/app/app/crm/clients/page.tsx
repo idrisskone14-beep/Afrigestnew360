@@ -19,12 +19,13 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const lp = parseListParams(sp);
   const statut = enumParam(sp, "statut", ["actifs", "inactifs"] as const);
+  const priceLists = ctx.hasModule("sales") && ctx.can("crm.customer.update") ? await ctx.db.priceList.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }) : [];
   const { rows, total } = await listCustomers(ctx, { q: lp.q, skip: lp.skip, take: lp.take, active: statut === undefined ? undefined : statut === "actifs" });
 
   return (
     <>
       <ListToolbar placeholder="Rechercher un client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "actifs", label: "Actifs" }, { value: "inactifs", label: "Inactifs" }] }]}>
-        {ctx.can("crm.customer.create") && <CustomerFormDialog defaultCountry={ctx.company.country} />}
+        {ctx.can("crm.customer.create") && <CustomerFormDialog defaultCountry={ctx.company.country} priceLists={priceLists} />}
       </ListToolbar>
       {rows.length === 0 ? (
         <EmptyState icon={<Users className="size-8" />} title={lp.q ? "Aucun client trouvé" : "Aucun client pour le moment"} description={lp.q ? "Essayez une autre recherche." : "Créez votre premier client ou convertissez un prospect."} />

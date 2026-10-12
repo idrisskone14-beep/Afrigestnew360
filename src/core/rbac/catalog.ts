@@ -86,10 +86,11 @@ export const PERMISSIONS: readonly PermissionDef[] = [
 
   // Ventes & CRM
   ...build("sales", "sales", {
-    quote: ["Devis", CRUD],
+    quote: ["Devis", [...CRUD, "send"]],
     order: ["Commandes clients", CRUD],
     delivery: ["Bons de livraison", ["read", "create", "update"]],
     discount: ["Remises", ["approve"]],
+    pricelist: ["Listes de prix", ["manage"]],
   }),
   ...build("crm", "crm", {
     customer: ["Clients", CRUD],

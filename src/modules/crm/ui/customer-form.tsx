@@ -17,10 +17,10 @@ import { createCustomerAction, updateCustomerAction } from "../actions";
 import { customerSchema, type CustomerInput } from "../schemas";
 
 const EMPTY: CustomerInput = {
-  type: "COMPANY", name: "", email: "", phone: "", address: "", city: "", country: "", taxId: "", rccm: "", website: "", paymentTermsDays: 30, creditLimit: "", notes: "",
+  type: "COMPANY", name: "", email: "", phone: "", address: "", city: "", country: "", taxId: "", rccm: "", website: "", paymentTermsDays: 30, priceListId: "", creditLimit: "", notes: "",
 };
 
-export function CustomerFormDialog({ customerId, initial, isActive = true, defaultCountry }: { customerId?: string; initial?: CustomerInput; isActive?: boolean; defaultCountry?: string }) {
+export function CustomerFormDialog({ customerId, initial, isActive = true, defaultCountry, priceLists = [] }: { customerId?: string; initial?: CustomerInput; isActive?: boolean; defaultCountry?: string; priceLists?: { id: string; name: string }[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -79,6 +79,16 @@ export function CustomerFormDialog({ customerId, initial, isActive = true, defau
           <Field label="Identifiant fiscal" htmlFor="cu-tax" error={errors.taxId?.message}><Input id="cu-tax" {...register("taxId")} /></Field>
           <Field label="RCCM" htmlFor="cu-rccm" error={errors.rccm?.message}><Input id="cu-rccm" {...register("rccm")} /></Field>
           <Field label="Délai de paiement (jours)" htmlFor="cu-terms" error={errors.paymentTermsDays?.message}><Input id="cu-terms" type="number" min={0} {...register("paymentTermsDays")} /></Field>
+          {priceLists.length > 0 && (
+            <Field label="Liste de prix" hint="Tarif proposé à la saisie des devis, commandes et factures" error={errors.priceListId?.message}>
+              <Controller control={control} name="priceListId" render={({ field }) => (
+                <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="none">Prix standard</SelectItem>{priceLists.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
+                </Select>
+              )} />
+            </Field>
+          )}
           <Field label="Plafond de crédit" htmlFor="cu-credit" hint="Laisser vide = sans plafond" error={errors.creditLimit?.message}><Input id="cu-credit" type="number" min={0} {...register("creditLimit")} /></Field>
           <Field label="Notes" htmlFor="cu-notes" className="sm:col-span-2" error={errors.notes?.message}><Textarea id="cu-notes" rows={3} {...register("notes")} /></Field>
           <div className="sm:col-span-2"><SubmitButton pending={pending}>{editing ? "Enregistrer" : "Créer le client"}</SubmitButton></div>

@@ -18,6 +18,7 @@ import { cancelInvoiceAction, deleteInvoiceAction } from "@/modules/sales/action
 import { customerBalance, getInvoice, invoiceBalance, isOverdue } from "@/modules/sales/invoices";
 import { DocHeader, PdfLinks } from "@/modules/sales/ui/doc-kit";
 import { DispatchHistory } from "@/modules/sales/ui/dispatch-history";
+import { MakeRecurringDialog } from "@/modules/sales/ui/recurring-dialogs";
 import { DocumentPreview } from "@/modules/sales/ui/document-preview";
 import { CopyShareLinkButton, SendDocumentDialog } from "@/modules/sales/ui/send-dialog";
 import { listDispatches, sendDefaults } from "@/modules/sales/dispatch";
@@ -34,6 +35,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   if (!z.string().uuid().safeParse(id).success) notFound();
   const i = await getInvoice(ctx, id).catch((e) => { if (e instanceof AppError && e.code === "NOT_FOUND") notFound(); throw e; });
   const cur = i.currency;
+  const recurringSource = i.recurringId ? await ctx.db.recurringInvoice.findFirst({ where: { id: i.recurringId }, select: { id: true, title: true } }) : null;
   const deductedIn = i.deductedInId ? await ctx.db.invoice.findFirst({ where: { id: i.deductedInId }, select: { id: true, number: true } }) : null;
   const balance = invoiceBalance(i).toNumber();
   const overdue = isOverdue(i);
@@ -41,7 +43,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const open = i.status === "ISSUED" || i.status === "PARTIALLY_PAID";
   const canUpdate = ctx.can("finance.invoice.update");
   const canValidate = ctx.can("finance.payment.validate");
-  const sendable = canUpdate && i.status !== "DRAFT" && i.status !== "CANCELLED";
+  const sendable = ctx.can("finance.invoice.send") && i.status !== "DRAFT" && i.status !== "CANCELLED";
   const [dispatches, defaults] = await Promise.all([listDispatches(ctx, "invoice", id), sendable ? sendDefaults(ctx, "invoice", id) : Promise.resolve(null)]);
   const accounts = ctx.hasModule("finance") && ctx.can("finance.account.read") ? await ctx.db.financeAccount.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true, name: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }) : [];
 
@@ -72,6 +74,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         <CardContent className="flex flex-wrap items-center gap-2 p-4">
           {sendable && defaults && <SendDocumentDialog kind="invoice" id={i.id} defaults={defaults} resend={Boolean(i.sentAt)} />}
           {sendable && <CopyShareLinkButton kind="invoice" id={i.id} />}
+          {i.status !== "CANCELLED" && i.kind === "STANDARD" && ctx.can("finance.invoice.create") && <MakeRecurringDialog invoiceId={i.id} customerName={i.customer.name} />}
           {i.status === "DRAFT" && canUpdate && <IssueInvoiceDialog invoiceId={i.id} total={num(i.total)} currency={cur} canOverride={ctx.can("sales.discount.approve")} creditWarning={creditWarning} />}
           {open && ctx.can("finance.payment.create") && balance > 0 && <PaymentDialog invoiceId={i.id} balance={balance} currency={cur} willValidate={canValidate} accounts={accounts} />}
           {live && ctx.can("finance.credit_note.create") && creditable.some((l) => l.creditable > 0) && <CreditNoteDialog invoiceId={i.id} lines={creditable} />}
@@ -86,6 +89,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         <DocumentPreview data={await invoicePreview(ctx, i, balance)} />
       </section>
 
+      {recurringSource && <p role="status" className="rounded-lg border bg-card px-4 py-3 text-sm">Facture générée par le modèle récurrent <Link href="/app/sales/recurrentes" className="text-brand hover:underline">{recurringSource.title}</Link>.</p>}
       {i.kind === "DEPOSIT" && <p role="status" className="rounded-lg border bg-card px-4 py-3 text-sm">Facture d&apos;acompte : {deductedIn ? <>déduite de la facture finale <Link href={`/app/sales/factures/${deductedIn.id}`} className="text-brand hover:underline">{deductedIn.number ?? "brouillon"}</Link>.</> : "elle sera déduite automatiquement de la facture finale (créée depuis le devis ou la commande)."}</p>}
       {sendable && <p role="status" className="rounded-lg border bg-card px-4 py-3 text-sm">{i.sentAt ? `Envoyée au client le ${fmtDate(i.sentAt)}.` : "Pas encore envoyée au client."}</p>}
       <DispatchHistory rows={dispatches} />

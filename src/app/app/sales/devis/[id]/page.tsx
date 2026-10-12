@@ -35,7 +35,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   const editable = canUpdate && (q.status === "DRAFT" || q.status === "SENT");
   const convertible = q.status !== "CONVERTED" && q.status !== "REJECTED" && status !== "EXPIRED";
   const label = q.kind === "PROFORMA" ? "Proforma" : "Devis";
-  const sendable = canUpdate && (q.status === "DRAFT" || q.status === "SENT" || q.status === "ACCEPTED") && status !== "EXPIRED";
+  const sendable = ctx.can("sales.quote.send") && (q.status === "DRAFT" || q.status === "SENT" || q.status === "ACCEPTED") && status !== "EXPIRED";
   const [dispatches, defaults, deposits] = await Promise.all([listDispatches(ctx, "quote", id), sendable ? sendDefaults(ctx, "quote", id) : Promise.resolve(null), depositsOf(ctx, { orderId: null, quoteId: id })]);
   const canDeposit = q.kind === "QUOTE" && convertible && ctx.can("finance.invoice.create");
 

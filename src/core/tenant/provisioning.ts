@@ -15,6 +15,7 @@ export async function syncCatalog(db: Db) {
       update: { name: m.name, description: m.description, kind: m.kind, icon: m.icon, sortOrder: m.sortOrder },
     });
   }
+  const known = new Set((await db.permission.findMany({ select: { key: true } })).map((p) => p.key));
   for (const p of PERMISSIONS) {
     await db.permission.upsert({
       where: { key: p.key },
@@ -24,6 +25,21 @@ export async function syncCatalog(db: Db) {
   }
   // Permissions retirées du catalogue → supprimées (cascade sur RolePermission).
   await db.permission.deleteMany({ where: { key: { notIn: PERMISSIONS.map((p) => p.key) } } });
+
+  // Permissions NOUVELLES : les rôles issus d'un gabarit (hors administrateurs) les reçoivent si le gabarit les prévoit.
+  // Les permissions déjà connues ne sont jamais touchées : les personnalisations des administrateurs sont respectées.
+  const fresh = PERMISSIONS.filter((p) => !known.has(p.key)).map((p) => p.key);
+  if (fresh.length === 0) return { added: [] as string[] };
+  const ids = new Map((await db.permission.findMany({ where: { key: { in: fresh } }, select: { id: true, key: true } })).map((p) => [p.key, p.id]));
+  for (const tpl of ROLE_TEMPLATES) {
+    if (tpl.isAdmin) continue;
+    const keys = expandPatterns(tpl.patterns).filter((k) => fresh.includes(k));
+    if (keys.length === 0) continue;
+    const roles = await db.role.findMany({ where: { templateKey: tpl.key, isAdmin: false }, select: { id: true, companyId: true } });
+    if (roles.length === 0) continue;
+    await db.rolePermission.createMany({ data: roles.flatMap((r) => keys.map((k) => ({ roleId: r.id, companyId: r.companyId, permissionId: ids.get(k)! }))), skipDuplicates: true });
+  }
+  return { added: fresh };
 }
 
 export function slugify(input: string): string {

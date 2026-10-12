@@ -18,15 +18,21 @@ export async function loadSalesEditorData(ctx: TenantContext) {
     loadEditorData(ctx),
     ctx.db.customer.findMany({
       where: { deletedAt: null, isActive: true },
-      select: { id: true, name: true, address: true, city: true, country: true, email: true, phone: true, taxId: true },
+      select: { id: true, name: true, address: true, city: true, country: true, email: true, phone: true, taxId: true, priceListId: true },
       orderBy: { name: "asc" },
       take: 1000,
     }),
     issuer(ctx),
   ]);
+  // tarifs par client : prix des produits de la liste du client (proposition à la saisie, jamais une contrainte)
+  const listIds = [...new Set(customers.map((c) => c.priceListId).filter((x): x is string => Boolean(x)))];
+  const items = listIds.length ? await ctx.db.priceListItem.findMany({ where: { priceListId: { in: listIds }, priceList: { isActive: true } }, select: { priceListId: true, productId: true, price: true } }) : [];
+  const byList = new Map<string, Record<string, number>>();
+  for (const i of items) byList.set(i.priceListId, { ...(byList.get(i.priceListId) ?? {}), [i.productId]: Number(i.price) });
+  const names = listIds.length ? new Map((await ctx.db.priceList.findMany({ where: { id: { in: listIds } }, select: { id: true, name: true } })).map((l) => [l.id, l.name])) : new Map<string, string>();
   return {
     ...base,
-    customers: customers.map((c) => ({ id: c.id, name: c.name, lines: partyOf(c).lines })),
+    customers: customers.map((c) => ({ id: c.id, name: c.name, lines: partyOf(c).lines, priceListName: c.priceListId ? names.get(c.priceListId) ?? null : null, prices: c.priceListId ? byList.get(c.priceListId) ?? {} : {} })),
     issuer: { name: iss.issuer.name, lines: iss.issuer.lines, legal: iss.issuer.legal, logoUrl: iss.logo ? `/api/files/logo/${ctx.company.id}` : null },
   };
 }

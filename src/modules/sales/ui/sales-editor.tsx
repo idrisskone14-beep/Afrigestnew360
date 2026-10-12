@@ -40,7 +40,7 @@ export function SalesEditor({ kind, id, number, initial, customers, products, ta
   id?: string;
   number?: string | null;
   initial: EditorInitial;
-  customers: { id: string; name: string; lines: string[] }[];
+  customers: { id: string; name: string; lines: string[]; priceListName?: string | null; prices?: Record<string, number> }[];
   products: ProductOpt[];
   taxes: TaxOpt[];
   currency: string;
@@ -75,7 +75,8 @@ export function SalesEditor({ kind, id, number, initial, customers, products, ta
   const pickProduct = (key: number, productId: string) => {
     if (productId === FREE) return patch(key, { productId: "" });
     const p = products.find((x) => x.id === productId);
-    if (p) patch(key, { productId, description: p.name, unit: p.unit, unitPrice: String(p.salePrice), taxId: p.taxId ?? defaultTax });
+    // prix de la liste du client s'il y en a un pour ce produit, sinon prix de vente standard
+    if (p) patch(key, { productId, description: p.name, unit: p.unit, unitPrice: String(customers.find((c) => c.id === f.customerId)?.prices?.[p.id] ?? p.salePrice), taxId: p.taxId ?? defaultTax });
   };
 
   const isProforma = kind === "quote" && f.quoteKind === "PROFORMA";
@@ -187,6 +188,7 @@ export function SalesEditor({ kind, id, number, initial, customers, products, ta
                   <SelectContent>{customers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
+              {customers.find((c) => c.id === f.customerId)?.priceListName && <p className="rounded-lg border bg-muted/50 px-3 py-2 text-sm">Liste de prix du client : <strong>{customers.find((c) => c.id === f.customerId)?.priceListName}</strong>. Ses prix sont proposés quand vous choisissez un article (modifiables).</p>}
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={`${C.dateLabel} *`} htmlFor="se-date"><Input id="se-date" type="date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
                 <Field label={C.secondLabel} htmlFor="se-second" hint={C.secondHint}><Input id="se-second" type="date" value={f.second} onChange={(e) => setF({ ...f, second: e.target.value })} /></Field>

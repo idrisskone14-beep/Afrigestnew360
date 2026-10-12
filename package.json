@@ -18,8 +18,9 @@
     "db:reset": "prisma migrate reset --force",
     "db:app-role": "tsx scripts/db-app-role.ts",
     "db:owner-password": "tsx scripts/reset-owner-password.ts",
+    "db:sync-catalog": "tsx --conditions=react-server scripts/sync-catalog.ts",
     "docs:gen": "tsx scripts/gen-docs.ts",
-    "vercel-build": "prisma migrate deploy && next build",
+    "vercel-build": "prisma migrate deploy && tsx --conditions=react-server scripts/sync-catalog.ts && next build",
     "postinstall": "prisma generate"
   },
   "dependencies": {

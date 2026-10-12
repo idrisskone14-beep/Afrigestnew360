@@ -17,6 +17,14 @@ const money = (v: unknown) => (v === "" || v === undefined || v === null ? null 
 const date = (v?: string) => (v ? new Date(v) : null);
 const clientErr = (m: string) => businessRule(m);
 
+/** Liste de prix d'un client : doit exister dans l'entreprise et être active (vide = prix standard). */
+async function usablePriceList(ctx: Ctx, id?: string | null) {
+  if (!id) return null;
+  const l = await ctx.db.priceList.findFirst({ where: { id, isActive: true }, select: { id: true } });
+  if (!l) throw clientErr("Liste de prix inconnue ou désactivée.");
+  return l.id;
+}
+
 // ── Clients ───────────────────────────────────────────────────
 
 export async function listCustomers(ctx: Ctx, p: { q?: string; skip: number; take: number; active?: boolean }) {
@@ -44,13 +52,14 @@ export async function getCustomer(ctx: Ctx, id: string) {
 export async function createCustomer(ctx: Ctx, input: z.output<typeof customerSchema>) {
   const [limits, usage] = await Promise.all([getEffectiveLimits(ctx.company.id), getUsage(ctx.company.id)]);
   assertWithinLimit(limits, "customers", usage.customers);
+  const priceListId = await usablePriceList(ctx, input.priceListId);
   const created = await ctx.tx(async (tx) => {
     const code = await nextNumber(tx, ctx.company.id, "customer");
     return tx.customer.create({
       data: {
         companyId: ctx.company.id, code, type: input.type, name: input.name, email: blank(input.email), phone: blank(input.phone),
         address: blank(input.address), city: blank(input.city), country: blank(input.country), taxId: blank(input.taxId), rccm: blank(input.rccm),
-        website: blank(input.website), paymentTermsDays: input.paymentTermsDays, creditLimit: money(input.creditLimit), notes: blank(input.notes),
+        website: blank(input.website), paymentTermsDays: input.paymentTermsDays, priceListId, creditLimit: money(input.creditLimit), notes: blank(input.notes),
         ownerId: ctx.user.id, createdById: ctx.user.id,
       },
     });
@@ -61,12 +70,13 @@ export async function createCustomer(ctx: Ctx, input: z.output<typeof customerSc
 
 export async function updateCustomer(ctx: Ctx, input: z.output<typeof updateCustomerSchema>) {
   const before = await getCustomer(ctx, input.id);
+  const priceListId = input.priceListId === (before.priceListId ?? "") ? before.priceListId : await usablePriceList(ctx, input.priceListId);
   const after = await ctx.db.customer.update({
     where: { id: input.id },
     data: {
       type: input.type, name: input.name, email: blank(input.email), phone: blank(input.phone), address: blank(input.address), city: blank(input.city),
       country: blank(input.country), taxId: blank(input.taxId), rccm: blank(input.rccm), website: blank(input.website),
-      paymentTermsDays: input.paymentTermsDays, creditLimit: money(input.creditLimit), notes: blank(input.notes), isActive: input.isActive,
+      paymentTermsDays: input.paymentTermsDays, priceListId, creditLimit: money(input.creditLimit), notes: blank(input.notes), isActive: input.isActive,
     },
   });
   await audit(ctx, { action: "customer.update", resource: "Customer", resourceId: after.id, summary: `${ctx.user.name} a modifié le client ${after.name} (${after.code}).`, before, after });

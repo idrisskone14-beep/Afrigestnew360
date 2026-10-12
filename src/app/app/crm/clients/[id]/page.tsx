@@ -33,6 +33,7 @@ export default async function CustomerDetailPage({ params, searchParams }: { par
   const tab = enumParam(sp, "onglet", TABS) ?? "resume";
   const canEdit = ctx.can("crm.customer.update");
   const showSales = ctx.hasModule("sales") && ctx.can("finance.invoice.read");
+  const priceLists = ctx.hasModule("sales") && ctx.can("crm.customer.update") ? await ctx.db.priceList.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }) : [];
 
   const tabs = [
     { href: `/app/crm/clients/${id}`, label: "Résumé", exact: true },
@@ -54,10 +55,11 @@ export default async function CustomerDetailPage({ params, searchParams }: { par
             <CustomerFormDialog
               customerId={customer.id}
               isActive={customer.isActive}
+              priceLists={priceLists}
               initial={{
                 type: customer.type, name: customer.name, email: customer.email ?? "", phone: customer.phone ?? "", address: customer.address ?? "", city: customer.city ?? "",
                 country: customer.country ?? "", taxId: customer.taxId ?? "", rccm: customer.rccm ?? "", website: customer.website ?? "",
-                paymentTermsDays: customer.paymentTermsDays, creditLimit: customer.creditLimit ? num(customer.creditLimit) : "", notes: customer.notes ?? "",
+                paymentTermsDays: customer.paymentTermsDays, priceListId: customer.priceListId ?? "", creditLimit: customer.creditLimit ? num(customer.creditLimit) : "", notes: customer.notes ?? "",
               }}
             />
           )}
@@ -85,6 +87,7 @@ export default async function CustomerDetailPage({ params, searchParams }: { par
             <CardContent className="grid grid-cols-2 gap-3 text-sm">
               <Info label="Type">{customer.type === "COMPANY" ? "Entreprise" : "Particulier"}</Info>
               <Info label="Délai de paiement">{customer.paymentTermsDays} jours</Info>
+              {customer.priceListId && <Info label="Liste de prix">{priceLists.find((l) => l.id === customer.priceListId)?.name ?? "Liste désactivée"}</Info>}
               <Info label="Plafond de crédit">{customer.creditLimit ? formatMoney(num(customer.creditLimit), ctx.company.currency) : "Sans plafond"}</Info>
               <Info label="Identifiant fiscal">{customer.taxId ?? "—"}</Info>
               <Info label="RCCM">{customer.rccm ?? "—"}</Info>

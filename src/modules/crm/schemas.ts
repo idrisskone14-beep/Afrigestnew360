@@ -18,6 +18,7 @@ export const customerSchema = z.object({
   rccm: text(60),
   website: text(200),
   paymentTermsDays: z.coerce.number().int().min(0).max(365),
+  priceListId: z.union([z.literal(""), z.string().uuid()]).optional(),
   creditLimit: z.union([z.literal(""), money]).optional(),
   notes: text(2000),
 });

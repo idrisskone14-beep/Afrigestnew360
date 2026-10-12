@@ -38,9 +38,11 @@ const ITEMS: Record<string, (ctx: Pick<TenantContext, "can">) => ItemDef[]> = {
     { href: "/app/sales/commandes", label: "Bons de commande", show: any("sales.order.read") },
     { href: "/app/sales/livraisons", label: "Bons de livraison", show: any("sales.delivery.read") },
     { href: "/app/sales/factures", label: "Factures de vente", show: any("finance.invoice.read") },
+    { href: "/app/sales/recurrentes", label: "Factures récurrentes", show: any("finance.invoice.read") },
     { href: "/app/sales/paiements", label: "Paiements", show: any("finance.payment.read") },
     { href: "/app/sales/avoirs", label: "Avoirs", show: any("finance.credit_note.read") },
     { href: "/app/sales/relances", label: "Relances", show: any("finance.invoice.read") },
+    { href: "/app/sales/listes-de-prix", label: "Listes de prix", show: any("sales.pricelist.manage") },
   ],
   crm: () => [
     { href: "/app/crm", label: "Vue d'ensemble", exact: true, show: always },
