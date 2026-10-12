@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { flushPendingPush } from "@/core/push/service";
 import { purgeRateLimits } from "@/core/security/rate-limit";
 import { generateAllAlerts } from "@/modules/platform/alerts";
 
@@ -16,6 +17,7 @@ async function run(req: NextRequest) {
   if (!safeEqual(token, secret)) return new NextResponse(null, { status: 401, headers: { "Cache-Control": "no-store" } });
   try {
     const result = await generateAllAlerts();
+    await flushPendingPush().catch((e) => console.error("[cron:push]", e)); // notifications push restées en attente
     await purgeRateLimits().catch((e) => console.error("[cron:rate-limit]", e)); // ménage des compteurs périmés
     return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {

@@ -25,6 +25,14 @@ Format : une entrée par phase livrée, des changements les plus récents aux pl
 
 **Déploiement** : script `vercel-build` (migrations automatiques avant la construction), `vercel.json` (région, cron des alertes).
 
+## Mobile : application installable, barre du bas, scan, photo, push (2026-10)
+- **Application installable (PWA)** : manifeste, icônes (aussi favicon et icône iPhone), service worker. Hors connexion, une page claire s'affiche ; **aucune donnée d'entreprise n'est mise en cache** sur l'appareil.
+- **Barre de navigation du bas** (téléphone) : Accueil, module principal, bouton « + » de gestes rapides (devis, facture, commande, scan, photo de justificatif, achats — selon les droits et modules), Alertes, Menu. Cibles tactiles de 44 px sur écran tactile.
+- **Scan de code-barres** par la caméra (détecteur natif, ZXing en repli, saisie manuelle en secours) : ouvre la fiche produit, remplit la recherche des produits, ou ajoute l'article dans un devis / une commande / une facture.
+- **Photo de justificatif** (`/app/capture`) : dépense créée en brouillon avec la photo (compressée sur l'appareil) rattachée dans les Documents.
+- **Notifications push** (Web Push / VAPID) : inscription par appareil, test, préférence « Push » par type d'événement, distribution juste après la requête puis par la tâche planifiée, nettoyage des appareils disparus. Adresses limitées aux services push connus (anti-SSRF). Variables `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (`npm run push:keys`).
+- Politique de permissions : `camera=(self)` (nécessaire au scan et à la photo).
+
 ## Ventes : envoi, lien public, acomptes, récurrence, tarifs (2026-10)
 - **Envoi par e-mail** des devis et des factures (PDF en pièce jointe + lien de consultation), journal des envois, colonne « Envoi » et chiffre « Factures non envoyées ». Droits `sales.quote.send` et `finance.invoice.send`.
 - **Lien public** `/p/<secret>` (192 bits, révocable, sans compte) : consultation, PDF et, pour un devis, **acceptation ou refus en ligne** (nom, commentaire, adresse IP journalisés ; notification aux commerciaux ; une seule réponse).

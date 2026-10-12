@@ -23,6 +23,7 @@ export function checkEnv(env: Record<string, string | undefined> = process.env):
     if (env.DATABASE_URL && !/sslmode=|ssl=true/.test(env.DATABASE_URL) && !/localhost|127\.0\.0\.1/.test(env.DATABASE_URL)) warning("DATABASE_URL sans sslmode : la connexion à la base n'est peut-être pas chiffrée");
   }
   if (env.REQUIRE_EMAIL_VERIFICATION === "true" && !env.RESEND_API_KEY) warning("RESEND_API_KEY absente : les e-mails de vérification ne partiront pas");
+  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) warning("VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY absentes : notifications push désactivées (npm run push:keys)");
   if (!env.CRON_SECRET || env.CRON_SECRET.length < 16) warning("CRON_SECRET absente ou trop courte : tâche planifiée désactivée");
   return out;
 }

@@ -99,9 +99,10 @@ model User {
   updatedAt        DateTime   @updatedAt
   deletedAt        DateTime?
 
-  memberships CompanyMembership[]
-  sessions    UserSession[]
-  tokens      AuthToken[]
+  memberships       CompanyMembership[]
+  sessions          UserSession[]
+  tokens            AuthToken[]
+  pushSubscriptions PushSubscription[]
 
   @@index([status])
 }
@@ -592,12 +593,15 @@ model Notification {
   // Canal e-mail : file d'attente transactionnelle, distribuée par la tâche planifiée (jamais pendant la transaction métier)
   emailPending Boolean            @default(false)
   emailedAt    DateTime?
+  // Canal push (appareils inscrits) : distribué juste après la requête, ou par la tâche planifiée à défaut
+  pushPending  Boolean            @default(false)
   createdAt    DateTime           @default(now())
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId, userId, status, createdAt])
   @@index([emailPending])
+  @@index([pushPending])
 }
 
 model NotificationPreference {
@@ -607,6 +611,7 @@ model NotificationPreference {
   type      String
   inApp     Boolean @default(true)
   email     Boolean @default(false)
+  push      Boolean @default(true)
 
   @@unique([companyId, userId, type])
 }
@@ -670,4 +675,21 @@ model PlatformSetting {
   value       String
   updatedAt   DateTime @updatedAt
   updatedById String?  @db.Uuid
+}
+
+// ── Appareils inscrits aux notifications push (par utilisateur, tous employeurs confondus) ───────────────
+model PushSubscription {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  // adresse du service push du navigateur : unique, c'est l'identité de l'appareil
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

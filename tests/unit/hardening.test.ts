@@ -68,6 +68,8 @@ describe("checkEnv", () => {
     ENCRYPTION_KEY: "0".repeat(64),
     APP_URL: "https://exemple.com",
     CRON_SECRET: "c".repeat(24),
+    VAPID_PUBLIC_KEY: "p".repeat(40),
+    VAPID_PRIVATE_KEY: "k".repeat(30),
   };
 
   it("configuration complète : aucun problème", () => {
@@ -95,5 +97,14 @@ describe("checkEnv", () => {
     expect(msgs).toContain("CRON_SECRET");
     expect(msgs).toContain("https://");
     expect(msgs).toContain("sslmode");
+  });
+});
+
+describe("checkEnv : notifications push", () => {
+  it("signale l'absence de clés VAPID par un avertissement (jamais bloquant)", () => {
+    const base = { DATABASE_URL: "postgresql://u:p@h:5432/d", AUTH_SECRET: "a".repeat(32), ENCRYPTION_KEY: "e".repeat(64), APP_URL: "https://exemple.ci", CRON_SECRET: "c".repeat(24), NODE_ENV: "production" };
+    const problems = checkEnv(base);
+    expect(problems.filter((p) => p.level === "blocking").some((p) => p.message.includes("VAPID"))).toBe(false);
+    expect(problems.some((p) => p.level === "warning" && p.message.includes("VAPID"))).toBe(true);
   });
 });

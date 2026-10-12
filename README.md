@@ -110,6 +110,7 @@ Les entreprises ont des offres différentes (Enterprise / Business / Starter) : 
 | `npm run docs:gen` | Régénère `docs/PERMISSIONS.md` depuis le catalogue de permissions (un test vérifie qu'il est à jour) |
 | `npm run db:seed` | Seed idempotent (`SEED_DEMO=false` pour ne charger que le catalogue). Les données de démonstration passent par les **vrais services** (numérotation, stock, écritures comptables) : chiffres cohérents entre modules |
 | `GET /api/cron/recurring` | Génère les factures récurrentes échues (toutes entreprises, au nom de l'auteur du modèle). Même protection que ci-dessous. |
+| `GET /sw.js`, `GET /manifest.webmanifest`, `GET /pwa/*.png` | Service worker (hors connexion + push), manifeste et icônes de l'application installable. Le service worker ne met aucune page en cache. |
 | `GET /p/<secret>` | Page publique d'un devis ou d'une facture (lecture, PDF, réponse du client à un devis). Pas de session ; secret révocable. |
 | `GET /api/cron/alerts` | Génère les alertes d'échéances et de stock (toutes entreprises). Désactivée sans `CRON_SECRET` ; appeler avec `Authorization: Bearer <secret>` (ex. une fois par jour) |
 

@@ -2,6 +2,8 @@ import "server-only";
 import { platformDb, type Db } from "@/core/db/client";
 import { appUrl, sendMail } from "@/core/mail";
 import type { NotificationType } from "@/core/notification-catalog";
+import { pushConfigured } from "@/core/push/service";
+import { schedulePushFlush } from "@/core/push/schedule";
 
 export { NOTIFICATION_CATALOG, NOTIFICATION_TYPE_KEYS, type NotificationType } from "@/core/notification-catalog";
 
@@ -15,18 +17,19 @@ export interface NotifyInput { companyId: string; userIds: string[]; type: Notif
 export async function notify(db: Db, input: NotifyInput): Promise<number> {
   const ids = [...new Set(input.userIds)];
   if (ids.length === 0) return 0;
-  const prefs = await db.notificationPreference.findMany({ where: { companyId: input.companyId, type: input.type, userId: { in: ids } }, select: { userId: true, inApp: true, email: true } });
+  const prefs = await db.notificationPreference.findMany({ where: { companyId: input.companyId, type: input.type, userId: { in: ids } }, select: { userId: true, inApp: true, email: true, push: true } });
   const pref = new Map(prefs.map((p) => [p.userId, p]));
   const now = new Date();
   const data = ids.flatMap((userId) => {
     const p = pref.get(userId);
-    const inApp = p?.inApp ?? true, email = p?.email ?? false;
-    if (!inApp && !email) return [];
-    // e-mail seul : la ligne sert de file d'attente et ne compte pas parmi les non lues
-    return [{ companyId: input.companyId, userId, type: input.type, title: input.title, body: input.body ?? null, link: input.link ?? null, emailPending: email, ...(inApp ? {} : { status: "READ" as const, readAt: now }) }];
+    const inApp = p?.inApp ?? true, email = p?.email ?? false, push = (p?.push ?? true) && pushConfigured();
+    if (!inApp && !email && !push) return [];
+    // e-mail ou push seuls : la ligne sert de file d'attente et ne compte pas parmi les non lues
+    return [{ companyId: input.companyId, userId, type: input.type, title: input.title, body: input.body ?? null, link: input.link ?? null, emailPending: email, pushPending: push, ...(inApp ? {} : { status: "READ" as const, readAt: now }) }];
   });
   if (data.length === 0) return 0;
   await db.notification.createMany({ data });
+  if (data.some((n) => n.pushPending)) schedulePushFlush();
   return data.length;
 }
 

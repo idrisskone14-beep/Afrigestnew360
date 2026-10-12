@@ -7,6 +7,8 @@ import {
   beginTwoFactorSetup, changePassword, confirmTwoFactorSetup, disableTwoFactor, revokeSession, revokeSessions,
 } from "@/core/auth/service";
 import { changePasswordSchema, disableTotpSchema, totpCodeSchema } from "@/core/auth/schemas";
+import { removeSubscription, saveSubscription, sendPushToUser } from "@/core/push/service";
+import { enforceRateLimit } from "@/core/security/rate-limit";
 import { createInvitation } from "@/core/tenant/invitations";
 import { companySettingsSchema } from "@/core/tenant/schemas";
 import { z } from "zod";
@@ -14,7 +16,7 @@ import { changeMemberRole, removeMember, revokeInvitation, setMemberStatus } fro
 import { createRole, deleteRole, updateRole } from "./roles";
 import {
   changeRoleSchema, createRoleSchema, inviteMemberSchema, invitationIdSchema, memberStatusSchema, membershipIdSchema,
-  notificationPrefsSchema, roleIdSchema, updateRoleSchema, NOTIFICATION_TYPES,
+  notificationPrefsSchema, pushRemoveSchema, pushSubscriptionSchema, roleIdSchema, updateRoleSchema, NOTIFICATION_TYPES,
 } from "./schemas";
 
 const refresh = (path: string) => revalidatePath(path);
@@ -144,11 +146,30 @@ export const saveNotificationPrefsAction = defineTenantAction({
       for (const p of input.prefs.filter((x) => known.has(x.type))) {
         await tx.notificationPreference.upsert({
           where: { companyId_userId_type: { companyId: ctx.company.id, userId: ctx.user.id, type: p.type } },
-          create: { companyId: ctx.company.id, userId: ctx.user.id, type: p.type, inApp: p.inApp, email: p.email },
-          update: { inApp: p.inApp, email: p.email },
+          create: { companyId: ctx.company.id, userId: ctx.user.id, type: p.type, inApp: p.inApp, email: p.email, push: p.push },
+          update: { inApp: p.inApp, email: p.email, push: p.push },
         });
       }
     });
+  },
+});
+
+// ── Notifications push (appareils de l'utilisateur) ───────────────
+
+export const savePushSubscriptionAction = defineUserAction({
+  input: pushSubscriptionSchema,
+  handler: async ({ session, input }) => { await saveSubscription(session.user.id, input, input.userAgent); },
+});
+export const removePushSubscriptionAction = defineUserAction({
+  input: pushRemoveSchema,
+  handler: async ({ session, input }) => { await removeSubscription(session.user.id, input.endpoint); },
+});
+/** Notification de test sur tous les appareils inscrits de l'utilisateur (limitée : 5 par 10 minutes). */
+export const sendTestPushAction = defineUserAction({
+  input: z.object({}),
+  handler: async ({ session }) => {
+    await enforceRateLimit("push-test", { limit: 5, windowMs: 10 * 60_000 });
+    return sendPushToUser(session.user.id, { title: "Notification de test", body: "Les notifications push fonctionnent sur cet appareil.", url: "/app/parametres/notifications", tag: "test" });
   },
 });
 

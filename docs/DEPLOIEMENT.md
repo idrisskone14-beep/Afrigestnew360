@@ -49,6 +49,7 @@ SEED_DEMO=false npm run db:seed  # catalogue (modules, offres, permissions) + co
 | `PLATFORM_OWNER_EMAIL` / `PLATFORM_OWNER_PASSWORD` | au premier seed | compte propriétaire de la plateforme (`/super-admin`) — mot de passe fort, à changer après la première connexion |
 | `REQUIRE_EMAIL_VERIFICATION` | recommandé | `true` : la connexion exige une adresse e-mail confirmée — **sauf en mode « validation par le Super Admin »** (choisi dans la console, ou imposé faute d'envoi d'e-mails), où aucune confirmation n'est demandée. `false` : jamais exigée |
 | `RESEND_API_KEY`, `MAIL_FROM` | si e-mails | clé Resend ; `MAIL_FROM="AfriGest 360 <no-reply@votre-domaine>"` sur un domaine **vérifié** |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | si notifications push | générer UNE paire avec `npm run push:keys` ; `VAPID_SUBJECT=mailto:contact@votre-domaine`. Changer de clés oblige chaque utilisateur à réactiver les notifications sur ses appareils |
 | `CRON_SECRET` | oui | `openssl rand -hex 24` (16 caractères minimum) — Vercel l'envoie automatiquement au cron |
 | `DATABASE_POOL_MAX` | non | connexions par instance serverless (défaut 5) ; ne dépassez pas `limite de la base ÷ nombre d'instances simultanées` |
 | `SIGNUP_MODE` | non | `email` (défaut) ou `approval` : mode d'inscription de repli (le réglage de la console prime) |

@@ -26,8 +26,15 @@ export const roleIdSchema = z.object({ roleId: uuid });
 export const NOTIFICATION_TYPES = NOTIFICATION_CATALOG;
 
 export const notificationPrefsSchema = z.object({
-  prefs: z.array(z.object({ type: z.string(), inApp: z.boolean(), email: z.boolean() })).max(50),
+  prefs: z.array(z.object({ type: z.string(), inApp: z.boolean(), email: z.boolean(), push: z.boolean().default(true) })).max(50),
 });
+
+export const pushSubscriptionSchema = z.object({
+  endpoint: z.string().url().max(1000),
+  keys: z.object({ p256dh: z.string().min(20).max(200), auth: z.string().min(8).max(100) }),
+  userAgent: z.string().max(300).optional(),
+});
+export const pushRemoveSchema = z.object({ endpoint: z.string().url().max(1000) });
 
 export const taxSchema = z.object({
   name: z.string().trim().min(2, "Nom requis").max(60),
