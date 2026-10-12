@@ -14,17 +14,17 @@ export async function invoiceKpis(ctx: Ctx, period: DateRange): Promise<Kpi[]> {
   const today = new Date(new Date().toDateString());
   const live = ["ISSUED", "PARTIALLY_PAID", "PAID"] as const;
   const open = ["ISSUED", "PARTIALLY_PAID"] as const;
-  const [billed, late, drafts] = await Promise.all([
+  const [billed, late, unsent] = await Promise.all([
     ctx.db.invoice.aggregate({ where: { issueDate: period, status: { in: [...live] } }, _count: true, _sum: { total: true, amountPaid: true } }),
     ctx.db.invoice.aggregate({ where: { issueDate: period, status: { in: [...open] }, dueDate: { lt: today } }, _count: true, _sum: { total: true, amountPaid: true, creditedAmount: true } }),
-    ctx.db.invoice.aggregate({ where: { issueDate: period, status: "DRAFT" }, _count: true, _sum: { total: true } }),
+    ctx.db.invoice.aggregate({ where: { issueDate: period, status: { in: [...live] }, sentAt: null }, _count: true, _sum: { total: true } }),
   ]);
   const remaining = d(late._sum.total ?? 0).minus(d(late._sum.amountPaid ?? 0)).minus(d(late._sum.creditedAmount ?? 0));
   return [
     { label: "Chiffre d'affaires facturé", count: billed._count, amount: fmt(billed._sum.total ?? 0, cur), tag: "TTC", tone: "blue" },
     { label: "Chiffre d'affaires encaissé", amount: fmt(billed._sum.amountPaid ?? 0, cur), tag: "TTC", tone: "green" },
     { label: "Factures en retard", count: late._count, amount: fmt(remaining.toNumber(), cur), tag: "reste dû", tone: "red" },
-    { label: "Brouillons à émettre", count: drafts._count, amount: fmt(drafts._sum.total ?? 0, cur), tag: "TTC", tone: "amber" },
+    { label: "Factures non envoyées", count: unsent._count, amount: fmt(unsent._sum.total ?? 0, cur), tag: "TTC", tone: "amber" },
   ];
 }
 

@@ -4,11 +4,14 @@ import { revalidatePath } from "next/cache";
 import { defineTenantAction } from "@/core/actions/define";
 import * as inv from "./invoices";
 import * as ord from "./orders";
+import { businessRule } from "@/core/errors";
+import { ensureShareLink } from "@/core/share/service";
+import { sendSalesDocument } from "./dispatch";
 import * as pay from "./payments";
 import * as qt from "./quotes";
 import {
   creditNoteSchema, deliverySchema, idSchema, invoiceSchema, issueInvoiceSchema, orderSchema, paymentSchema, quoteSchema, quoteStatusSchema, reminderSchema,
-  updateInvoiceSchema, updateOrderSchema, updateQuoteSchema,
+  sendDocumentSchema, shareLinkSchema, updateInvoiceSchema, updateOrderSchema, updateQuoteSchema,
 } from "./schemas";
 import { z } from "zod";
 
@@ -22,6 +25,12 @@ export const setQuoteStatusAction = defineTenantAction({ input: quoteStatusSchem
 export const deleteQuoteAction = defineTenantAction({ input: idSchema, module: M, permission: "sales.quote.delete", handler: async ({ ctx, input }) => { await qt.deleteQuote(ctx, input.id); bust(); } });
 export const convertQuoteToOrderAction = defineTenantAction({ input: idSchema, module: M, permission: ["sales.quote.update", "sales.order.create"], handler: async ({ ctx, input }) => { const o = await qt.convertQuoteToOrder(ctx, input.id); bust(); return { id: o.id }; } });
 export const convertQuoteToInvoiceAction = defineTenantAction({ input: idSchema, module: M, permission: ["sales.quote.update", "finance.invoice.create"], handler: async ({ ctx, input }) => { const i = await qt.convertQuoteToInvoice(ctx, input.id); bust(); return { id: i.id }; } });
+
+// Envoi par e-mail et lien public (devis : droit de modification du devis ; facture : droit de modification de la facture)
+export const sendQuoteAction = defineTenantAction({ input: sendDocumentSchema, module: M, permission: "sales.quote.update", handler: async ({ ctx, input }) => { const r = await sendSalesDocument(ctx, { kind: "quote", ...input }); bust(); return { url: r.url }; } });
+export const sendInvoiceAction = defineTenantAction({ input: sendDocumentSchema, module: M, permission: "finance.invoice.update", handler: async ({ ctx, input }) => { const r = await sendSalesDocument(ctx, { kind: "invoice", ...input }); bust(); return { url: r.url }; } });
+export const quoteShareLinkAction = defineTenantAction({ input: shareLinkSchema, module: M, permission: "sales.quote.read", handler: async ({ ctx, input }) => { await qt.getQuote(ctx, input.id); return ensureShareLink(ctx, "QUOTE", input.id); } });
+export const invoiceShareLinkAction = defineTenantAction({ input: shareLinkSchema, module: M, permission: "finance.invoice.read", handler: async ({ ctx, input }) => { const i = await inv.getInvoice(ctx, input.id); if (i.status === "DRAFT") throw businessRule("Émettez la facture avant de la partager."); return ensureShareLink(ctx, "INVOICE", input.id); } });
 
 // Commandes et livraisons
 export const createOrderAction = defineTenantAction({ input: orderSchema, module: M, permission: "sales.order.create", handler: async ({ ctx, input }) => { const o = await ord.createOrder(ctx, input); bust(); return { id: o.id }; } });

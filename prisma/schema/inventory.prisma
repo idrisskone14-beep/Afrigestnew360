@@ -28,7 +28,6 @@ model ProductCategory {
   products Product[]
 
   @@unique([companyId, name])
-
   @@index([companyId, parentId])
 }
 
@@ -54,15 +53,15 @@ model Product {
   updatedAt   DateTime    @updatedAt
   deletedAt   DateTime?
 
-  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  category  ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  levels    StockLevel[]
-  movements StockMovement[]
+  company        Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category       ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  levels         StockLevel[]
+  priceListItems PriceListItem[]
+  movements      StockMovement[]
 
   @@unique([companyId, sku])
   @@index([companyId, name])
   @@index([companyId, barcode])
-
   @@index([companyId, categoryId])
 }
 

@@ -80,3 +80,12 @@ export const creditNoteSchema = z.object({
 });
 
 export const reminderSchema = z.object({ invoiceId: uuid, channel: z.enum(["EMAIL", "PHONE", "MANUAL"]), note: text(500) });
+
+export const sendDocumentSchema = z.object({
+  id: uuid,
+  to: z.string().trim().email("Adresse e-mail invalide").max(200),
+  subject: z.string().trim().min(3, "Objet requis").max(200),
+  message: z.string().trim().min(1, "Message requis").max(4000),
+  attachPdf: z.boolean().default(true),
+});
+export const shareLinkSchema = z.object({ id: uuid });

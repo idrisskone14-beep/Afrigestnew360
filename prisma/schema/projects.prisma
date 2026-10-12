@@ -57,7 +57,6 @@ model Project {
 
   @@unique([companyId, code])
   @@index([companyId, status])
-
   @@index([companyId, customerId])
   @@index([companyId, managerId])
 }
@@ -91,7 +90,6 @@ model ProjectTask {
 
   @@index([companyId, projectId, status])
   @@index([companyId, assigneeId])
-
   @@index([companyId, dependsOnId])
 }
 
@@ -120,7 +118,6 @@ model TimeEntry {
 
   @@index([companyId, projectId, date])
   @@index([companyId, employeeId, date])
-
   @@index([companyId, invoiceId])
   @@index([companyId, taskId])
 }

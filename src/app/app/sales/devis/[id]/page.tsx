@@ -13,7 +13,10 @@ import { fmtDate } from "@/lib/format";
 import { convertQuoteToInvoiceAction, convertQuoteToOrderAction, deleteQuoteAction, setQuoteStatusAction } from "@/modules/sales/actions";
 import { effectiveQuoteStatus, getQuote } from "@/modules/sales/quotes";
 import { DocHeader, PdfLinks } from "@/modules/sales/ui/doc-kit";
+import { DispatchHistory } from "@/modules/sales/ui/dispatch-history";
 import { DocumentPreview } from "@/modules/sales/ui/document-preview";
+import { CopyShareLinkButton, SendDocumentDialog } from "@/modules/sales/ui/send-dialog";
+import { listDispatches, sendDefaults } from "@/modules/sales/dispatch";
 import { quotePreview } from "@/modules/sales/ui/sales-editor-data";
 
 export const metadata: Metadata = { title: "Devis" };
@@ -28,6 +31,8 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   const editable = canUpdate && (q.status === "DRAFT" || q.status === "SENT");
   const convertible = q.status !== "CONVERTED" && q.status !== "REJECTED" && status !== "EXPIRED";
   const label = q.kind === "PROFORMA" ? "Proforma" : "Devis";
+  const sendable = canUpdate && (q.status === "DRAFT" || q.status === "SENT" || q.status === "ACCEPTED") && status !== "EXPIRED";
+  const [dispatches, defaults] = await Promise.all([listDispatches(ctx, "quote", id), sendable ? sendDefaults(ctx, "quote", id) : Promise.resolve(null)]);
 
   return (
     <div className="space-y-6">
@@ -47,7 +52,9 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
       {canUpdate && (
         <Card>
           <CardContent className="flex flex-wrap items-center gap-2 p-4">
-            {q.status === "DRAFT" && <ActionButton action={setQuoteStatusAction} input={{ id: q.id, status: "SENT" as const }} label="Marquer comme envoyé" icon={<Send className="size-4" />} success="Devis marqué comme envoyé" />}
+            {sendable && defaults && <SendDocumentDialog kind="quote" id={q.id} defaults={defaults} resend={Boolean(q.sentAt)} />}
+            {sendable && <CopyShareLinkButton kind="quote" id={q.id} />}
+            {q.status === "DRAFT" && <ActionButton action={setQuoteStatusAction} input={{ id: q.id, status: "SENT" as const }} label="Marquer comme envoyé (hors e-mail)" icon={<Send className="size-4" />} success="Devis marqué comme envoyé" />}
             {(q.status === "DRAFT" || q.status === "SENT") && status !== "EXPIRED" && <ActionButton action={setQuoteStatusAction} input={{ id: q.id, status: "ACCEPTED" as const }} label="Accepté par le client" icon={<Check className="size-4" />} success="Devis accepté" />}
             {(q.status === "DRAFT" || q.status === "SENT" || q.status === "ACCEPTED") && <ActionButton action={setQuoteStatusAction} input={{ id: q.id, status: "REJECTED" as const }} label="Refusé" icon={<X className="size-4" />} confirm={{ title: "Marquer comme refusé ?", description: "Le devis ne pourra plus être converti." }} />}
             {convertible && q.kind === "QUOTE" && ctx.can("sales.order.create") && <ActionButton action={convertQuoteToOrderAction} input={{ id: q.id }} variant="default" label="Convertir en commande" icon={<ArrowRight className="size-4" />} success="Commande créée" redirectToNew="/app/sales/commandes" confirm={{ title: "Convertir en commande ?", description: "Les lignes sont copiées sans ressaisie et le stock est réservé (si le module Stock est actif). Le devis passe à « Converti ».", confirmLabel: "Convertir" }} />}
@@ -56,12 +63,19 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
           </CardContent>
         </Card>
       )}
+      {(q.sentAt || q.respondedAt) && (
+        <p role="status" className="rounded-lg border bg-card px-4 py-3 text-sm">
+          {q.sentAt && <>Envoyé au client le {fmtDate(q.sentAt)}. </>}
+          {q.respondedAt && <><strong>{q.status === "REJECTED" ? "Refusé" : "Accepté"} en ligne</strong>{q.respondedByName ? ` par ${q.respondedByName}` : ""} le {fmtDate(q.respondedAt)}.{q.responseNote ? ` « ${q.responseNote} »` : ""}</>}
+        </p>
+      )}
       {q.convertedOrderId && <p className="text-sm text-muted-foreground">Converti en <Link className="text-brand hover:underline" href={`/app/sales/commandes/${q.convertedOrderId}`}>commande</Link>.</p>}
       {q.convertedInvoiceId && <p className="text-sm text-muted-foreground">Converti en <Link className="text-brand hover:underline" href={`/app/sales/factures/${q.convertedInvoiceId}`}>facture</Link>.</p>}
 
       <section aria-label="Document" className="rounded-xl bg-muted/70 p-3 sm:p-6">
         <DocumentPreview data={await quotePreview(ctx, q)} />
       </section>
+      <DispatchHistory rows={dispatches} />
     </div>
   );
 }

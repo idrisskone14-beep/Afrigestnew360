@@ -134,7 +134,6 @@ model AuthToken {
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([email, type])
-
   @@index([userId])
 }
 
@@ -211,6 +210,11 @@ model Company {
   creditNoteLines       CreditNoteLine[]
   payments              Payment[]
   reminders             Reminder[]
+  shareLinks            ShareLink[]
+  documentDispatches    DocumentDispatch[]
+  recurringInvoices     RecurringInvoice[]
+  priceLists            PriceList[]
+  priceListItems        PriceListItem[]
   suppliers             Supplier[]
   purchaseRequests      PurchaseRequest[]
   purchaseRequestLines  PurchaseRequestLine[]
@@ -315,7 +319,6 @@ model Invitation {
   role    Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([companyId, email])
-
   @@index([companyId, roleId])
 }
 
@@ -419,7 +422,6 @@ model PlanModule {
   module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@id([planId, moduleId])
-
   @@index([moduleId])
 }
 
@@ -552,7 +554,6 @@ model Department {
 
   @@unique([companyId, code])
   @@index([companyId])
-
   @@index([companyId, parentId])
 }
 

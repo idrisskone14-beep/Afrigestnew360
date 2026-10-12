@@ -100,6 +100,7 @@ model Customer {
   creditLimit      Decimal?  @db.Decimal(18, 2)
   ownerId          String?   @db.Uuid
   branchId         String?   @db.Uuid
+  priceListId      String?   @db.Uuid
   notes            String?
   isActive         Boolean   @default(true)
   createdById      String?   @db.Uuid
@@ -107,20 +108,23 @@ model Customer {
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime?
 
-  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contacts      Contact[]
-  opportunities Opportunity[]
-  activities    Activity[]
-  quotes        Quote[]
-  salesOrders   SalesOrder[]
-  deliveries    Delivery[]
-  invoices      Invoice[]
-  payments      Payment[]
-  projects      Project[]
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  priceList         PriceList?         @relation(fields: [priceListId], references: [id], onDelete: SetNull)
+  recurringInvoices RecurringInvoice[]
+  contacts          Contact[]
+  opportunities     Opportunity[]
+  activities        Activity[]
+  quotes            Quote[]
+  salesOrders       SalesOrder[]
+  deliveries        Delivery[]
+  invoices          Invoice[]
+  payments          Payment[]
+  projects          Project[]
 
   @@unique([companyId, code])
   @@index([companyId, name])
   @@index([companyId, deletedAt])
+  @@index([companyId, priceListId])
 }
 
 model Contact {
@@ -214,7 +218,6 @@ model Opportunity {
 
   @@index([companyId, stageId])
   @@index([companyId, status])
-
   @@index([companyId, customerId])
   @@index([companyId, leadId])
 }
@@ -242,7 +245,6 @@ model Activity {
 
   @@index([companyId, customerId])
   @@index([companyId, dueAt])
-
   @@index([companyId, leadId])
   @@index([companyId, opportunityId])
 }

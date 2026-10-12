@@ -17,7 +17,10 @@ import { formatMoney } from "@/lib/reference-data";
 import { cancelInvoiceAction, deleteInvoiceAction } from "@/modules/sales/actions";
 import { customerBalance, getInvoice, invoiceBalance, isOverdue } from "@/modules/sales/invoices";
 import { DocHeader, PdfLinks } from "@/modules/sales/ui/doc-kit";
+import { DispatchHistory } from "@/modules/sales/ui/dispatch-history";
 import { DocumentPreview } from "@/modules/sales/ui/document-preview";
+import { CopyShareLinkButton, SendDocumentDialog } from "@/modules/sales/ui/send-dialog";
+import { listDispatches, sendDefaults } from "@/modules/sales/dispatch";
 import { invoicePreview } from "@/modules/sales/ui/sales-editor-data";
 import { CreditNoteDialog, IssueInvoiceDialog, PaymentDialog, ReminderDialog } from "@/modules/sales/ui/invoice-dialogs";
 import { PaymentRowActions } from "@/modules/sales/ui/payment-row-actions";
@@ -37,6 +40,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const open = i.status === "ISSUED" || i.status === "PARTIALLY_PAID";
   const canUpdate = ctx.can("finance.invoice.update");
   const canValidate = ctx.can("finance.payment.validate");
+  const sendable = canUpdate && i.status !== "DRAFT" && i.status !== "CANCELLED";
+  const [dispatches, defaults] = await Promise.all([listDispatches(ctx, "invoice", id), sendable ? sendDefaults(ctx, "invoice", id) : Promise.resolve(null)]);
   const accounts = ctx.hasModule("finance") && ctx.can("finance.account.read") ? await ctx.db.financeAccount.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true, name: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }) : [];
 
   // lignes créditables = quantité facturée − déjà créditée (avoirs non annulés)
@@ -64,6 +69,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
       <Card>
         <CardContent className="flex flex-wrap items-center gap-2 p-4">
+          {sendable && defaults && <SendDocumentDialog kind="invoice" id={i.id} defaults={defaults} resend={Boolean(i.sentAt)} />}
+          {sendable && <CopyShareLinkButton kind="invoice" id={i.id} />}
           {i.status === "DRAFT" && canUpdate && <IssueInvoiceDialog invoiceId={i.id} total={num(i.total)} currency={cur} canOverride={ctx.can("sales.discount.approve")} creditWarning={creditWarning} />}
           {open && ctx.can("finance.payment.create") && balance > 0 && <PaymentDialog invoiceId={i.id} balance={balance} currency={cur} willValidate={canValidate} accounts={accounts} />}
           {live && ctx.can("finance.credit_note.create") && creditable.some((l) => l.creditable > 0) && <CreditNoteDialog invoiceId={i.id} lines={creditable} />}
@@ -77,6 +84,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
       <section aria-label="Document" className="rounded-xl bg-muted/70 p-3 sm:p-6">
         <DocumentPreview data={await invoicePreview(ctx, i, balance)} />
       </section>
+
+      {sendable && <p role="status" className="rounded-lg border bg-card px-4 py-3 text-sm">{i.sentAt ? `Envoyée au client le ${fmtDate(i.sentAt)}.` : "Pas encore envoyée au client."}</p>}
+      <DispatchHistory rows={dispatches} />
 
       {i.installments.length > 1 && (
         <Card>

@@ -8,6 +8,35 @@ enum QuoteKind {
   PROFORMA
 }
 
+enum InvoiceKind {
+  STANDARD
+  // facture d'acompte : encaissée avant la livraison, déduite de la facture finale
+  DEPOSIT
+}
+
+enum ShareDocType {
+  QUOTE
+  INVOICE
+}
+
+enum DispatchStatus {
+  SENT
+  FAILED
+}
+
+enum RecurringFrequency {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  YEARLY
+}
+
+enum RecurringStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
 enum QuoteStatus {
   DRAFT
   SENT
@@ -85,6 +114,11 @@ model Quote {
   terms              String?
   convertedOrderId   String?     @db.Uuid
   convertedInvoiceId String?     @db.Uuid
+  // dernier envoi au client (e-mail) ; réponse du client via le lien public
+  sentAt             DateTime?
+  respondedAt        DateTime?
+  respondedByName    String?
+  responseNote       String?
   createdById        String?     @db.Uuid
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
@@ -198,7 +232,6 @@ model Delivery {
 
   @@unique([companyId, number])
   @@index([companyId, orderId])
-
   @@index([companyId, customerId])
 }
 
@@ -223,9 +256,13 @@ model Invoice {
   companyId      String        @db.Uuid
   // attribué à l'ÉMISSION (numérotation sans trou) ; null pour un brouillon
   number         String?
+  kind           InvoiceKind   @default(STANDARD)
   customerId     String        @db.Uuid
   orderId        String?       @db.Uuid
   quoteId        String?       @db.Uuid
+  // facture d'acompte : facture finale qui la déduit (null = pas encore déduite)
+  deductedInId   String?       @db.Uuid
+  recurringId    String?       @db.Uuid
   status         InvoiceStatus @default(DRAFT)
   issueDate      DateTime      @default(now())
   dueDate        DateTime?
@@ -241,6 +278,7 @@ model Invoice {
   branchId       String?       @db.Uuid
   costCenterId   String?       @db.Uuid
   issuedAt       DateTime?
+  sentAt         DateTime?
   cancelledAt    DateTime?
   createdById    String?       @db.Uuid
   createdAt      DateTime      @default(now())
@@ -249,6 +287,7 @@ model Invoice {
   company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
   order        SalesOrder?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  recurring    RecurringInvoice?    @relation(fields: [recurringId], references: [id], onDelete: SetNull)
   lines        InvoiceLine[]
   installments InvoiceInstallment[]
   payments     Payment[]
@@ -261,9 +300,11 @@ model Invoice {
   @@unique([companyId, number])
   @@index([companyId, status, dueDate])
   @@index([companyId, customerId])
-
   @@index([companyId, orderId])
   @@index([companyId, projectId])
+  @@index([companyId, quoteId])
+  @@index([companyId, deductedInId])
+  @@index([companyId, recurringId])
 }
 
 model InvoiceLine {
@@ -391,7 +432,6 @@ model Payment {
   @@index([companyId, status, date])
   @@index([companyId, invoiceId])
   @@index([companyId, customerId])
-
   @@index([companyId, accountId])
   @@index([companyId, billId])
   @@index([companyId, supplierId])
@@ -411,4 +451,110 @@ model Reminder {
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([companyId, invoiceId])
+}
+
+// ── Lien public d'un devis / d'une facture (consultation, PDF, acceptation du devis) ─────────────────────
+model ShareLink {
+  id           String       @id @default(uuid()) @db.Uuid
+  companyId    String       @db.Uuid
+  docType      ShareDocType
+  docId        String       @db.Uuid
+  // secret aléatoire (192 bits) : seul le détenteur du lien accède au document ; révocable
+  token        String       @unique
+  revokedAt    DateTime?
+  viewCount    Int          @default(0)
+  lastViewedAt DateTime?
+  createdById  String?      @db.Uuid
+  createdAt    DateTime     @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, docType, docId])
+}
+
+// ── Journal des envois de documents par e-mail ───────────────────────────────────────────────────────────
+model DocumentDispatch {
+  id        String         @id @default(uuid()) @db.Uuid
+  companyId String         @db.Uuid
+  docType   ShareDocType
+  docId     String         @db.Uuid
+  toEmail   String
+  subject   String
+  status    DispatchStatus
+  error     String?
+  sentById  String?        @db.Uuid
+  sentAt    DateTime       @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, docType, docId])
+}
+
+// ── Factures récurrentes (abonnements, loyers, maintenance…) ──────────────────────────────────────────────
+model RecurringInvoice {
+  id           String             @id @default(uuid()) @db.Uuid
+  companyId    String             @db.Uuid
+  title        String
+  customerId   String             @db.Uuid
+  frequency    RecurringFrequency
+  // prochaine date de génération ; avancée à chaque génération
+  nextRunDate  DateTime           @db.Date
+  endDate      DateTime?          @db.Date
+  status       RecurringStatus    @default(ACTIVE)
+  // émettre la facture tout de suite, puis l'envoyer au client
+  autoIssue    Boolean            @default(false)
+  autoSend     Boolean            @default(false)
+  notes        String?
+  terms        String?
+  // lignes du modèle : [{ productId, description, unit, quantity, unitPrice, discountPct, taxId }]
+  lines        Json
+  branchId     String?            @db.Uuid
+  costCenterId String?            @db.Uuid
+  projectId    String?            @db.Uuid
+  runCount     Int                @default(0)
+  lastRunAt    DateTime?
+  lastError    String?
+  createdById  String?            @db.Uuid
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  invoices Invoice[]
+
+  @@index([companyId, status, nextRunDate])
+  @@index([companyId, customerId])
+}
+
+// ── Listes de prix par client ─────────────────────────────────────────────────────────────────────────────
+model PriceList {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company   Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items     PriceListItem[]
+  customers Customer[]
+
+  @@unique([companyId, name])
+}
+
+model PriceListItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  companyId   String  @db.Uuid
+  priceListId String  @db.Uuid
+  productId   String  @db.Uuid
+  price       Decimal @db.Decimal(18, 2)
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  priceList PriceList @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([priceListId, productId])
+  @@index([companyId, productId])
 }

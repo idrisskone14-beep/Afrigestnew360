@@ -5,6 +5,10 @@ export interface MailMessage {
   subject: string;
   text: string;
   html?: string;
+  /** Pièces jointes (ex. PDF d'un devis). */
+  attachments?: { filename: string; content: Buffer }[];
+  /** Adresse de réponse (ex. l'e-mail de l'entreprise émettrice). */
+  replyTo?: string;
 }
 
 /**
@@ -26,6 +30,8 @@ export async function sendMail(msg: MailMessage): Promise<void> {
       subject: msg.subject,
       text: msg.text,
       html: msg.html,
+      ...(msg.replyTo ? { reply_to: msg.replyTo } : {}),
+      ...(msg.attachments?.length ? { attachments: msg.attachments.map((a) => ({ filename: a.filename, content: a.content.toString("base64") })) } : {}),
     }),
   });
   if (!res.ok) {

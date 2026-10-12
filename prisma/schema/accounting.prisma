@@ -106,7 +106,6 @@ model AccountMapping {
   ledgerAccount LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Restrict)
 
   @@unique([companyId, key])
-
   @@index([companyId, ledgerAccountId])
 }
 
@@ -140,7 +139,6 @@ model JournalEntry {
   @@unique([companyId, sourceType, sourceId])
   @@index([companyId, date])
   @@index([companyId, journalId, date])
-
   @@index([companyId, fiscalYearId])
   @@index([companyId, periodId])
 }

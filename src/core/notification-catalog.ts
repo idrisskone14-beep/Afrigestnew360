@@ -10,6 +10,7 @@ export const NOTIFICATION_CATALOG = [
   { type: "approval.decided", label: "Décision sur ma demande" },
   { type: "leave.request", label: "Congé", module: "hr" },
   { type: "payment.received", label: "Paiement reçu", module: "sales" },
+  { type: "quote.responded", label: "Réponse d'un client à un devis", module: "sales" },
   { type: "due_date", label: "Échéance proche" },
   { type: "task.assigned", label: "Tâche", module: "projects" },
   { type: "document.expiring", label: "Document expirant", module: "documents" },

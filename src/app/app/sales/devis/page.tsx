@@ -17,6 +17,7 @@ import { fmtDate } from "@/lib/format";
 import { PAGE_SIZE, enumParam, parseListParams, type SearchParams } from "@/lib/list-params";
 import { formatMoney } from "@/lib/reference-data";
 import { effectiveQuoteStatus, listQuotes } from "@/modules/sales/quotes";
+import { SentCell } from "@/modules/sales/ui/dispatch-history";
 import { quoteKpis } from "@/modules/sales/kpis";
 
 export const metadata: Metadata = { title: "Devis" };
@@ -45,7 +46,7 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
         <SelectionBar />
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>N°</TableHead><TableHead>Client</TableHead><TableHead className="hidden sm:table-cell">Date</TableHead><TableHead className="hidden md:table-cell">Validité</TableHead><TableHead className="text-right">Total TTC</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>N°</TableHead><TableHead>Client</TableHead><TableHead className="hidden sm:table-cell">Date</TableHead><TableHead className="hidden md:table-cell">Validité</TableHead><TableHead className="text-right">Total TTC</TableHead><TableHead className="hidden sm:table-cell">Envoi</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((q) => (
                 <TableRow key={q.id}>
@@ -55,6 +56,7 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
                   <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">{fmtDate(q.issueDate)}</TableCell>
                   <TableCell className="hidden text-sm text-muted-foreground md:table-cell">{fmtDate(q.validUntil)}</TableCell>
                   <TableCell className="text-right text-sm tabular">{formatMoney(num(q.total), q.currency)}</TableCell>
+                  <TableCell className="hidden sm:table-cell"><SentCell at={q.sentAt} /></TableCell>
                   <TableCell><Status value={effectiveQuoteStatus(q)} /></TableCell>
                 </TableRow>
               ))}

@@ -17,6 +17,7 @@ import { fmtDate } from "@/lib/format";
 import { PAGE_SIZE, dateRangeParam, enumParam, parseListParams, type SearchParams } from "@/lib/list-params";
 import { formatMoney } from "@/lib/reference-data";
 import { invoiceBalance, isOverdue, listInvoices } from "@/modules/sales/invoices";
+import { SentCell } from "@/modules/sales/ui/dispatch-history";
 import { invoiceKpis } from "@/modules/sales/kpis";
 
 export const metadata: Metadata = { title: "Factures" };
@@ -43,7 +44,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
         <SelectionBar />
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>N°</TableHead><TableHead>Client</TableHead><TableHead className="hidden sm:table-cell">Émission</TableHead><TableHead className="hidden md:table-cell">Échéance</TableHead><TableHead className="text-right">Total TTC</TableHead><TableHead className="hidden text-right lg:table-cell">Reste</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>N°</TableHead><TableHead>Client</TableHead><TableHead className="hidden sm:table-cell">Émission</TableHead><TableHead className="hidden md:table-cell">Échéance</TableHead><TableHead className="text-right">Total TTC</TableHead><TableHead className="hidden text-right lg:table-cell">Reste</TableHead><TableHead className="hidden md:table-cell">Envoi</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((i) => {
                 const overdue = isOverdue(i);
@@ -57,6 +58,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
                     <TableCell className={`hidden text-sm md:table-cell ${overdue ? "font-medium text-destructive" : "text-muted-foreground"}`}>{fmtDate(i.dueDate)}</TableCell>
                     <TableCell className="text-right text-sm tabular">{formatMoney(num(i.total), i.currency)}</TableCell>
                     <TableCell className="hidden text-right text-sm tabular lg:table-cell">{i.status === "DRAFT" || i.status === "CANCELLED" ? "—" : formatMoney(bal, i.currency)}</TableCell>
+                    <TableCell className="hidden md:table-cell"><SentCell at={i.sentAt} applicable={i.status !== "DRAFT" && i.status !== "CANCELLED"} /></TableCell>
                     <TableCell><Status value={overdue ? "OVERDUE" : i.status} /></TableCell>
                   </TableRow>
                 );
