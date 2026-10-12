@@ -6,6 +6,7 @@ import * as inv from "./invoices";
 import * as ord from "./orders";
 import { businessRule } from "@/core/errors";
 import { ensureShareLink } from "@/core/share/service";
+import { createDepositInvoice, depositSchema } from "./deposits";
 import { sendSalesDocument } from "./dispatch";
 import * as pay from "./payments";
 import * as qt from "./quotes";
@@ -25,6 +26,9 @@ export const setQuoteStatusAction = defineTenantAction({ input: quoteStatusSchem
 export const deleteQuoteAction = defineTenantAction({ input: idSchema, module: M, permission: "sales.quote.delete", handler: async ({ ctx, input }) => { await qt.deleteQuote(ctx, input.id); bust(); } });
 export const convertQuoteToOrderAction = defineTenantAction({ input: idSchema, module: M, permission: ["sales.quote.update", "sales.order.create"], handler: async ({ ctx, input }) => { const o = await qt.convertQuoteToOrder(ctx, input.id); bust(); return { id: o.id }; } });
 export const convertQuoteToInvoiceAction = defineTenantAction({ input: idSchema, module: M, permission: ["sales.quote.update", "finance.invoice.create"], handler: async ({ ctx, input }) => { const i = await qt.convertQuoteToInvoice(ctx, input.id); bust(); return { id: i.id }; } });
+
+// Facture d'acompte (créée depuis un devis ou une commande ; lecture de la source exigée)
+export const createDepositInvoiceAction = defineTenantAction({ input: depositSchema, module: M, permission: "finance.invoice.create", handler: async ({ ctx, input }) => { ctx.assertCan(input.source === "quote" ? "sales.quote.read" : "sales.order.read"); const i = await createDepositInvoice(ctx, input); bust(); return { id: i.id }; } });
 
 // Envoi par e-mail et lien public (devis : droit de modification du devis ; facture : droit de modification de la facture)
 export const sendQuoteAction = defineTenantAction({ input: sendDocumentSchema, module: M, permission: "sales.quote.update", handler: async ({ ctx, input }) => { const r = await sendSalesDocument(ctx, { kind: "quote", ...input }); bust(); return { url: r.url }; } });

@@ -6,6 +6,8 @@ import { businessRule, notFound } from "@/core/errors";
 import { nextNumber } from "@/core/numbering";
 import type { TenantContext } from "@/core/tenant/context";
 import "@/modules/registry";
+import { d } from "@/core/money";
+import { deductionFor, markDepositsDeducted } from "./deposits";
 import type { z } from "zod";
 import { lineData, parseDate, resolveLines } from "@/core/documents/lines";
 import type { quoteSchema, updateQuoteSchema } from "./schemas";
@@ -142,13 +144,16 @@ export async function convertQuoteToInvoice(ctx: Ctx, id: string) {
   const terms = q.customer.paymentTermsDays;
   const issue = new Date();
   const invoice = await ctx.tx(async (tx) => {
+    // acomptes déjà facturés sur ce devis : déduits par des lignes négatives (voir deposits.ts)
+    const ded = await deductionFor(tx, ctx.company.id, { orderId: null, quoteId: q.id }, q.currency, d(q.total), q.lines.length);
     const inv = await tx.invoice.create({
       data: {
         companyId: ctx.company.id, customerId: q.customerId, quoteId: q.id, status: "DRAFT", issueDate: issue, dueDate: new Date(issue.getTime() + terms * 86_400_000), currency: q.currency,
-        subtotal: q.subtotal.toString(), discountTotal: q.discountTotal.toString(), taxTotal: q.taxTotal.toString(), total: q.total.toString(), notes: q.notes, terms: q.terms, createdById: ctx.user.id,
-        lines: { create: q.lines.map((l) => ({ companyId: ctx.company.id, position: l.position, productId: l.productId, description: l.description, unit: l.unit, quantity: l.quantity.toString(), unitPrice: l.unitPrice.toString(), discountPct: l.discountPct.toString(), taxId: l.taxId, taxRate: l.taxRate.toString(), netAmount: l.netAmount.toString(), taxAmount: l.taxAmount.toString(), total: l.total.toString() })) },
+        subtotal: d(q.subtotal).plus(ded?.gross ?? 0).toString(), discountTotal: q.discountTotal.toString(), taxTotal: d(q.taxTotal).plus(ded?.tax ?? 0).toString(), total: d(q.total).plus(ded?.total ?? 0).toString(), notes: q.notes, terms: q.terms, createdById: ctx.user.id,
+        lines: { create: [...q.lines.map((l) => ({ companyId: ctx.company.id, position: l.position, productId: l.productId, description: l.description, unit: l.unit, quantity: l.quantity.toString(), unitPrice: l.unitPrice.toString(), discountPct: l.discountPct.toString(), taxId: l.taxId, taxRate: l.taxRate.toString(), netAmount: l.netAmount.toString(), taxAmount: l.taxAmount.toString(), total: l.total.toString() })), ...(ded?.lines ?? [])] },
       },
     });
+    if (ded) await markDepositsDeducted(tx, ded.depositIds, inv.id);
     await tx.quote.update({ where: { id: q.id }, data: { status: "CONVERTED", convertedInvoiceId: inv.id } });
     return inv;
   });

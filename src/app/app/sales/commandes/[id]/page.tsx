@@ -15,6 +15,9 @@ import { fmtDate } from "@/lib/format";
 import { formatMoney } from "@/lib/reference-data";
 import { cancelOrderAction, confirmOrderAction, deleteOrderAction, invoiceFromOrderAction } from "@/modules/sales/actions";
 import { getOrder } from "@/modules/sales/orders";
+import { depositsOf } from "@/modules/sales/deposits";
+import { DepositDialog } from "@/modules/sales/ui/deposit-dialog";
+import { DepositsCard } from "@/modules/sales/ui/deposits-card";
 import { DocHeader, PdfLinks } from "@/modules/sales/ui/doc-kit";
 import { DocumentPreview } from "@/modules/sales/ui/document-preview";
 import { orderPreview } from "@/modules/sales/ui/sales-editor-data";
@@ -37,6 +40,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const deliverable = o.lines.map((l) => ({ id: l.id, description: l.description, unit: l.unit, remaining: d(l.quantity).minus(l.deliveredQty).minus(inDraft.get(l.id) ?? 0).toNumber() })).filter((l) => l.remaining > 0);
   const live = o.status === "CONFIRMED" || o.status === "PARTIALLY_DELIVERED";
   const anyDelivered = o.lines.some((l) => num(l.deliveredQty) > 0);
+  const deposits = await depositsOf(ctx, { orderId: o.id, quoteId: o.quoteId });
   const invoiceable = (o.status !== "DRAFT" && o.status !== "CANCELLED") && o.lines.some((l) => d(l.quantity).gt(l.invoicedQty));
 
   return (
@@ -53,6 +57,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <CardContent className="flex flex-wrap items-center gap-2 p-4">
           {canUpdate && o.status === "DRAFT" && <ActionButton action={confirmOrderAction} input={{ id: o.id }} variant="default" label="Confirmer la commande" icon={<CheckCircle2 className="size-4" />} success="Commande confirmée" confirm={{ title: "Confirmer la commande ?", description: "Le stock disponible est réservé pour cette commande (si le module Stock est actif).", confirmLabel: "Confirmer" }} />}
           {live && ctx.can("sales.delivery.create") && deliverable.length > 0 && <CreateDeliveryDialog orderId={o.id} lines={deliverable} warehouses={warehouses} defaultWarehouseId={o.warehouseId} />}
+          {o.status !== "DRAFT" && o.status !== "CANCELLED" && ctx.can("finance.invoice.create") && <DepositDialog source="order" id={o.id} total={num(o.total)} currency={o.currency} />}
           {invoiceable && ctx.can("finance.invoice.create") && (
             <>
               <ActionButton action={invoiceFromOrderAction} input={{ id: o.id, onlyDelivered: false }} label="Facturer la commande" icon={<FileText className="size-4" />} success="Facture brouillon créée" redirectToNew="/app/sales/factures" />
@@ -67,6 +72,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <section aria-label="Document" className="rounded-xl bg-muted/70 p-3 sm:p-6">
         <DocumentPreview data={await orderPreview(ctx, o)} />
       </section>
+
+      <DepositsCard rows={deposits} currency={o.currency} />
 
       {o.status !== "DRAFT" && (
         <Card className="overflow-hidden">

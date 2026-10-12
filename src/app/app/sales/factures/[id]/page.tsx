@@ -34,6 +34,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   if (!z.string().uuid().safeParse(id).success) notFound();
   const i = await getInvoice(ctx, id).catch((e) => { if (e instanceof AppError && e.code === "NOT_FOUND") notFound(); throw e; });
   const cur = i.currency;
+  const deductedIn = i.deductedInId ? await ctx.db.invoice.findFirst({ where: { id: i.deductedInId }, select: { id: true, number: true } }) : null;
   const balance = invoiceBalance(i).toNumber();
   const overdue = isOverdue(i);
   const live = i.status === "ISSUED" || i.status === "PARTIALLY_PAID" || i.status === "PAID";
@@ -61,7 +62,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
     <div className="space-y-6">
       <DocHeader
         crumbs={[{ label: "Factures", href: "/app/sales/factures" }, { label: i.number ?? "Brouillon" }]}
-        title={i.number ? `Facture ${i.number}` : "Facture (brouillon)"}
+        title={i.kind === "DEPOSIT" ? (i.number ? `Facture d'acompte ${i.number}` : "Facture d'acompte (brouillon)") : i.number ? `Facture ${i.number}` : "Facture (brouillon)"}
         badges={<Status value={overdue ? "OVERDUE" : i.status} />}
         subtitle={<>Pour <Link href={`/app/crm/clients/${i.customerId}`} className="text-foreground hover:text-brand">{i.customer.name}</Link> · émise le {fmtDate(i.issueDate)} · échéance {fmtDate(i.dueDate)}{i.orderId ? <> · <Link href={`/app/sales/commandes/${i.orderId}`} className="text-brand hover:underline">commande</Link></> : null}</>}
         actions={<><PdfLinks kind="invoice" id={i.id} />{canUpdate && i.status === "DRAFT" && <Button variant="outline" asChild><Link href={`/app/sales/factures/${i.id}/modifier`}><Pencil className="size-4" /> Modifier</Link></Button>}</>}
@@ -85,6 +86,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         <DocumentPreview data={await invoicePreview(ctx, i, balance)} />
       </section>
 
+      {i.kind === "DEPOSIT" && <p role="status" className="rounded-lg border bg-card px-4 py-3 text-sm">Facture d&apos;acompte : {deductedIn ? <>déduite de la facture finale <Link href={`/app/sales/factures/${deductedIn.id}`} className="text-brand hover:underline">{deductedIn.number ?? "brouillon"}</Link>.</> : "elle sera déduite automatiquement de la facture finale (créée depuis le devis ou la commande)."}</p>}
       {sendable && <p role="status" className="rounded-lg border bg-card px-4 py-3 text-sm">{i.sentAt ? `Envoyée au client le ${fmtDate(i.sentAt)}.` : "Pas encore envoyée au client."}</p>}
       <DispatchHistory rows={dispatches} />
 

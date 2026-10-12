@@ -84,7 +84,7 @@ export async function buildPdf(ctx: Ctx, kind: PdfKind, id: string): Promise<{ d
       const balance = invoiceBalance(i).toNumber();
       const overdue = isOverdue(i);
       doc = {
-        ...base, title: "FACTURE", number: i.number ?? "BROUILLON", currency: i.currency, recipient: partyOf(i.customer),
+        ...base, title: i.kind === "DEPOSIT" ? "FACTURE D'ACOMPTE" : "FACTURE", number: i.number ?? "BROUILLON", currency: i.currency, recipient: partyOf(i.customer),
         status: i.status === "PAID" ? { label: "Payée", color: "#16A34A" } : i.status === "CANCELLED" ? { label: "Annulée", color: "#DC2626" } : i.status === "DRAFT" ? { label: "Brouillon", color: "#64748B" } : overdue ? { label: "Échue", color: "#DC2626" } : undefined,
         dates: [{ label: "Date d'émission", value: i.issueDate }, { label: "Échéance", value: i.dueDate }], lines: toLines(i.lines),
         totals: [

@@ -52,7 +52,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
                 return (
                   <TableRow key={i.id}>
                   <TableCell><RowBox id={i.id} label={i.number ?? "brouillon"} /></TableCell>
-                    <TableCell><Link href={`/app/sales/factures/${i.id}`} className="text-sm font-medium hover:text-brand">{i.number ?? "Brouillon"}</Link></TableCell>
+                    <TableCell><Link href={`/app/sales/factures/${i.id}`} className="text-sm font-medium hover:text-brand">{i.number ?? "Brouillon"}</Link>{i.kind === "DEPOSIT" && <span className="ml-1.5 text-xs text-muted-foreground">acompte</span>}</TableCell>
                     <TableCell className="text-sm">{i.customer.name}</TableCell>
                     <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">{fmtDate(i.issueDate)}</TableCell>
                     <TableCell className={`hidden text-sm md:table-cell ${overdue ? "font-medium text-destructive" : "text-muted-foreground"}`}>{fmtDate(i.dueDate)}</TableCell>

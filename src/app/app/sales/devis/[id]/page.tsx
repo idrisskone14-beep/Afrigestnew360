@@ -8,11 +8,15 @@ import { Status } from "@/components/app/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AppError } from "@/core/errors";
+import { num } from "@/core/money";
 import { requirePagePermission } from "@/core/tenant/guards";
 import { fmtDate } from "@/lib/format";
 import { convertQuoteToInvoiceAction, convertQuoteToOrderAction, deleteQuoteAction, setQuoteStatusAction } from "@/modules/sales/actions";
 import { effectiveQuoteStatus, getQuote } from "@/modules/sales/quotes";
 import { DocHeader, PdfLinks } from "@/modules/sales/ui/doc-kit";
+import { depositsOf } from "@/modules/sales/deposits";
+import { DepositDialog } from "@/modules/sales/ui/deposit-dialog";
+import { DepositsCard } from "@/modules/sales/ui/deposits-card";
 import { DispatchHistory } from "@/modules/sales/ui/dispatch-history";
 import { DocumentPreview } from "@/modules/sales/ui/document-preview";
 import { CopyShareLinkButton, SendDocumentDialog } from "@/modules/sales/ui/send-dialog";
@@ -32,7 +36,8 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   const convertible = q.status !== "CONVERTED" && q.status !== "REJECTED" && status !== "EXPIRED";
   const label = q.kind === "PROFORMA" ? "Proforma" : "Devis";
   const sendable = canUpdate && (q.status === "DRAFT" || q.status === "SENT" || q.status === "ACCEPTED") && status !== "EXPIRED";
-  const [dispatches, defaults] = await Promise.all([listDispatches(ctx, "quote", id), sendable ? sendDefaults(ctx, "quote", id) : Promise.resolve(null)]);
+  const [dispatches, defaults, deposits] = await Promise.all([listDispatches(ctx, "quote", id), sendable ? sendDefaults(ctx, "quote", id) : Promise.resolve(null), depositsOf(ctx, { orderId: null, quoteId: id })]);
+  const canDeposit = q.kind === "QUOTE" && convertible && ctx.can("finance.invoice.create");
 
   return (
     <div className="space-y-6">
@@ -57,6 +62,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
             {q.status === "DRAFT" && <ActionButton action={setQuoteStatusAction} input={{ id: q.id, status: "SENT" as const }} label="Marquer comme envoyé (hors e-mail)" icon={<Send className="size-4" />} success="Devis marqué comme envoyé" />}
             {(q.status === "DRAFT" || q.status === "SENT") && status !== "EXPIRED" && <ActionButton action={setQuoteStatusAction} input={{ id: q.id, status: "ACCEPTED" as const }} label="Accepté par le client" icon={<Check className="size-4" />} success="Devis accepté" />}
             {(q.status === "DRAFT" || q.status === "SENT" || q.status === "ACCEPTED") && <ActionButton action={setQuoteStatusAction} input={{ id: q.id, status: "REJECTED" as const }} label="Refusé" icon={<X className="size-4" />} confirm={{ title: "Marquer comme refusé ?", description: "Le devis ne pourra plus être converti." }} />}
+            {canDeposit && <DepositDialog source="quote" id={q.id} total={num(q.total)} currency={q.currency} />}
             {convertible && q.kind === "QUOTE" && ctx.can("sales.order.create") && <ActionButton action={convertQuoteToOrderAction} input={{ id: q.id }} variant="default" label="Convertir en commande" icon={<ArrowRight className="size-4" />} success="Commande créée" redirectToNew="/app/sales/commandes" confirm={{ title: "Convertir en commande ?", description: "Les lignes sont copiées sans ressaisie et le stock est réservé (si le module Stock est actif). Le devis passe à « Converti ».", confirmLabel: "Convertir" }} />}
             {convertible && ctx.can("finance.invoice.create") && <ActionButton action={convertQuoteToInvoiceAction} input={{ id: q.id }} label="Convertir en facture" icon={<ArrowRight className="size-4" />} success="Facture brouillon créée" redirectToNew="/app/sales/factures" confirm={{ title: "Convertir en facture ?", description: "Une facture brouillon est créée avec les mêmes lignes ; vous pourrez la relire avant de l'émettre.", confirmLabel: "Convertir" }} />}
             {q.status === "DRAFT" && ctx.can("sales.quote.delete") && <ActionButton action={deleteQuoteAction} input={{ id: q.id }} variant="destructive" label="Supprimer" icon={<Trash2 className="size-4" />} redirectTo="/app/sales/devis" success="Devis supprimé" confirm={{ title: "Supprimer ce devis ?", description: "Cette action est définitive." }} />}
@@ -75,6 +81,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
       <section aria-label="Document" className="rounded-xl bg-muted/70 p-3 sm:p-6">
         <DocumentPreview data={await quotePreview(ctx, q)} />
       </section>
+      <DepositsCard rows={deposits} currency={q.currency} />
       <DispatchHistory rows={dispatches} />
     </div>
   );

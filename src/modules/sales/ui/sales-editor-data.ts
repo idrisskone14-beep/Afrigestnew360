@@ -88,7 +88,7 @@ export const orderPreview = (ctx: TenantContext, o: Awaited<ReturnType<typeof ge
 export const invoicePreview = (ctx: TenantContext, i: Awaited<ReturnType<typeof getInvoice>>, balance: number) => {
   const live = i.status !== "DRAFT" && i.status !== "CANCELLED";
   return savedPreview(ctx, {
-    ...i, title: "Facture", dates: [["Date d'émission", i.issueDate], ["Échéance", i.dueDate]], numberPlaceholder: "attribué à l'émission",
+    ...i, title: i.kind === "DEPOSIT" ? "Facture d'acompte" : "Facture", dates: [["Date d'émission", i.issueDate], ["Échéance", i.dueDate]], numberPlaceholder: "attribué à l'émission",
     extraTotals: [
       ...(num(i.creditedAmount) ? [{ label: "Avoirs", value: -num(i.creditedAmount) }] : []),
       ...(num(i.amountPaid) ? [{ label: "Déjà réglé", value: -num(i.amountPaid) }] : []),

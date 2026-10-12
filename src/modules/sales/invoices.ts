@@ -1,5 +1,6 @@
 import "server-only";
 import type { DateRange } from "@/core/tenant/period";
+import { deductionFor, markDepositsDeducted, releaseDeposits } from "./deposits";
 import { cancelApprovals, requestApproval, requiresApproval } from "@/core/approvals";
 import { audit } from "@/core/audit";
 import type { Db } from "@/core/db/client";
@@ -143,6 +144,7 @@ export async function deleteInvoice(ctx: Ctx, id: string) {
   await ctx.tx(async (tx) => {
     if (inv.quoteId) await tx.quote.updateMany({ where: { id: inv.quoteId, convertedInvoiceId: id }, data: { status: "ACCEPTED", convertedInvoiceId: null } });
     await cancelApprovals(tx, "discount", id);
+    await releaseDeposits(tx, id);
     await tx.invoice.delete({ where: { id } });
   });
   await audit(ctx, { action: "invoice.delete", resource: "Invoice", resourceId: id, summary: `${ctx.user.name} a supprimé une facture brouillon.` });
@@ -161,13 +163,19 @@ export async function createInvoiceFromOrder(ctx: Ctx, orderId: string, opts: { 
     const a = computeLine({ quantity: qty, unitPrice: l.unitPrice, discountPct: l.discountPct, taxRate: l.taxRate }, order.currency);
     return { companyId: ctx.company.id, position: i, orderLineId: l.id, productId: l.productId, description: l.description, unit: l.unit, quantity: qty.toString(), unitPrice: l.unitPrice.toString(), discountPct: l.discountPct.toString(), taxId: l.taxId, taxRate: l.taxRate.toString(), netAmount: a.net.toString(), taxAmount: a.tax.toString(), total: a.total.toString(), gross: a.gross, discount: a.discount };
   });
-  const sum = (f: (x: (typeof lines)[number]) => Numeric) => lines.reduce((a, x) => a.plus(d(f(x))), d(0)).toString();
-  const inv = await ctx.db.invoice.create({
-    data: {
-      companyId: ctx.company.id, customerId: order.customerId, orderId: order.id, quoteId: order.quoteId, status: "DRAFT", issueDate: issue, dueDate: new Date(issue.getTime() + order.customer.paymentTermsDays * DAY), currency: order.currency,
-      subtotal: sum((x) => x.gross), discountTotal: sum((x) => x.discount), taxTotal: sum((x) => x.taxAmount), total: sum((x) => x.total), notes: order.notes, createdById: ctx.user.id,
-      lines: { create: lines.map(({ gross: _g, discount: _d, ...rest }) => rest) },
-    },
+  const sum = (f: (x: (typeof lines)[number]) => Numeric) => lines.reduce((a, x) => a.plus(d(f(x))), d(0));
+  const inv = await ctx.tx(async (tx) => {
+    // acomptes déjà facturés : déduits par des lignes négatives (voir deposits.ts)
+    const ded = await deductionFor(tx, ctx.company.id, { orderId: order.id, quoteId: order.quoteId }, order.currency, sum((x) => x.total), lines.length);
+    const created = await tx.invoice.create({
+      data: {
+        companyId: ctx.company.id, customerId: order.customerId, orderId: order.id, quoteId: order.quoteId, status: "DRAFT", issueDate: issue, dueDate: new Date(issue.getTime() + order.customer.paymentTermsDays * DAY), currency: order.currency,
+        subtotal: sum((x) => x.gross).plus(ded?.gross ?? 0).toString(), discountTotal: sum((x) => x.discount).toString(), taxTotal: sum((x) => x.taxAmount).plus(ded?.tax ?? 0).toString(), total: sum((x) => x.total).plus(ded?.total ?? 0).toString(), notes: order.notes, createdById: ctx.user.id,
+        lines: { create: [...lines.map(({ gross: _g, discount: _d, ...rest }) => rest), ...(ded?.lines ?? [])] },
+      },
+    });
+    if (ded) await markDepositsDeducted(tx, ded.depositIds, created.id);
+    return created;
   });
   await audit(ctx, { action: "invoice.create", resource: "Invoice", resourceId: inv.id, summary: `${ctx.user.name} a créé une facture brouillon depuis la commande ${order.number}.`, after: { orderId } });
   return inv;
@@ -254,6 +262,7 @@ export async function cancelInvoice(ctx: Ctx, id: string) {
       orderIds.add(ol.orderId);
     }
     await tx.invoice.update({ where: { id }, data: { status: "CANCELLED", cancelledAt: new Date() } });
+    await releaseDeposits(tx, id);
     for (const oid of orderIds) await refreshOrderStatus(tx, oid);
     await emit(tx, ctx, "invoice.cancelled", { invoiceId: id });
   });
