@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { UserPlus } from "lucide-react";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
+import { KpiCards } from "@/components/app/kpi-cards";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -7,12 +9,15 @@ import { Status } from "@/components/app/status-badge";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { num } from "@/core/money";
+import { periodFor } from "@/core/tenant/period";
 import { requirePagePermission } from "@/core/tenant/guards";
 import { fmtDate } from "@/lib/format";
 import { PAGE_SIZE, enumParam, parseListParams, type SearchParams } from "@/lib/list-params";
 import { formatMoney } from "@/lib/reference-data";
 import { listLeads } from "@/modules/crm/service";
 import { LeadActions, LeadFormDialog } from "@/modules/crm/ui/lead-ui";
+
+import { leadKpis } from "@/modules/crm/kpis";
 
 export const metadata: Metadata = { title: "Prospects" };
 
@@ -22,24 +27,30 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const ctx = await requirePagePermission("crm.lead.read");
   const sp = await searchParams;
   const lp = parseListParams(sp);
+  const period = await periodFor(sp, "creation");
   const status = enumParam(sp, "statut", STATUSES);
-  const { rows, total } = await listLeads(ctx, { q: lp.q, status, skip: lp.skip, take: lp.take });
+  const { rows, total } = await listLeads(ctx, { q: lp.q, status, period, skip: lp.skip, take: lp.take });
   const can = { update: ctx.can("crm.lead.update"), delete: ctx.can("crm.lead.delete"), convert: ctx.can("crm.lead.update") && ctx.can("crm.customer.create") };
 
+  const kpis = await leadKpis(ctx, period);
   return (
-    <>
-      <ListToolbar placeholder="Rechercher un prospect…" filters={[{ name: "statut", label: "Statut", options: [{ value: "NEW", label: "Nouveaux" }, { value: "CONTACTED", label: "Contactés" }, { value: "QUALIFIED", label: "Qualifiés" }, { value: "LOST", label: "Perdus" }, { value: "CONVERTED", label: "Convertis" }] }]}>
+    <ListScope filename="prospects">
+      <KpiCards items={kpis} />
+      <ListToolbar placeholder="Rechercher un prospect…" filters={[{ name: "statut", label: "Statut", options: [{ value: "NEW", label: "Nouveaux" }, { value: "CONTACTED", label: "Contactés" }, { value: "QUALIFIED", label: "Qualifiés" }, { value: "LOST", label: "Perdus" }, { value: "CONVERTED", label: "Convertis" }] }, { name: "creation", label: "Création", kind: "date" as const }]}>
         {ctx.can("crm.lead.create") && <LeadFormDialog />}
       </ListToolbar>
       {rows.length === 0 ? (
         <EmptyState icon={<UserPlus className="size-8" />} title="Aucun prospect" description="Ajoutez vos prospects pour suivre leur qualification, puis convertissez-les en clients." />
       ) : (
+        <>
+        <SelectionBar />
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Prospect</TableHead><TableHead className="hidden md:table-cell">Contact</TableHead><TableHead className="hidden lg:table-cell">Source</TableHead><TableHead className="hidden sm:table-cell text-right">Valeur</TableHead><TableHead>Statut</TableHead><TableHead className="hidden lg:table-cell">Créé le</TableHead><TableHead className="w-10"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Prospect</TableHead><TableHead className="hidden md:table-cell">Contact</TableHead><TableHead className="hidden lg:table-cell">Source</TableHead><TableHead className="hidden sm:table-cell text-right">Valeur</TableHead><TableHead>Statut</TableHead><TableHead className="hidden lg:table-cell">Créé le</TableHead><TableHead className="w-10"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((l) => (
                 <TableRow key={l.id}>
+                  <TableCell><RowBox id={l.id} label={l.name} /></TableCell>
                   <TableCell><span className="block truncate text-sm font-medium">{l.name}</span><span className="block text-xs text-muted-foreground">{l.companyName ?? ""}</span></TableCell>
                   <TableCell className="hidden text-sm md:table-cell">{l.email ?? "—"}<span className="block text-xs text-muted-foreground">{l.phone ?? ""}</span></TableCell>
                   <TableCell className="hidden text-sm lg:table-cell">{l.source ?? "—"}</TableCell>
@@ -54,8 +65,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
             </TableBody>
           </Table>
         </Card>
+        </>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/crm/prospects" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

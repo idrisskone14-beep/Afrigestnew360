@@ -94,7 +94,7 @@ export function SelectAllBox() {
   return <Checkbox aria-label="Tout sélectionner" checked={scope.allSelected} onCheckedChange={scope.toggleAll} />;
 }
 
-export function RowBox({ id, label }: { id: string; label: string }) {
+export function RowBox({ id, label = "cette ligne" }: { id: string; label?: string }) {
   const scope = useScope();
   const register = scope?.register;
   // inscription de la ligne dans la portée pendant sa présence à l'écran

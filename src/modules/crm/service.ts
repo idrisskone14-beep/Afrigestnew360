@@ -1,4 +1,5 @@
 import "server-only";
+import type { DateRange } from "@/core/tenant/period";
 import { audit } from "@/core/audit";
 import { businessRule, notFound } from "@/core/errors";
 import { assertWithinLimit, getEffectiveLimits, getUsage } from "@/core/modules/limits";
@@ -120,8 +121,9 @@ export async function deleteContact(ctx: Ctx, id: string) {
 
 // ── Prospects ─────────────────────────────────────────────────
 
-export async function listLeads(ctx: Ctx, p: { q?: string; status?: "NEW" | "CONTACTED" | "QUALIFIED" | "LOST" | "CONVERTED"; skip: number; take: number }) {
+export async function listLeads(ctx: Ctx, p: { period?: DateRange; q?: string; status?: "NEW" | "CONTACTED" | "QUALIFIED" | "LOST" | "CONVERTED"; skip: number; take: number }) {
   const where = {
+    ...(p.period ? { createdAt: p.period } : {}),
     deletedAt: null,
     ...(p.status ? { status: p.status } : {}),
     ...(p.q ? { OR: ["name", "companyName", "email", "phone"].map((f) => ({ [f]: { contains: p.q, mode: "insensitive" as const } })) } : {}),

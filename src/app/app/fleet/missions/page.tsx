@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Route } from "lucide-react";
 import { forbidden } from "next/navigation";
 import { ActionButton } from "@/components/app/action-button";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -33,20 +34,21 @@ export default async function TripsPage({ searchParams }: { searchParams: Promis
   const manage = ctx.can("fleet.trip.manage");
 
   return (
-    <>
+    <ListScope filename="missions">
       <ListToolbar placeholder="Rechercher…" filters={[
         { name: "statut", label: "Statut", options: TRIP_STATUSES.map((s) => ({ value: s.value, label: s.label })) },
         { name: "vehicule", label: "Véhicule", options: opt.allVehicles.map((v) => ({ value: v.id, label: v.name })) },
       ]}>
         {manage && <TripDialog vehicles={opt.vehicles} drivers={opt.drivers} customers={opt.customers} projects={opt.projects} />}
       </ListToolbar>
+      <SelectionBar />
       {rows.length === 0 ? <EmptyState icon={<Route className="size-8" />} title="Aucune mission" description={manage ? "Planifiez une mission : le véhicule, le chauffeur, le permis et les assurances sont contrôlés." : undefined} /> : (
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Mission</TableHead><TableHead>Trajet</TableHead><TableHead className="hidden sm:table-cell">Véhicule / chauffeur</TableHead><TableHead className="hidden text-right md:table-cell">Km</TableHead><TableHead className="hidden text-right md:table-cell">Produit</TableHead><TableHead>Statut</TableHead>{manage && <TableHead className="w-44"><span className="sr-only">Actions</span></TableHead>}</TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Mission</TableHead><TableHead>Trajet</TableHead><TableHead className="hidden sm:table-cell">Véhicule / chauffeur</TableHead><TableHead className="hidden text-right md:table-cell">Km</TableHead><TableHead className="hidden text-right md:table-cell">Produit</TableHead><TableHead>Statut</TableHead>{manage && <TableHead className="w-44"><span className="sr-only">Actions</span></TableHead>}</TableRow></TableHeader>
             <TableBody>
               {rows.map((t) => (
-                <TableRow key={t.id}>
+                <TableRow key={t.id}><TableCell><RowBox id={t.id} /></TableCell>
                   <TableCell className="text-sm font-medium">{t.number}<div className="text-xs font-normal text-muted-foreground">{fmtDateTime(t.plannedStart)}</div></TableCell>
                   <TableCell className="text-sm">{t.origin} → {t.destination}{t.cargo && <div className="text-xs text-muted-foreground">{t.cargo}</div>}</TableCell>
                   <TableCell className="hidden text-sm sm:table-cell">{t.vehicle.plate}<div className="text-xs text-muted-foreground">{t.driver.fullName}</div></TableCell>
@@ -67,6 +69,6 @@ export default async function TripsPage({ searchParams }: { searchParams: Promis
         </Card>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/fleet/missions" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

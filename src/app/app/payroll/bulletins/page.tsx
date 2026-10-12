@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { FileText } from "lucide-react";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
 import { Status } from "@/components/app/status-badge";
@@ -23,14 +24,15 @@ export default async function PayslipsPage({ searchParams }: { searchParams: Pro
   const { rows, total } = await listPayslips(ctx, { skip: lp.skip, take: lp.take });
   const cur = ctx.company.currency;
   return (
-    <>
+    <ListScope filename="bulletins">
+      <SelectionBar />
       {rows.length === 0 ? <EmptyState icon={<FileText className="size-8" />} title="Aucun bulletin" description={manage ? "Les bulletins apparaissent ici une fois la campagne validée." : "Vos bulletins apparaissent ici une fois la paie validée. Si vous n'en voyez pas, votre compte n'est peut-être pas lié à une fiche salarié."} /> : (
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Période</TableHead>{manage && <TableHead>Salarié</TableHead>}<TableHead className="hidden sm:table-cell">N°</TableHead><TableHead className="text-right">Brut</TableHead><TableHead className="text-right">Net</TableHead><TableHead>Statut</TableHead><TableHead className="w-10"><span className="sr-only">PDF</span></TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Période</TableHead>{manage && <TableHead>Salarié</TableHead>}<TableHead className="hidden sm:table-cell">N°</TableHead><TableHead className="text-right">Brut</TableHead><TableHead className="text-right">Net</TableHead><TableHead>Statut</TableHead><TableHead className="w-10"><span className="sr-only">PDF</span></TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((p) => (
-                <TableRow key={p.id}>
+                <TableRow key={p.id}><TableCell><RowBox id={p.id} /></TableCell>
                   <TableCell className="text-sm font-medium capitalize">{periodLabel(p.run.year, p.run.month)}</TableCell>
                   {manage && <TableCell className="text-sm">{p.employee.lastName} {p.employee.firstName}</TableCell>}
                   <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">{p.number}</TableCell>
@@ -45,6 +47,6 @@ export default async function PayslipsPage({ searchParams }: { searchParams: Pro
         </Card>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/payroll/bulletins" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

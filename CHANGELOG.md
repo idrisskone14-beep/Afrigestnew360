@@ -25,8 +25,16 @@ Format : une entrée par phase livrée, des changements les plus récents aux pl
 
 **Déploiement** : script `vercel-build` (migrations automatiques avant la construction), `vercel.json` (région, cron des alertes).
 
+## Ventes : envoi, lien public, acomptes, récurrence, tarifs (2026-10)
+- **Envoi par e-mail** des devis et des factures (PDF en pièce jointe + lien de consultation), journal des envois, colonne « Envoi » et chiffre « Factures non envoyées ». Droits `sales.quote.send` et `finance.invoice.send`.
+- **Lien public** `/p/<secret>` (192 bits, révocable, sans compte) : consultation, PDF et, pour un devis, **acceptation ou refus en ligne** (nom, commentaire, adresse IP journalisés ; notification aux commerciaux ; une seule réponse).
+- **Factures d'acompte** depuis un devis ou une commande (pourcentage ou montant TTC, réparti par taux de TVA) ; la facture finale **déduit** les acomptes par des lignes négatives.
+- **Factures récurrentes** (mensuel à annuel) : modèle créé depuis une facture, brouillon ou émission + envoi automatiques, rattrapage des échéances manquées, tâche planifiée `/api/cron/recurring` (05 h UTC).
+- **Listes de prix par client** : tarif par produit, proposé à la saisie des devis, commandes et factures ; rattachée depuis la fiche client. Droit `sales.pricelist.manage`.
+- Déploiement : `vercel-build` synchronise désormais le catalogue de permissions (`scripts/sync-catalog.ts`) ; les rôles issus d'un gabarit reçoivent les NOUVELLES permissions prévues par leur gabarit (les personnalisations existantes ne sont pas touchées).
+
 ## Nouvelle interface : coque et listes (2026-10)
-Barre du haut (pays, entreprise, année d'affichage), rail d'icônes par famille de modules, menu latéral clair à sous-menus dépliables (les onglets de module disparaissent), titres avec fil d'Ariane, police sans empattement. Listes : cartes de chiffres (Ventes), filtres en pastilles (statut, dates), cases à cocher, export CSV de l'affichage ou de la sélection, pagination « Page X sur N » avec choix du nombre de lignes. L'année d'affichage filtre pour l'instant les listes de Ventes.
+Barre du haut (pays, entreprise, année d'affichage), rail d'icônes par famille de modules, menu latéral clair à sous-menus dépliables (les onglets de module disparaissent), titres avec fil d'Ariane, police sans empattement. Listes : cartes de chiffres (Ventes), filtres en pastilles (statut, dates), cases à cocher, export CSV de l'affichage ou de la sélection, pagination « Page X sur N » avec choix du nombre de lignes. L'année d'affichage filtre les listes de Ventes, d'Achats (sauf fournisseurs), les dépenses, les mouvements de trésorerie et les prospects ; cartes de chiffres sur les listes de Ventes, d'Achats, de Finance et sur les prospects ; cases à cocher et export CSV sur toutes les listes en tableau.
 
 ## Devis, commandes et factures : nouvelle présentation (2026-10)
 Même éditeur en deux volets pour les devis, les commandes et les factures (onglets En-tête / Produits / Paiement et mentions / Options avec, selon le document, agence, centre de coûts, projet ou entrepôt ; aperçu « papier » en direct) ; page de détail qui montre le document tel qu'il sera imprimé ; PDF refondu pour tous les documents commerciaux (logo, émetteur/client, tableau à en-tête orange, détail de TVA, récapitulatif avec « Net à payer », cadre « Bon pour accord »).

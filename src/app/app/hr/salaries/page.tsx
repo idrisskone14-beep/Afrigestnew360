@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { UserRound } from "lucide-react";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -37,7 +38,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
   ]) : [[], []];
 
   return (
-    <>
+    <ListScope filename="salaries">
       <ListToolbar placeholder="Nom, matricule, poste…" filters={[
         { name: "statut", label: "Statut", options: [{ value: "ACTIVE", label: "En activité" }, { value: "SUSPENDED", label: "Suspendus" }, { value: "TERMINATED", label: "Sortis" }] },
         { name: "departement", label: "Département", options: departments.map((d) => ({ value: d.id, label: d.name })) },
@@ -45,13 +46,14 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
       ]}>
         {create && <EmployeeFormDialog departments={departments} branches={branches} managers={managers.map((m) => ({ id: m.id, name: `${m.lastName} ${m.firstName}` }))} users={members.map((m) => ({ id: m.userId, name: `${m.user.name} (${m.user.email})` }))} canPay={pay} />}
       </ListToolbar>
+      <SelectionBar />
       {rows.length === 0 ? <EmptyState icon={<UserRound className="size-8" />} title={lp.q ? "Aucun salarié trouvé" : "Aucun salarié pour le moment"} description="Enregistrez vos salariés pour gérer contrats, congés, présences et paie." /> : (
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Salarié</TableHead><TableHead className="hidden md:table-cell">Poste</TableHead><TableHead className="hidden lg:table-cell">Département</TableHead><TableHead className="hidden sm:table-cell">Embauche</TableHead>{pay && <TableHead className="hidden text-right lg:table-cell">Salaire de base</TableHead>}<TableHead>Statut</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Salarié</TableHead><TableHead className="hidden md:table-cell">Poste</TableHead><TableHead className="hidden lg:table-cell">Département</TableHead><TableHead className="hidden sm:table-cell">Embauche</TableHead>{pay && <TableHead className="hidden text-right lg:table-cell">Salaire de base</TableHead>}<TableHead>Statut</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((e) => (
-                <TableRow key={e.id}>
+                <TableRow key={e.id}><TableCell><RowBox id={e.id} /></TableCell>
                   <TableCell><Link href={`/app/hr/salaries/${e.id}`} className="block hover:text-brand"><span className="block text-sm font-medium">{e.lastName} {e.firstName}</span><span className="block text-xs text-muted-foreground">{e.number}</span></Link></TableCell>
                   <TableCell className="hidden text-sm md:table-cell">{e.jobTitle ?? "—"}</TableCell>
                   <TableCell className="hidden text-sm lg:table-cell">{e.department?.name ?? "—"}{e.branch ? <span className="block text-xs text-muted-foreground">{e.branch.name}</span> : null}</TableCell>
@@ -65,6 +67,6 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
         </Card>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/hr/salaries" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

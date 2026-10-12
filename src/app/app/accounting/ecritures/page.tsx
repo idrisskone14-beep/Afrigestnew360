@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen, Plus } from "lucide-react";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -33,7 +34,7 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
   const cur = ctx.company.currency;
 
   return (
-    <>
+    <ListScope filename="ecritures">
       <YearSwitch years={years} current={fy.id} basePath="/app/accounting/ecritures" params={{ journal: journalId, statut: status, q: lp.q }} />
       <ListToolbar placeholder="N°, libellé ou pièce…" filters={[
         { name: "journal", label: "Journal", options: journals.map((j) => ({ value: j.id, label: `${j.code} — ${j.name}` })) },
@@ -41,13 +42,14 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
       ]}>
         {ctx.can("accounting.entry.create") && <Button asChild><Link href="/app/accounting/ecritures/nouveau"><Plus className="size-4" /> Nouvelle écriture</Link></Button>}
       </ListToolbar>
+      <SelectionBar />
       {rows.length === 0 ? <EmptyState icon={<BookOpen className="size-8" />} title="Aucune écriture" description="Les écritures sont générées automatiquement par les ventes, achats, paiements et dépenses, ou saisies manuellement (opérations diverses)." /> : (
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>N°</TableHead><TableHead>Date</TableHead><TableHead className="hidden sm:table-cell">Journal</TableHead><TableHead>Libellé</TableHead><TableHead className="text-right">Montant</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>N°</TableHead><TableHead>Date</TableHead><TableHead className="hidden sm:table-cell">Journal</TableHead><TableHead>Libellé</TableHead><TableHead className="text-right">Montant</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((e) => (
-                <TableRow key={e.id}>
+                <TableRow key={e.id}><TableCell><RowBox id={e.id} /></TableCell>
                   <TableCell><Link href={`/app/accounting/ecritures/${e.id}`} className="whitespace-nowrap text-sm font-medium hover:text-brand">{e.status === "DRAFT" ? "Brouillon" : e.number}</Link></TableCell>
                   <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{fmtDate(e.date)}</TableCell>
                   <TableCell className="hidden text-sm sm:table-cell">{e.journal.code}</TableCell>
@@ -61,6 +63,6 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
         </Card>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/accounting/ecritures" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Wrench } from "lucide-react";
 import { forbidden } from "next/navigation";
 import { ActionButton } from "@/components/app/action-button";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -33,17 +34,18 @@ export default async function MaintenancePage({ searchParams }: { searchParams: 
   const manage = ctx.can("fleet.maintenance.manage");
 
   return (
-    <>
+    <ListScope filename="entretiens">
       <ListToolbar placeholder="Rechercher…" filters={[{ name: "statut", label: "Statut", options: [{ value: "PLANNED", label: "Planifiés" }, { value: "DONE", label: "Réalisés" }, { value: "CANCELLED", label: "Annulés" }] }]}>
         {manage && <MaintenanceDialog vehicles={opt.vehicles} suppliers={opt.suppliers} />}
       </ListToolbar>
+      <SelectionBar />
       {rows.length === 0 ? <EmptyState icon={<Wrench className="size-8" />} title="Aucun entretien" description={manage ? "Planifiez ou enregistrez un entretien : la prochaine échéance (date ou kilométrage) déclenche une alerte." : undefined} /> : (
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Véhicule</TableHead><TableHead>Entretien</TableHead><TableHead className="text-right">Coût</TableHead><TableHead>Statut</TableHead>{manage && <TableHead className="w-44"><span className="sr-only">Actions</span></TableHead>}</TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Date</TableHead><TableHead>Véhicule</TableHead><TableHead>Entretien</TableHead><TableHead className="text-right">Coût</TableHead><TableHead>Statut</TableHead>{manage && <TableHead className="w-44"><span className="sr-only">Actions</span></TableHead>}</TableRow></TableHeader>
             <TableBody>
               {rows.map((m) => (
-                <TableRow key={m.id}>
+                <TableRow key={m.id}><TableCell><RowBox id={m.id} /></TableCell>
                   <TableCell className="whitespace-nowrap text-sm">{fmtDate(m.date)}</TableCell>
                   <TableCell className="text-sm"><Link href={`/app/fleet/vehicules/${m.vehicle.id}?onglet=entretiens`} className="font-medium hover:text-brand">{m.vehicle.plate}</Link></TableCell>
                   <TableCell className="text-sm">{m.description}<div className="text-xs text-muted-foreground">{MAINTENANCE_TYPES.find((t) => t.value === m.type)?.label}</div></TableCell>
@@ -57,6 +59,6 @@ export default async function MaintenancePage({ searchParams }: { searchParams: 
         </Card>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/fleet/entretiens" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

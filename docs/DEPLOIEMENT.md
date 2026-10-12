@@ -9,7 +9,7 @@ Navigateur ──► Vercel (Next.js, fonctions serverless, région fra1)
                  │  rôle applicatif « afrigest_app » (RLS appliquée, sans BYPASSRLS)
                  ▼
                PostgreSQL managé (SSL obligatoire)         Resend (e-mails)
-                 ▲  rôle propriétaire (migrations, seed)   Cron Vercel → /api/cron/alerts
+                 ▲  rôle propriétaire (migrations, seed)   Cron Vercel → /api/cron/alerts, /api/cron/recurring
 ```
 
 Deux comptes de base de données, deux URL :
@@ -61,7 +61,8 @@ Ne mettez **jamais** ces valeurs dans le dépôt. `.env`, `.env.*.local` et `upl
 1. *Add New → Project* : importer le dépôt GitHub. Framework détecté : Next.js.
 2. Renseigner les variables (§3) pour l'environnement **Production**, puis déployer.
 3. Le script `vercel-build` (déclaré dans `package.json`) exécute **`prisma migrate deploy` puis `next build`** : chaque déploiement applique automatiquement les migrations en attente avant de construire. Si une migration échoue, **le déploiement échoue et la version précédente reste en ligne**. Les migrations sont additives et idempotentes par conception (voir `docs/CONTRIBUER.md`).
-4. `vercel.json` fixe la région (`fra1`) et le cron quotidien (06 h UTC) `GET /api/cron/alerts`.
+4. `vercel.json` fixe la région (`fra1`) et deux crons quotidiens : `GET /api/cron/recurring` (05 h UTC, factures récurrentes) puis `GET /api/cron/alerts` (06 h UTC). Les deux exigent `CRON_SECRET`.
+5. `vercel-build` applique les migrations puis `scripts/sync-catalog.ts` (catalogue modules / permissions, idempotent) avant `next build`.
 5. Après chaque modification de variables : **Redeploy** (les variables ne s'appliquent qu'aux nouveaux déploiements).
 
 ## 5. Vérifications après déploiement

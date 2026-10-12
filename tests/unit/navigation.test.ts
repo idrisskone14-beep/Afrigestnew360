@@ -9,7 +9,7 @@ const canOnly = (...keys: string[]) => ({ can: (k: string) => keys.includes(k) }
 describe("navigation : sous-menus par module", () => {
   it("n'affiche que les pages que l'utilisateur peut ouvrir", () => {
     const labels = moduleItems(canOnly("sales.quote.read", "finance.invoice.read"), "sales").map((i) => i.label);
-    expect(labels).toEqual(["Vue d'ensemble", "Devis clients", "Factures de vente", "Relances"]);
+    expect(labels).toEqual(["Vue d'ensemble", "Devis clients", "Factures de vente", "Factures récurrentes", "Relances"]);
     expect(moduleItems(canOnly(), "sales").map((i) => i.label)).toEqual(["Vue d'ensemble"]);
   });
 

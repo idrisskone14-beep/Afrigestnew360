@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Truck } from "lucide-react";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -22,19 +23,22 @@ export default async function SuppliersPage({ searchParams }: { searchParams: Pr
   const { rows, total } = await listSuppliers(ctx, { q: lp.q, skip: lp.skip, take: lp.take, active: statut === undefined ? undefined : statut === "actifs" });
 
   return (
-    <>
+    <ListScope filename="fournisseurs">
       <ListToolbar placeholder="Rechercher un fournisseur…" filters={[{ name: "statut", label: "Statut", options: [{ value: "actifs", label: "Actifs" }, { value: "inactifs", label: "Inactifs" }] }]}>
         {ctx.can("purchases.supplier.create") && <SupplierFormDialog defaultCountry={ctx.company.country} />}
       </ListToolbar>
       {rows.length === 0 ? (
         <EmptyState icon={<Truck className="size-8" />} title={lp.q ? "Aucun fournisseur trouvé" : "Aucun fournisseur pour le moment"} description={lp.q ? "Essayez une autre recherche." : "Créez votre premier fournisseur pour passer des commandes."} />
       ) : (
+        <>
+        <SelectionBar />
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Fournisseur</TableHead><TableHead className="hidden md:table-cell">Contact</TableHead><TableHead className="hidden lg:table-cell">Ville</TableHead><TableHead className="hidden sm:table-cell">Délai</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Fournisseur</TableHead><TableHead className="hidden md:table-cell">Contact</TableHead><TableHead className="hidden lg:table-cell">Ville</TableHead><TableHead className="hidden sm:table-cell">Délai</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((s) => (
                 <TableRow key={s.id}>
+                  <TableCell><RowBox id={s.id} label={s.name} /></TableCell>
                   <TableCell>
                     <Link href={`/app/purchases/fournisseurs/${s.id}`} className="block min-w-0 hover:text-brand">
                       <span className="block truncate text-sm font-medium">{s.name}</span>
@@ -50,8 +54,9 @@ export default async function SuppliersPage({ searchParams }: { searchParams: Pr
             </TableBody>
           </Table>
         </Card>
+        </>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/purchases/fournisseurs" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

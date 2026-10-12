@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Wallet } from "lucide-react";
-import { ExportButton, ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { KpiCards } from "@/components/app/kpi-cards";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
@@ -36,7 +36,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   return (
     <ListScope filename="paiements">
       <KpiCards items={kpis} />
-      <ListToolbar placeholder="N° de reçu, référence ou client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "PENDING", label: "En attente" }, { value: "VALIDATED", label: "Validés" }, { value: "CANCELLED", label: "Annulés" }] }, { name: "date", label: "Date", kind: "date" as const }]}><ExportButton /></ListToolbar>
+      <ListToolbar placeholder="N° de reçu, référence ou client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "PENDING", label: "En attente" }, { value: "VALIDATED", label: "Validés" }, { value: "CANCELLED", label: "Annulés" }] }, { name: "date", label: "Date", kind: "date" as const }]} />
       {pending > 0 && canValidate && <p className="mb-4 rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">{pending} paiement{pending > 1 ? "s" : ""} en attente de validation.</p>}
       {rows.length === 0 ? <EmptyState icon={<Wallet className="size-8" />} title="Aucun paiement" description="Les encaissements s'enregistrent depuis la fiche d'une facture émise." /> : (
         <>

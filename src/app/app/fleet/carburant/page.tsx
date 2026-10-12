@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Fuel } from "lucide-react";
 import { forbidden } from "next/navigation";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -29,17 +30,18 @@ export default async function FuelPage({ searchParams }: { searchParams: Promise
   const manage = ctx.can("fleet.fuel.manage");
 
   return (
-    <>
+    <ListScope filename="carburant">
       <ListToolbar placeholder="Rechercher…" filters={[{ name: "vehicule", label: "Véhicule", options: opt.allVehicles.map((v) => ({ value: v.id, label: v.name })) }]}>
         {manage && <FuelDialog vehicles={opt.vehicles} drivers={opt.drivers} />}
       </ListToolbar>
+      <SelectionBar />
       {rows.length === 0 ? <EmptyState icon={<Fuel className="size-8" />} title="Aucun plein enregistré" description={manage ? "Saisissez les pleins : kilométrage, litres et montant. La consommation est calculée entre deux pleins complets." : undefined} /> : (
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Véhicule</TableHead><TableHead className="hidden sm:table-cell">Chauffeur</TableHead><TableHead className="text-right">Km</TableHead><TableHead className="text-right">Litres</TableHead><TableHead className="text-right">Montant</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Date</TableHead><TableHead>Véhicule</TableHead><TableHead className="hidden sm:table-cell">Chauffeur</TableHead><TableHead className="text-right">Km</TableHead><TableHead className="text-right">Litres</TableHead><TableHead className="text-right">Montant</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((r) => (
-                <TableRow key={r.id}>
+                <TableRow key={r.id}><TableCell><RowBox id={r.id} /></TableCell>
                   <TableCell className="whitespace-nowrap text-sm">{fmtDate(r.date)}</TableCell>
                   <TableCell className="text-sm"><Link href={`/app/fleet/vehicules/${r.vehicle.id}?onglet=carburant`} className="font-medium hover:text-brand">{r.vehicle.plate}</Link>{r.station && <div className="text-xs text-muted-foreground">{r.station}</div>}</TableCell>
                   <TableCell className="hidden text-sm sm:table-cell">{r.driver?.fullName ?? "—"}</TableCell>
@@ -53,6 +55,6 @@ export default async function FuelPage({ searchParams }: { searchParams: Promise
         </Card>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/fleet/carburant" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

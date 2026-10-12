@@ -1,4 +1,5 @@
 import "server-only";
+import type { DateRange } from "@/core/tenant/period";
 import { cancelApprovals, requestApproval, requiresApproval } from "@/core/approvals";
 import { audit } from "@/core/audit";
 import type { Db } from "@/core/db/client";
@@ -32,8 +33,10 @@ async function assertSupplier(ctx: Ctx, id: string) {
   return s;
 }
 
-export async function listBills(ctx: Ctx, p: { q?: string; status?: string; supplierId?: string; overdue?: boolean; skip: number; take: number }) {
+export async function listBills(ctx: Ctx, p: { period?: DateRange; due?: DateRange; q?: string; status?: string; supplierId?: string; overdue?: boolean; skip: number; take: number }) {
   const where = {
+    ...(p.period ? { billDate: p.period } : {}),
+    ...(p.due && (p.due.gte || p.due.lt) ? { dueDate: p.due } : {}),
     ...(p.overdue ? { status: { in: ["POSTED", "PARTIALLY_PAID"] as ("POSTED" | "PARTIALLY_PAID")[] }, dueDate: { lt: startOfToday() } } : p.status ? { status: p.status as never } : {}),
     ...(p.supplierId ? { supplierId: p.supplierId } : {}),
     ...(p.q ? { OR: [{ number: { contains: p.q, mode: "insensitive" as const } }, { supplierRef: { contains: p.q, mode: "insensitive" as const } }, { supplier: { name: { contains: p.q, mode: "insensitive" as const } } }] } : {}),
@@ -181,8 +184,9 @@ async function settleBill(tx: Db, billId: string) {
   if (status !== b.status) await tx.supplierBill.update({ where: { id: billId }, data: { status } });
 }
 
-export async function listSupplierPayments(ctx: Ctx, p: { q?: string; supplierId?: string; skip: number; take: number }) {
+export async function listSupplierPayments(ctx: Ctx, p: { period?: DateRange; q?: string; supplierId?: string; skip: number; take: number }) {
   const where = {
+    ...(p.period ? { date: p.period } : {}),
     direction: "OUT" as const,
     ...(p.supplierId ? { supplierId: p.supplierId } : {}),
     ...(p.q ? { OR: [{ number: { contains: p.q, mode: "insensitive" as const } }, { reference: { contains: p.q, mode: "insensitive" as const } }, { supplier: { name: { contains: p.q, mode: "insensitive" as const } } }] } : {}),

@@ -3,6 +3,7 @@ import { Users } from "lucide-react";
 import { forbidden } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { ActionButton } from "@/components/app/action-button";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -31,17 +32,18 @@ export default async function DriversPage({ searchParams }: { searchParams: Prom
   const opt = manage ? await fleetOptions(ctx) : null;
 
   return (
-    <>
+    <ListScope filename="chauffeurs">
       <ListToolbar placeholder="Nom du chauffeur…" filters={[{ name: "statut", label: "Statut", options: [{ value: "ACTIVE", label: "Actifs" }, { value: "SUSPENDED", label: "Suspendus" }, { value: "LEFT", label: "Partis" }] }]}>
         {manage && opt && <DriverDialog employees={opt.employees} />}
       </ListToolbar>
+      <SelectionBar />
       {rows.length === 0 ? <EmptyState icon={<Users className="size-8" />} title="Aucun chauffeur" description={manage ? "Ajoutez vos chauffeurs, salariés ou prestataires." : undefined} /> : (
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Chauffeur</TableHead><TableHead className="hidden sm:table-cell">Téléphone</TableHead>{manage && <TableHead className="hidden md:table-cell">Permis</TableHead>}<TableHead>Statut</TableHead>{manage && <TableHead className="w-24"><span className="sr-only">Actions</span></TableHead>}</TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Chauffeur</TableHead><TableHead className="hidden sm:table-cell">Téléphone</TableHead>{manage && <TableHead className="hidden md:table-cell">Permis</TableHead>}<TableHead>Statut</TableHead>{manage && <TableHead className="w-24"><span className="sr-only">Actions</span></TableHead>}</TableRow></TableHeader>
             <TableBody>
               {rows.map((dr) => (
-                <TableRow key={dr.id}>
+                <TableRow key={dr.id}><TableCell><RowBox id={dr.id} /></TableCell>
                   <TableCell className="text-sm font-medium">{dr.fullName}{dr.employeeId && <div className="text-xs font-normal text-muted-foreground">Salarié</div>}</TableCell>
                   <TableCell className="hidden text-sm sm:table-cell">{dr.phone ?? "—"}</TableCell>
                   {manage && <TableCell className="hidden text-sm md:table-cell">{dr.licenseNumber ?? "—"}{dr.licenseCategory ? ` (${dr.licenseCategory})` : ""} {dr.licenseExpiry && <Badge variant={isPast(dr.licenseExpiry) ? "destructive" : "outline"}>{isPast(dr.licenseExpiry) ? "expiré" : "jusqu'au"} {fmtDate(dr.licenseExpiry)}</Badge>}</TableCell>}
@@ -54,6 +56,6 @@ export default async function DriversPage({ searchParams }: { searchParams: Prom
         </Card>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/fleet/chauffeurs" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

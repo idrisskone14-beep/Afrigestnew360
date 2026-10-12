@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Ban, CalendarDays } from "lucide-react";
 import { ActionButton } from "@/components/app/action-button";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -43,7 +44,7 @@ export default async function LeavesPage({ searchParams }: { searchParams: Promi
   const today = new Date();
 
   return (
-    <>
+    <ListScope filename="conges">
       <ListToolbar placeholder="Rechercher…" filters={[
         { name: "statut", label: "Statut", options: [{ value: "PENDING", label: "En attente" }, { value: "APPROVED", label: "Approuvés" }, { value: "REJECTED", label: "Refusés" }, { value: "CANCELLED", label: "Annulés" }] },
         { name: "type", label: "Type", options: allTypes.map((t) => ({ value: t.id, label: t.name })) },
@@ -57,18 +58,19 @@ export default async function LeavesPage({ searchParams }: { searchParams: Promi
           {balances.map((b) => <Card key={b.type.id}><CardContent className="space-y-0.5 p-4"><p className="text-xs text-muted-foreground">Mes jours — {b.type.name}</p><p className="text-lg font-semibold tabular">{b.remaining ? `${b.remaining.toNumber()} j restants` : `${b.taken.toNumber()} j pris`}</p><p className="text-xs text-muted-foreground">{b.entitlement ? `sur ${b.entitlement.toNumber()} · ` : ""}{b.pending.toNumber()} en attente</p></CardContent></Card>)}
         </div>
       )}
+      <SelectionBar />
 
       {rows.length === 0 ? <EmptyState icon={<CalendarDays className="size-8" />} title="Aucune demande de congé" description={seesAllLeaves(ctx) ? "Les demandes de l'équipe apparaissent ici." : "Vos demandes apparaissent ici."} /> : (
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Salarié</TableHead><TableHead>Type</TableHead><TableHead>Période</TableHead><TableHead className="text-right">Jours</TableHead><TableHead>Statut</TableHead><TableHead className="w-48"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Salarié</TableHead><TableHead>Type</TableHead><TableHead>Période</TableHead><TableHead className="text-right">Jours</TableHead><TableHead>Statut</TableHead><TableHead className="w-48"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((r) => {
                 const appr = approvalOf.get(r.id);
                 const mine = r.employee.id === me?.id;
                 const cancellable = (mine || ctx.can("hr.leave.approve") || hrMode) && (r.status === "PENDING" || (r.status === "APPROVED" && r.startDate > today));
                 return (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id}><TableCell><RowBox id={r.id} /></TableCell>
                     <TableCell className="text-sm"><Link href={ctx.can("hr.employee.read") ? `/app/hr/salaries/${r.employee.id}?onglet=conges` : "/app/hr/conges"} className="font-medium hover:text-brand">{r.employee.lastName} {r.employee.firstName}</Link></TableCell>
                     <TableCell className="text-sm">{r.type.name}{!r.type.paid && <span className="block text-xs text-muted-foreground">non payé</span>}</TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{fmtDate(r.startDate)} → {fmtDate(r.endDate)}</TableCell>
@@ -88,6 +90,6 @@ export default async function LeavesPage({ searchParams }: { searchParams: Promi
         </Card>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/hr/conges" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

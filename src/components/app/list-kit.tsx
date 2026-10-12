@@ -6,6 +6,7 @@ import { Calendar, Check, Search, Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ExportButton } from "./data-list";
 import { cn } from "@/lib/utils";
 
 export interface FilterDef {
@@ -125,7 +126,10 @@ export function ListToolbar({ placeholder = "Rechercher…", filters = [], hideS
         ? <DateChip key={f.name} f={f} from={sp.get(`${f.name}_du`) ?? ""} to={sp.get(`${f.name}_au`) ?? ""} push={push} />
         : <ValueChip key={f.name} f={f} value={sp.get(f.name)} push={push} />)}
       {anyFilter && <Button type="button" variant="ghost" size="sm" onClick={reset}><X className="size-4" /> Réinitialiser</Button>}
-      {children && <div className="ml-auto flex items-center gap-2">{children}</div>}
+      <div className="ml-auto flex items-center gap-2">
+        <ExportButton />
+        {children}
+      </div>
     </div>
   );
 }

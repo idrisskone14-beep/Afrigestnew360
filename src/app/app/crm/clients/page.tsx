@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Users } from "lucide-react";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -23,17 +24,20 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const { rows, total } = await listCustomers(ctx, { q: lp.q, skip: lp.skip, take: lp.take, active: statut === undefined ? undefined : statut === "actifs" });
 
   return (
-    <>
+    <ListScope filename="clients">
       <ListToolbar placeholder="Rechercher un client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "actifs", label: "Actifs" }, { value: "inactifs", label: "Inactifs" }] }]}>
         {ctx.can("crm.customer.create") && <CustomerFormDialog defaultCountry={ctx.company.country} priceLists={priceLists} />}
       </ListToolbar>
       {rows.length === 0 ? (
         <EmptyState icon={<Users className="size-8" />} title={lp.q ? "Aucun client trouvé" : "Aucun client pour le moment"} description={lp.q ? "Essayez une autre recherche." : "Créez votre premier client ou convertissez un prospect."} />
       ) : (
+        <>
+        <SelectionBar />
         <Card className="overflow-hidden p-0">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"><SelectAllBox /></TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead className="hidden md:table-cell">Contact</TableHead>
                 <TableHead className="hidden lg:table-cell">Ville</TableHead>
@@ -44,6 +48,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             <TableBody>
               {rows.map((c) => (
                 <TableRow key={c.id}>
+                  <TableCell><RowBox id={c.id} label={c.name} /></TableCell>
                   <TableCell>
                     <Link href={`/app/crm/clients/${c.id}`} className="block min-w-0 hover:text-brand">
                       <span className="block truncate text-sm font-medium">{c.name}</span>
@@ -59,8 +64,9 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             </TableBody>
           </Table>
         </Card>
+        </>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/crm/clients" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

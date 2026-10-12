@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Truck } from "lucide-react";
-import { ExportButton, ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -24,7 +24,7 @@ export default async function DeliveriesPage({ searchParams }: { searchParams: P
   const { rows, total } = await listDeliveries(ctx, { q: lp.q, period, skip: lp.skip, take: lp.take });
   return (
     <ListScope filename="livraisons">
-      <ListToolbar placeholder="N° ou client…" filters={[{ name: "date", label: "Date", kind: "date" as const }]}><ExportButton /></ListToolbar>
+      <ListToolbar placeholder="N° ou client…" filters={[{ name: "date", label: "Date", kind: "date" as const }]} />
       {rows.length === 0 ? <EmptyState icon={<Truck className="size-8" />} title="Aucune livraison" description="Créez un bon de livraison depuis une commande confirmée." /> : (
         <>
         <SelectionBar />

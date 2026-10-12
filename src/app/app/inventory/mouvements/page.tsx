@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ArrowLeftRight } from "lucide-react";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -30,7 +31,7 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
   const products = canCreate ? await ctx.db.product.findMany({ where: { deletedAt: null, isActive: true, trackStock: true }, select: { id: true, name: true, sku: true }, orderBy: { name: "asc" }, take: 500 }) : [];
 
   return (
-    <>
+    <ListScope filename="mouvements-stock">
       <ListToolbar
         placeholder="Mouvements"
         filters={[
@@ -40,15 +41,16 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
       >
         {canCreate && <MovementDialog products={products} warehouses={warehouses.map((w) => ({ id: w.id, name: w.name }))} canAdjust={ctx.can("inventory.stock.adjust")} />}
       </ListToolbar>
+      <SelectionBar />
       {rows.length === 0 ? (
         <EmptyState icon={<ArrowLeftRight className="size-8" />} title="Aucun mouvement" description="Entrées, sorties, transferts et ajustements apparaissent ici, avec leur auteur et leur motif." />
       ) : (
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Produit</TableHead><TableHead className="hidden sm:table-cell">Type</TableHead><TableHead className="hidden md:table-cell">Entrepôt</TableHead><TableHead className="text-right">Quantité</TableHead><TableHead className="hidden lg:table-cell">Motif / référence</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>Date</TableHead><TableHead>Produit</TableHead><TableHead className="hidden sm:table-cell">Type</TableHead><TableHead className="hidden md:table-cell">Entrepôt</TableHead><TableHead className="text-right">Quantité</TableHead><TableHead className="hidden lg:table-cell">Motif / référence</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((m) => (
-                <TableRow key={m.id}>
+                <TableRow key={m.id}><TableCell><RowBox id={m.id} /></TableCell>
                   <TableCell className="text-sm text-muted-foreground">{fmtDateTime(m.date)}</TableCell>
                   <TableCell><span className="block truncate text-sm font-medium">{m.product.name}</span><span className="block text-xs text-muted-foreground">{m.product.sku}</span></TableCell>
                   <TableCell className="hidden sm:table-cell"><StatusBadge tone={m.type === "OUT" ? "danger" : m.type === "IN" || m.type === "RETURN" ? "success" : "info"}>{LABEL[m.type]}</StatusBadge></TableCell>
@@ -62,6 +64,6 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
         </Card>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/inventory/mouvements" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
-import { ExportButton, ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { KpiCards } from "@/components/app/kpi-cards";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
@@ -36,7 +36,6 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
     <ListScope filename="devis">
       <KpiCards items={kpis} />
       <ListToolbar placeholder="N° ou client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "DRAFT", label: "Brouillons" }, { value: "SENT", label: "Envoyés" }, { value: "ACCEPTED", label: "Acceptés" }, { value: "REJECTED", label: "Refusés" }, { value: "EXPIRED", label: "Expirés" }, { value: "CONVERTED", label: "Convertis" }] }, { name: "emission", label: "Émission", kind: "date" as const }]}>
-        <ExportButton />
         {ctx.can("sales.quote.create") && <Button asChild><Link href="/app/sales/devis/nouveau"><Plus className="size-4" /> Nouveau devis</Link></Button>}
       </ListToolbar>
       {rows.length === 0 ? (

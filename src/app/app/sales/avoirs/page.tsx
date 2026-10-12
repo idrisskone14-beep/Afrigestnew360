@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ReceiptText } from "lucide-react";
-import { ExportButton, ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -26,7 +26,7 @@ export default async function CreditNotesPage({ searchParams }: { searchParams: 
   const { rows, total } = await listCreditNotes(ctx, { period, skip: lp.skip, take: lp.take });
   return (
     <ListScope filename="avoirs">
-      <ListToolbar placeholder="" filters={[{ name: "date", label: "Date", kind: "date" }]} hideSearch><ExportButton /></ListToolbar>
+      <ListToolbar placeholder="" filters={[{ name: "date", label: "Date", kind: "date" }]} hideSearch />
       {rows.length === 0 ? <EmptyState icon={<ReceiptText className="size-8" />} title="Aucun avoir" description="Un avoir se crée depuis la fiche d'une facture émise (retour de marchandise, erreur de prix, geste commercial)." /> : (
         <>
         <SelectionBar />

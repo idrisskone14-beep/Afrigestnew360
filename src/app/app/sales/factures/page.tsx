@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus, Receipt } from "lucide-react";
-import { ExportButton, ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
+import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { KpiCards } from "@/components/app/kpi-cards";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
@@ -30,13 +30,14 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   const period = await periodFor(sp, "emission");
   const due = dateRangeParam(sp, "echeance");
   const status = enumParam(sp, "statut", STATUSES);
-  const { rows, total } = await listInvoices(ctx, { q: lp.q, status, period, due, skip: lp.skip, take: lp.take });
+  // « Échues » : les impayés de toutes les années restent visibles (l'année ne cache pas une dette) ; les chiffres, eux, suivent l'année
+  const listPeriod = status === "OVERDUE" && !dateRangeParam(sp, "emission").gte && !dateRangeParam(sp, "emission").lt ? undefined : period;
+  const { rows, total } = await listInvoices(ctx, { q: lp.q, status, period: listPeriod, due, skip: lp.skip, take: lp.take });
   const kpis = await invoiceKpis(ctx, period);
   return (
     <ListScope filename="factures">
       <KpiCards items={kpis} />
       <ListToolbar placeholder="N° ou client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "DRAFT", label: "Brouillons" }, { value: "ISSUED", label: "Émises" }, { value: "PARTIALLY_PAID", label: "Payées en partie" }, { value: "OVERDUE", label: "Échues" }, { value: "PAID", label: "Payées" }, { value: "CANCELLED", label: "Annulées" }] }, { name: "emission", label: "Émission", kind: "date" as const }, { name: "echeance", label: "Échéance", kind: "date" as const }]}>
-        <ExportButton />
         {ctx.can("finance.invoice.create") && <Button asChild><Link href="/app/sales/factures/nouveau"><Plus className="size-4" /> Nouvelle facture</Link></Button>}
       </ListToolbar>
       {rows.length === 0 ? <EmptyState icon={<Receipt className="size-8" />} title="Aucune facture" description="Facturez une commande, convertissez un devis ou saisissez une facture." /> : (

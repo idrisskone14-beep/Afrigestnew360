@@ -1,4 +1,5 @@
 import "server-only";
+import type { DateRange } from "@/core/tenant/period";
 import { audit } from "@/core/audit";
 import { cancelApprovals, requestApproval, requiresApproval } from "@/core/approvals";
 import type { Db } from "@/core/db/client";
@@ -18,8 +19,9 @@ const blank = (v?: string | null) => (v && v.trim() ? v.trim() : null);
 
 // ═══ Demandes d'achat ═════════════════════════════════════════
 
-export async function listRequests(ctx: Ctx, p: { q?: string; status?: string; mine?: boolean; skip: number; take: number }) {
+export async function listRequests(ctx: Ctx, p: { period?: DateRange; q?: string; status?: string; mine?: boolean; skip: number; take: number }) {
   const where = {
+    ...(p.period ? { createdAt: p.period } : {}),
     ...(p.status ? { status: p.status as never } : {}),
     ...(p.mine ? { requesterId: ctx.user.id } : {}),
     ...(p.q ? { OR: [{ number: { contains: p.q, mode: "insensitive" as const } }, { reason: { contains: p.q, mode: "insensitive" as const } }] } : {}),
@@ -127,8 +129,9 @@ export async function convertRequestToOrder(ctx: Ctx, input: { requestId: string
 
 // ═══ Commandes fournisseur ════════════════════════════════════
 
-export async function listOrders(ctx: Ctx, p: { q?: string; status?: string; supplierId?: string; skip: number; take: number }) {
+export async function listOrders(ctx: Ctx, p: { period?: DateRange; q?: string; status?: string; supplierId?: string; skip: number; take: number }) {
   const where = {
+    ...(p.period ? { orderDate: p.period } : {}),
     ...(p.status ? { status: p.status as never } : {}),
     ...(p.supplierId ? { supplierId: p.supplierId } : {}),
     ...(p.q ? { OR: [{ number: { contains: p.q, mode: "insensitive" as const } }, { supplier: { name: { contains: p.q, mode: "insensitive" as const } } }] } : {}),
@@ -239,8 +242,9 @@ export async function refreshPurchaseOrderStatus(tx: Db, orderId: string) {
 
 // ═══ Réceptions ═══════════════════════════════════════════════
 
-export async function listReceipts(ctx: Ctx, p: { q?: string; orderId?: string; skip: number; take: number }) {
+export async function listReceipts(ctx: Ctx, p: { period?: DateRange; q?: string; orderId?: string; skip: number; take: number }) {
   const where = {
+    ...(p.period ? { receiptDate: p.period } : {}),
     ...(p.orderId ? { orderId: p.orderId } : {}),
     ...(p.q ? { OR: [{ number: { contains: p.q, mode: "insensitive" as const } }, { supplier: { name: { contains: p.q, mode: "insensitive" as const } } }] } : {}),
   };
