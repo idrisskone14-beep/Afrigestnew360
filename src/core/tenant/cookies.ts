@@ -12,3 +12,11 @@ export async function setActiveCompanyCookie(companyId: string) {
     maxAge: 60 * 60 * 24 * 365,
   });
 }
+
+export const YEAR_COOKIE = "afg_year";
+
+/** Année d'affichage choisie dans la barre du haut (préférence d'interface, pas un droit d'accès). */
+export async function setYearCookie(year: number) {
+  const secure = (await headers()).get("x-forwarded-proto") === "https" || process.env.NODE_ENV === "production";
+  (await cookies()).set(YEAR_COOKIE, String(year), { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: 60 * 60 * 24 * 365 });
+}

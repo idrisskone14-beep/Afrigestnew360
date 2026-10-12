@@ -1,4 +1,5 @@
 import "server-only";
+import type { DateRange } from "@/core/tenant/period";
 import { cancelApprovals, requestApproval, requiresApproval } from "@/core/approvals";
 import { audit } from "@/core/audit";
 import type { Db } from "@/core/db/client";
@@ -60,9 +61,11 @@ export async function customerBalance(ctx: Pick<Ctx, "db">, customerId: string) 
 
 // ── Lecture ───────────────────────────────────────────────────
 
-export async function listInvoices(ctx: Ctx, p: { q?: string; status?: InvoiceStatusT | "OVERDUE"; customerId?: string; skip: number; take: number }) {
+export async function listInvoices(ctx: Ctx, p: { q?: string; status?: InvoiceStatusT | "OVERDUE"; customerId?: string; period?: DateRange; due?: DateRange; skip: number; take: number }) {
   const today = startOfToday();
   const where = {
+    ...(p.period ? { issueDate: p.period } : {}),
+    ...(p.due && (p.due.gte || p.due.lt) ? { dueDate: p.status === "OVERDUE" ? { ...p.due, lt: p.due.lt && p.due.lt < today ? p.due.lt : today } : p.due } : {}),
     ...(p.status === "OVERDUE" ? { status: { in: ["ISSUED", "PARTIALLY_PAID"] as InvoiceStatusT[] }, dueDate: { lt: today } } : p.status ? { status: p.status } : {}),
     ...(p.customerId ? { customerId: p.customerId } : {}),
     ...(p.q ? { OR: [{ number: { contains: p.q, mode: "insensitive" as const } }, { customer: { name: { contains: p.q, mode: "insensitive" as const } } }] } : {}),
@@ -259,8 +262,8 @@ export async function cancelInvoice(ctx: Ctx, id: string) {
 
 // ── Avoirs ────────────────────────────────────────────────────
 
-export async function listCreditNotes(ctx: Ctx, p: { invoiceId?: string; skip: number; take: number }) {
-  const where = p.invoiceId ? { invoiceId: p.invoiceId } : {};
+export async function listCreditNotes(ctx: Ctx, p: { invoiceId?: string; period?: DateRange; skip: number; take: number }) {
+  const where = { ...(p.invoiceId ? { invoiceId: p.invoiceId } : {}), ...(p.period ? { issueDate: p.period } : {}) };
   const [total, rows] = await Promise.all([
     ctx.db.creditNote.count({ where }),
     ctx.db.creditNote.findMany({ where, orderBy: { createdAt: "desc" }, skip: p.skip, take: p.take, include: { invoice: { select: { id: true, number: true, customer: { select: { name: true } } } } } }),

@@ -1,4 +1,5 @@
 import "server-only";
+import type { DateRange } from "@/core/tenant/period";
 import { audit } from "@/core/audit";
 import type { Db } from "@/core/db/client";
 import { emit } from "@/core/events";
@@ -22,9 +23,10 @@ async function lockInvoice(tx: Db, id: string) {
   await tx.$queryRaw`SELECT "id" FROM "Invoice" WHERE "id" = ${id}::uuid FOR UPDATE`;
 }
 
-export async function listPayments(ctx: Ctx, p: { q?: string; status?: PaymentStatusT; customerId?: string; invoiceId?: string; skip: number; take: number }) {
+export async function listPayments(ctx: Ctx, p: { q?: string; status?: PaymentStatusT; customerId?: string; invoiceId?: string; period?: DateRange; skip: number; take: number }) {
   const where = {
     direction: "IN" as const,
+    ...(p.period ? { date: p.period } : {}),
     ...(p.status ? { status: p.status } : {}),
     ...(p.customerId ? { customerId: p.customerId } : {}),
     ...(p.invoiceId ? { invoiceId: p.invoiceId } : {}),

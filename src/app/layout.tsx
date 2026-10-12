@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
 import { RouteProgress } from "@/components/app/route-progress";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
@@ -8,8 +8,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-// Serif d'affichage : donne à AfriGest 360 une voix éditoriale, loin des interfaces génériques
-const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", display: "swap", axes: ["opsz"] });
 
 export const metadata: Metadata = {
   title: { default: "AfriGest 360 — Toute votre entreprise. Une seule plateforme.", template: "%s · AfriGest 360" },
@@ -26,7 +24,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning className={`${inter.variable} ${fraunces.variable}`}>
+    <html lang="fr" suppressHydrationWarning className={inter.variable}>
       <head>
         <ThemeScript />
       </head>

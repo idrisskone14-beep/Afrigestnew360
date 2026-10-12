@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus, ShoppingBag } from "lucide-react";
+import { ExportButton, ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
+import { KpiCards } from "@/components/app/kpi-cards";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -9,11 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { num } from "@/core/money";
+import { periodFor } from "@/core/tenant/period";
 import { requirePagePermission } from "@/core/tenant/guards";
 import { fmtDate } from "@/lib/format";
 import { PAGE_SIZE, enumParam, parseListParams, type SearchParams } from "@/lib/list-params";
 import { formatMoney } from "@/lib/reference-data";
 import { listOrders } from "@/modules/sales/orders";
+import { orderKpis } from "@/modules/sales/kpis";
 
 export const metadata: Metadata = { title: "Commandes clients" };
 const STATUSES = ["DRAFT", "CONFIRMED", "PARTIALLY_DELIVERED", "DELIVERED", "INVOICED", "CANCELLED"] as const;
@@ -22,20 +26,27 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   const ctx = await requirePagePermission("sales.order.read");
   const sp = await searchParams;
   const lp = parseListParams(sp);
+  const period = await periodFor(sp, "commande");
   const status = enumParam(sp, "statut", STATUSES);
-  const { rows, total } = await listOrders(ctx, { q: lp.q, status, skip: lp.skip, take: lp.take });
+  const { rows, total } = await listOrders(ctx, { q: lp.q, status, period, skip: lp.skip, take: lp.take });
+  const kpis = await orderKpis(ctx, period);
   return (
-    <>
-      <ListToolbar placeholder="N° ou client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "DRAFT", label: "Brouillons" }, { value: "CONFIRMED", label: "Confirmées" }, { value: "PARTIALLY_DELIVERED", label: "Livrées en partie" }, { value: "DELIVERED", label: "Livrées" }, { value: "INVOICED", label: "Facturées" }, { value: "CANCELLED", label: "Annulées" }] }]}>
+    <ListScope filename="commandes">
+      <KpiCards items={kpis} />
+      <ListToolbar placeholder="N° ou client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "DRAFT", label: "Brouillons" }, { value: "CONFIRMED", label: "Confirmées" }, { value: "PARTIALLY_DELIVERED", label: "Livrées en partie" }, { value: "DELIVERED", label: "Livrées" }, { value: "INVOICED", label: "Facturées" }, { value: "CANCELLED", label: "Annulées" }] }, { name: "commande", label: "Date", kind: "date" as const }]}>
+        <ExportButton />
         {ctx.can("sales.order.create") && <Button asChild><Link href="/app/sales/commandes/nouveau"><Plus className="size-4" /> Nouvelle commande</Link></Button>}
       </ListToolbar>
       {rows.length === 0 ? <EmptyState icon={<ShoppingBag className="size-8" />} title="Aucune commande" description="Les commandes naissent d'un devis accepté ou se saisissent directement." /> : (
+        <>
+        <SelectionBar />
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>N°</TableHead><TableHead>Client</TableHead><TableHead className="hidden sm:table-cell">Date</TableHead><TableHead className="text-right">Total TTC</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>N°</TableHead><TableHead>Client</TableHead><TableHead className="hidden sm:table-cell">Date</TableHead><TableHead className="text-right">Total TTC</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((o) => (
                 <TableRow key={o.id}>
+                  <TableCell><RowBox id={o.id} label={o.number} /></TableCell>
                   <TableCell><Link href={`/app/sales/commandes/${o.id}`} className="text-sm font-medium hover:text-brand">{o.number}</Link></TableCell>
                   <TableCell className="text-sm">{o.customer.name}</TableCell>
                   <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">{fmtDate(o.orderDate)}</TableCell>
@@ -46,8 +57,9 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             </TableBody>
           </Table>
         </Card>
+        </>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/sales/commandes" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

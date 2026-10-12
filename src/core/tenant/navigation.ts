@@ -1,6 +1,7 @@
 import { MODULES } from "@/core/modules/registry";
 import { PERMISSIONS } from "@/core/rbac/catalog";
 import type { TenantContext } from "./context";
+import { familyOfModule, moduleItems, type FamilyKey, type NavItem } from "./module-nav";
 
 export interface NavModule {
   key: string;
@@ -8,6 +9,10 @@ export interface NavModule {
   icon: string;
   href: string;
   kind: "CORE" | "STANDARD" | "EXTENSION";
+  /** Famille du rail d'icônes. */
+  family: FamilyKey;
+  /** Sous-menu (pages que l'utilisateur peut ouvrir). Vide : une seule page. */
+  items: NavItem[];
 }
 
 /**
@@ -18,5 +23,5 @@ export function visibleModules(ctx: Pick<TenantContext, "access" | "can">): NavM
   return MODULES.filter((m) => m.kind !== "CORE")
     .filter((m) => ctx.access.modules.has(m.key))
     .filter((m) => ctx.access.isAdmin || PERMISSIONS.some((p) => p.module === m.key && ctx.can(p.key)))
-    .map((m) => ({ key: m.key, name: m.name, icon: m.icon, href: `/app/${m.key}`, kind: m.kind }));
+    .map((m) => ({ key: m.key, name: m.name, icon: m.icon, href: `/app/${m.key}`, kind: m.kind, family: familyOfModule(m.key) ?? "documents", items: moduleItems(ctx, m.key) }));
 }

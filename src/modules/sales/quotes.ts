@@ -1,4 +1,5 @@
 import "server-only";
+import type { DateRange } from "@/core/tenant/period";
 import { audit } from "@/core/audit";
 import { emit } from "@/core/events";
 import { businessRule, notFound } from "@/core/errors";
@@ -27,8 +28,9 @@ async function assertCustomer(ctx: Ctx, customerId: string) {
   return c;
 }
 
-export async function listQuotes(ctx: Ctx, p: { q?: string; status?: QuoteStatusT; customerId?: string; skip: number; take: number }) {
+export async function listQuotes(ctx: Ctx, p: { q?: string; status?: QuoteStatusT; customerId?: string; period?: DateRange; skip: number; take: number }) {
   const where = {
+    ...(p.period ? { issueDate: p.period } : {}),
     ...(p.status && p.status !== "EXPIRED" ? { status: p.status } : {}),
     ...(p.status === "EXPIRED" ? { status: { in: ["DRAFT", "SENT"] as QuoteStatusT[] }, validUntil: { lt: new Date(Date.now() - 86_400_000) } } : {}),
     ...(p.customerId ? { customerId: p.customerId } : {}),

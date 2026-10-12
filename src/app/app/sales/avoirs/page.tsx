@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ReceiptText } from "lucide-react";
+import { ExportButton, ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
+import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
 import { Status } from "@/components/app/status-badge";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { num } from "@/core/money";
+import { periodFor } from "@/core/tenant/period";
 import { requirePagePermission } from "@/core/tenant/guards";
 import { fmtDate } from "@/lib/format";
 import { PAGE_SIZE, parseListParams, type SearchParams } from "@/lib/list-params";
@@ -19,16 +22,21 @@ export default async function CreditNotesPage({ searchParams }: { searchParams: 
   const ctx = await requirePagePermission("finance.credit_note.read");
   const sp = await searchParams;
   const lp = parseListParams(sp);
-  const { rows, total } = await listCreditNotes(ctx, { skip: lp.skip, take: lp.take });
+  const period = await periodFor(sp, "date");
+  const { rows, total } = await listCreditNotes(ctx, { period, skip: lp.skip, take: lp.take });
   return (
-    <>
+    <ListScope filename="avoirs">
+      <ListToolbar placeholder="" filters={[{ name: "date", label: "Date", kind: "date" }]} hideSearch><ExportButton /></ListToolbar>
       {rows.length === 0 ? <EmptyState icon={<ReceiptText className="size-8" />} title="Aucun avoir" description="Un avoir se crée depuis la fiche d'une facture émise (retour de marchandise, erreur de prix, geste commercial)." /> : (
+        <>
+        <SelectionBar />
         <Card className="overflow-hidden p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>N°</TableHead><TableHead>Client</TableHead><TableHead className="hidden sm:table-cell">Facture</TableHead><TableHead className="hidden md:table-cell">Date</TableHead><TableHead className="text-right">Montant</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-10"><SelectAllBox /></TableHead><TableHead>N°</TableHead><TableHead>Client</TableHead><TableHead className="hidden sm:table-cell">Facture</TableHead><TableHead className="hidden md:table-cell">Date</TableHead><TableHead className="text-right">Montant</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((c) => (
                 <TableRow key={c.id}>
+                  <TableCell><RowBox id={c.id} label={c.number ?? "brouillon"} /></TableCell>
                   <TableCell><Link href={`/app/sales/avoirs/${c.id}`} className="text-sm font-medium hover:text-brand">{c.number ?? "Brouillon"}</Link></TableCell>
                   <TableCell className="text-sm">{c.invoice.customer.name}</TableCell>
                   <TableCell className="hidden text-sm sm:table-cell"><Link href={`/app/sales/factures/${c.invoice.id}`} className="hover:text-brand">{c.invoice.number}</Link></TableCell>
@@ -40,8 +48,9 @@ export default async function CreditNotesPage({ searchParams }: { searchParams: 
             </TableBody>
           </Table>
         </Card>
+        </>
       )}
       <Pagination total={total} page={lp.page} pageSize={PAGE_SIZE} basePath="/app/sales/avoirs" searchParams={sp} />
-    </>
+    </ListScope>
   );
 }

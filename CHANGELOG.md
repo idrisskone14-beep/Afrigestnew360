@@ -25,6 +25,9 @@ Format : une entrée par phase livrée, des changements les plus récents aux pl
 
 **Déploiement** : script `vercel-build` (migrations automatiques avant la construction), `vercel.json` (région, cron des alertes).
 
+## Nouvelle interface : coque et listes (2026-10)
+Barre du haut (pays, entreprise, année d'affichage), rail d'icônes par famille de modules, menu latéral clair à sous-menus dépliables (les onglets de module disparaissent), titres avec fil d'Ariane, police sans empattement. Listes : cartes de chiffres (Ventes), filtres en pastilles (statut, dates), cases à cocher, export CSV de l'affichage ou de la sélection, pagination « Page X sur N » avec choix du nombre de lignes. L'année d'affichage filtre pour l'instant les listes de Ventes.
+
 ## Devis, commandes et factures : nouvelle présentation (2026-10)
 Même éditeur en deux volets pour les devis, les commandes et les factures (onglets En-tête / Produits / Paiement et mentions / Options avec, selon le document, agence, centre de coûts, projet ou entrepôt ; aperçu « papier » en direct) ; page de détail qui montre le document tel qu'il sera imprimé ; PDF refondu pour tous les documents commerciaux (logo, émetteur/client, tableau à en-tête orange, détail de TVA, récapitulatif avec « Net à payer », cadre « Bon pour accord »).
 

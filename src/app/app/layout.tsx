@@ -1,9 +1,13 @@
 import { NavCountsProvider } from "@/components/app/nav-counts";
+import { NavModulesProvider } from "@/components/app/module-header";
+import { Rail, SidebarContent } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
-import { SidebarContent } from "@/components/app/sidebar";
 import { loadContextState } from "@/core/tenant/context";
 import { canSeeValidations } from "@/core/approvals";
 import { visibleModules } from "@/core/tenant/navigation";
+import { selectedYear } from "@/core/tenant/period";
+import { yearOptions } from "@/lib/period";
+import { countryName } from "@/lib/reference-data";
 import { redirect } from "next/navigation";
 
 /**
@@ -24,21 +28,31 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Les compteurs (notifications non lues, validations en attente) ne sont PAS calculés ici : ils ralentiraient l'affichage
   // de toutes les pages. Ils arrivent juste après, via /api/nav/counts (voir NavCountsProvider).
   const nav = { modules, canSeeSettings, unreadCount: 0, validations: canSeeValidations(ctx) ? { pending: 0 } : null };
+  const year = await selectedYear();
+  const country = ctx.company.country ? { code: ctx.company.country, name: countryName(ctx.company.country) } : null;
 
   return (
     <NavCountsProvider>
-    <div className="min-h-dvh lg:pl-64">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-sidebar-border lg:block">
-        <SidebarContent {...nav} />
-      </aside>
-      <Topbar
-        nav={nav}
-        companies={ctx.switcher}
-        activeCompanyId={ctx.company.id}
-        user={{ name: ctx.user.name, email: ctx.user.email, isPlatformAdmin: ctx.user.isPlatformAdmin }}
-      />
-      <main className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">{children}</main>
-    </div>
+      <NavModulesProvider modules={modules}>
+        <div className="min-h-dvh">
+          <Topbar
+            nav={nav}
+            companies={ctx.switcher}
+            activeCompanyId={ctx.company.id}
+            user={{ name: ctx.user.name, email: ctx.user.email, isPlatformAdmin: ctx.user.isPlatformAdmin }}
+            country={country}
+            year={year}
+            years={yearOptions(year)}
+          />
+          <div className="lg:flex">
+            <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] shrink-0 border-r lg:flex">
+              <div className="w-14 border-r bg-card"><Rail modules={modules} canSeeSettings={canSeeSettings} /></div>
+              <div className="w-60"><SidebarContent {...nav} /></div>
+            </aside>
+            <main className="mx-auto w-full min-w-0 max-w-[1500px] flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+          </div>
+        </div>
+      </NavModulesProvider>
     </NavCountsProvider>
   );
 }

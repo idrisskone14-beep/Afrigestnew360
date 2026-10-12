@@ -5,7 +5,7 @@ import { z } from "zod";
 import { defineUserAction } from "@/core/actions/define";
 import { platformDb } from "@/core/db/client";
 import { AppError } from "@/core/errors";
-import { setActiveCompanyCookie } from "./cookies";
+import { setActiveCompanyCookie, setYearCookie } from "./cookies";
 
 /**
  * Change l'entreprise active. Le cookie n'est posé que si l'utilisateur est membre ACTIF d'une
@@ -22,6 +22,15 @@ export const switchCompanyAction = defineUserAction({
       throw new AppError("FORBIDDEN", "Vous n'avez pas accès à cette entreprise.");
     }
     await setActiveCompanyCookie(input.companyId);
+    revalidatePath("/app", "layout");
+  },
+});
+
+/** Année d'affichage des listes (cookie d'interface) ; ne donne accès à rien de plus. */
+export const setYearAction = defineUserAction({
+  input: z.object({ year: z.number().int().min(2000).max(2100) }),
+  handler: async ({ input }) => {
+    await setYearCookie(input.year);
     revalidatePath("/app", "layout");
   },
 });

@@ -31,15 +31,8 @@ export function CompanySwitcher({ activeId, items }: { activeId: string; items: 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-10 max-w-[15rem] gap-2.5 px-2" aria-label="Changer d'entreprise">
-          <Avatar className="size-7 rounded-md">
-            {active.logoUrl && <AvatarImage src={active.logoUrl} alt="" className="rounded-md object-contain" />}
-            <AvatarFallback className="rounded-md bg-primary text-[11px] font-semibold text-primary-foreground">{initials(active.name)}</AvatarFallback>
-          </Avatar>
-          <span className="hidden min-w-0 flex-col items-start text-left leading-tight sm:flex">
-            <span className="max-w-[9.5rem] truncate text-sm font-medium">{active.name}</span>
-            <span className="max-w-[9.5rem] truncate text-[11px] text-muted-foreground">{active.roleName}</span>
-          </span>
+        <Button variant="outline" className="h-10 w-32 justify-between gap-2 bg-card px-3 font-normal sm:w-64" aria-label="Changer d'entreprise">
+          <span className="min-w-0 truncate text-left text-sm">{active.name}</span>
           {pending ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : <ChevronsUpDown className="size-4 text-muted-foreground" />}
         </Button>
       </DropdownMenuTrigger>

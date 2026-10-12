@@ -1,4 +1,5 @@
 import "server-only";
+import type { DateRange } from "@/core/tenant/period";
 import { audit } from "@/core/audit";
 import type { Db } from "@/core/db/client";
 import { emit } from "@/core/events";
@@ -22,8 +23,9 @@ async function assertCustomer(ctx: Ctx, customerId: string) {
   return c;
 }
 
-export async function listOrders(ctx: Ctx, p: { q?: string; status?: OrderStatusT; customerId?: string; skip: number; take: number }) {
+export async function listOrders(ctx: Ctx, p: { q?: string; status?: OrderStatusT; customerId?: string; period?: DateRange; skip: number; take: number }) {
   const where = {
+    ...(p.period ? { orderDate: p.period } : {}),
     ...(p.status ? { status: p.status } : {}),
     ...(p.customerId ? { customerId: p.customerId } : {}),
     ...(p.q ? { OR: [{ number: { contains: p.q, mode: "insensitive" as const } }, { customer: { name: { contains: p.q, mode: "insensitive" as const } } }] } : {}),
@@ -130,8 +132,9 @@ export async function refreshOrderStatus(tx: Db, orderId: string) {
 
 // ── Livraisons ────────────────────────────────────────────────
 
-export async function listDeliveries(ctx: Ctx, p: { q?: string; orderId?: string; skip: number; take: number }) {
+export async function listDeliveries(ctx: Ctx, p: { q?: string; orderId?: string; period?: DateRange; skip: number; take: number }) {
   const where = {
+    ...(p.period ? { deliveryDate: p.period } : {}),
     ...(p.orderId ? { orderId: p.orderId } : {}),
     ...(p.q ? { OR: [{ number: { contains: p.q, mode: "insensitive" as const } }, { customer: { name: { contains: p.q, mode: "insensitive" as const } } }] } : {}),
   };
