@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, ScanBarcode, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { BarcodeScannerDialog } from "@/components/app/barcode-scanner";
 import { Field, FormAlert } from "@/components/app/form-kit";
 import { computeLine, computeTotals } from "@/core/money";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ export function SalesEditor({ kind, id, number, initial, customers, products, ta
     { id: "options", label: "Options" },
   ] as const, [C.hasTerms]);
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("header");
+  const [scanning, setScanning] = useState(false);
   const [f, setF] = useState({
     customerId: initial.customerId, date: initial.date, second: initial.secondDate, notes: initial.notes, terms: initial.terms, quoteKind: initial.quoteKind ?? "QUOTE",
     warehouseId: initial.warehouseId ?? "", branchId: initial.branchId ?? "", costCenterId: initial.costCenterId ?? "", projectId: initial.projectId ?? "",
@@ -77,6 +79,25 @@ export function SalesEditor({ kind, id, number, initial, customers, products, ta
     const p = products.find((x) => x.id === productId);
     // prix de la liste du client s'il y en a un pour ce produit, sinon prix de vente standard
     if (p) patch(key, { productId, description: p.name, unit: p.unit, unitPrice: String(customers.find((c) => c.id === f.customerId)?.prices?.[p.id] ?? p.salePrice), taxId: p.taxId ?? defaultTax });
+  };
+
+  /** Article scanné : ajoute une ligne avec le prix (liste du client ou prix standard), ou augmente la quantité de la ligne existante. */
+  const addScanned = (code: string) => {
+    const c = code.trim().toLowerCase();
+    const p = products.find((x) => x.barcode?.toLowerCase() === c) ?? products.find((x) => x.sku.toLowerCase() === c);
+    setScanning(false);
+    if (!p) { toast.error(`Aucun produit pour le code « ${code} »`); return; }
+    const price = String(customers.find((x) => x.id === f.customerId)?.prices?.[p.id] ?? p.salePrice);
+    const existing = lines.find((l) => l.productId === p.id);
+    if (existing) {
+      setLines((ls) => ls.map((l) => (l.key === existing.key ? { ...l, quantity: String((Number(l.quantity) || 0) + 1) } : l)));
+    } else {
+      const fresh: LineState = { key: nextKey, productId: p.id, description: p.name, unit: p.unit, quantity: "1", unitPrice: price, discountPct: "0", taxId: p.taxId ?? defaultTax };
+      // une ligne vierge (jamais remplie) est remplacée plutôt que laissée vide
+      setLines((ls) => (ls.length === 1 && !ls[0]!.productId && !ls[0]!.description.trim() && ls[0]!.unitPrice === "" ? [fresh] : [...ls, fresh]));
+      setNextKey((k) => k + 1);
+    }
+    toast.success(existing ? `${p.name} : quantité augmentée` : `${p.name} ajouté`);
   };
 
   const isProforma = kind === "quote" && f.quoteKind === "PROFORMA";
@@ -233,7 +254,11 @@ export function SalesEditor({ kind, id, number, initial, customers, products, ta
                   </fieldset>
                 );
               })}
-              <Button type="button" variant="outline" onClick={() => { setLines((ls) => [...ls, blank(nextKey)]); setNextKey((k) => k + 1); }}><Plus className="size-4" /> Ajouter un article</Button>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" onClick={() => { setLines((ls) => [...ls, blank(nextKey)]); setNextKey((k) => k + 1); }}><Plus className="size-4" /> Ajouter un article</Button>
+                <Button type="button" variant="outline" onClick={() => setScanning(true)}><ScanBarcode className="size-4" /> Scanner un code-barres</Button>
+              </div>
+              <BarcodeScannerDialog open={scanning} onOpenChange={setScanning} onDetected={addScanned} title="Ajouter un article" description="Scannez le code-barres du produit : il est ajouté à la ligne, ou sa quantité augmente." />
             </div>
           )}
 

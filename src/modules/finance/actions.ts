@@ -1,6 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { businessRule } from "@/core/errors";
+import { captureExpense } from "./capture";
 import { defineTenantAction } from "@/core/actions/define";
 import * as ex from "./expenses";
 import * as rp from "./reports";
@@ -28,6 +31,19 @@ export const cancelTransactionAction = defineTenantAction({ input: idSchema, mod
 export const reconcileAction = defineTenantAction({ input: reconcileSchema, module: M, permission: "finance.account.manage", handler: async ({ ctx, input }) => { await tr.setReconciled(ctx, input.id, input.reconciled); bust(); } });
 
 // Dépenses
+/** Dépense avec photo du justificatif (FormData : description, amount, date, categoryId, method, photo). */
+export const captureExpenseAction = defineTenantAction({
+  input: z.instanceof(FormData), module: M, permission: "finance.expense.create",
+  handler: async ({ ctx, input }) => {
+    const s = (k: string) => { const v = input.get(k); return typeof v === "string" ? v : ""; };
+    const photo = input.get("photo");
+    if (photo !== null && !(photo instanceof File)) throw businessRule("Photo invalide.");
+    const r = await captureExpense(ctx, { description: s("description"), amount: s("amount"), date: s("date"), categoryId: s("categoryId"), method: (s("method") || "CASH") as "CASH" }, photo && photo.size > 0 ? photo : null);
+    bust();
+    return r;
+  },
+});
+
 export const createExpenseAction = defineTenantAction({ input: expenseSchema, module: M, permission: "finance.expense.create", handler: async ({ ctx, input }) => { const e = await ex.createExpense(ctx, input); bust(); return { id: e.id }; } });
 export const updateExpenseAction = defineTenantAction({ input: updateExpenseSchema, module: M, permission: "finance.expense.update", handler: async ({ ctx, input }) => { await ex.updateExpense(ctx, input); bust(); } });
 export const deleteExpenseAction = defineTenantAction({ input: idSchema, module: M, permission: "finance.expense.delete", handler: async ({ ctx, input }) => { await ex.deleteExpense(ctx, input.id); bust(); } });

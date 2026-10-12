@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Package } from "lucide-react";
+import { ScanToSearchButton } from "@/modules/inventory/ui/scan-product";
 import { ListScope, RowBox, SelectAllBox, SelectionBar } from "@/components/app/data-list";
 import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
@@ -40,6 +41,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           ...(categories.length ? [{ name: "categorie", label: "Catégorie", options: categories.map((c) => ({ value: c.id, label: c.name })) }] : []),
         ]}
       >
+        <ScanToSearchButton />
         {canCreate && <ProductFormDialog categories={categories} warehouses={warehouses.map((w) => ({ id: w.id, name: w.name }))} taxes={taxes.filter((t) => t.isActive).map((t) => ({ id: t.id, name: t.name, rate: num(t.rate), isDefault: t.isDefault }))} />}
       </ListToolbar>
       <SelectionBar />

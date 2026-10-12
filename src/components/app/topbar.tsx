@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { Bell, Menu } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CommandPalette } from "./command-palette";
+import { useMobileMenu } from "./mobile-nav";
 import { CompanySwitcher } from "./company-switcher";
 import { useNavCounts } from "./nav-counts";
 import { SidebarContent, type SidebarProps } from "./sidebar";
@@ -24,7 +24,7 @@ export function Topbar({ nav, companies, activeCompanyId, user, country, year, y
   year: number;
   years: number[];
 }) {
-  const [drawer, setDrawer] = useState(false);
+  const { open: drawer, setOpen: setDrawer } = useMobileMenu();
   const { unread } = useNavCounts();
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-card px-3 sm:gap-3 sm:px-4">

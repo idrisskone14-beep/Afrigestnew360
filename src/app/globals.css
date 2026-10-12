@@ -290,3 +290,12 @@
   body { background: #fff !important; background-image: none !important; color: #000 !important; }
   @page { margin: 12mm; }
 }
+
+/* Écrans tactiles : cibles d'au moins 44 px (recommandation d'accessibilité) et saisie sans zoom automatique sur iPhone. */
+@media (pointer: coarse) {
+  [data-slot="button"]:not([data-size="icon"]):not([data-size="icon-sm"]):not([data-size="icon-lg"]) { min-height: 2.75rem; }
+  [data-slot="button"][data-size="icon"], [data-slot="button"][data-size="icon-sm"] { min-width: 2.75rem; min-height: 2.75rem; }
+  [data-slot="input"], [data-slot="select-trigger"], [data-slot="textarea"] { min-height: 2.75rem; font-size: 16px; }
+  [data-slot="table-cell"], [data-slot="table-head"] { padding-block: 0.875rem; }
+  [data-slot="dropdown-menu-item"], [data-slot="select-item"], [data-slot="command-item"] { min-height: 2.75rem; }
+}

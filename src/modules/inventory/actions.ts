@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { defineTenantAction } from "@/core/actions/define";
 import { audit } from "@/core/audit";
 import {
@@ -10,6 +11,7 @@ import * as inv from "./service";
 
 const bust = () => revalidatePath("/app/inventory", "layout");
 
+export const findProductByCodeAction = defineTenantAction({ input: z.object({ code: z.string().trim().min(1).max(64) }), module: "inventory", permission: "inventory.product.read", handler: async ({ ctx, input }) => inv.findProductByCode(ctx, input.code) });
 export const createProductAction = defineTenantAction({ input: productSchema, permission: "inventory.product.create", handler: async ({ ctx, input }) => { const p = await inv.createProduct(ctx, input); bust(); return { id: p.id }; } });
 export const updateProductAction = defineTenantAction({ input: updateProductSchema, permission: "inventory.product.update", handler: async ({ ctx, input }) => { await inv.updateProduct(ctx, input); bust(); } });
 export const archiveProductAction = defineTenantAction({ input: idSchema, permission: "inventory.product.delete", handler: async ({ ctx, input }) => { await inv.archiveProduct(ctx, input.id); bust(); } });

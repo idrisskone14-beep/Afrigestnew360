@@ -31,6 +31,16 @@ export async function listProducts(ctx: Ctx, p: { q?: string; categoryId?: strin
   return { total, rows: rows.map((r) => ({ ...r, stock: totals.get(r.id) ?? { quantity: d(0), reserved: d(0) } })) };
 }
 
+/** Produit correspondant à un code scanné : code-barres exact, sinon référence (insensible à la casse). */
+export async function findProductByCode(ctx: Ctx, code: string) {
+  const c = code.trim();
+  if (!c) return null;
+  return ctx.db.product.findFirst({
+    where: { deletedAt: null, isActive: true, OR: [{ barcode: c }, { sku: { equals: c, mode: "insensitive" } }] },
+    select: { id: true, name: true, sku: true, barcode: true },
+  });
+}
+
 export async function getProduct(ctx: Ctx, id: string) {
   const product = await ctx.db.product.findFirst({ where: { id, deletedAt: null }, include: { category: true } });
   if (!product) throw notFound("Produit");

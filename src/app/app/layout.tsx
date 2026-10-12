@@ -1,10 +1,13 @@
+import { MobileMenuProvider, MobileNav } from "@/components/app/mobile-nav";
 import { NavCountsProvider } from "@/components/app/nav-counts";
+import { PwaRegister } from "@/components/app/pwa-register";
 import { NavModulesProvider } from "@/components/app/module-header";
 import { Rail, SidebarContent } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
 import { loadContextState } from "@/core/tenant/context";
 import { canSeeValidations } from "@/core/approvals";
 import { visibleModules } from "@/core/tenant/navigation";
+import { quickActionsFor } from "@/core/tenant/quick-actions";
 import { selectedYear } from "@/core/tenant/period";
 import { yearOptions } from "@/lib/period";
 import { countryName } from "@/lib/reference-data";
@@ -28,12 +31,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Les compteurs (notifications non lues, validations en attente) ne sont PAS calculés ici : ils ralentiraient l'affichage
   // de toutes les pages. Ils arrivent juste après, via /api/nav/counts (voir NavCountsProvider).
   const nav = { modules, canSeeSettings, unreadCount: 0, validations: canSeeValidations(ctx) ? { pending: 0 } : null };
+  const quickActions = quickActionsFor(ctx);
   const year = await selectedYear();
   const country = ctx.company.country ? { code: ctx.company.country, name: countryName(ctx.company.country) } : null;
 
   return (
     <NavCountsProvider>
       <NavModulesProvider modules={modules}>
+        <MobileMenuProvider>
+        <PwaRegister />
         <div className="min-h-dvh">
           <Topbar
             nav={nav}
@@ -49,9 +55,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <div className="w-14 border-r bg-card"><Rail modules={modules} canSeeSettings={canSeeSettings} /></div>
               <div className="w-60"><SidebarContent {...nav} /></div>
             </aside>
-            <main className="mx-auto w-full min-w-0 max-w-[1500px] flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+            <main className="mx-auto w-full min-w-0 max-w-[1500px] flex-1 px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-6">{children}</main>
           </div>
+          <MobileNav modules={modules} quickActions={quickActions} />
         </div>
+        </MobileMenuProvider>
       </NavModulesProvider>
     </NavCountsProvider>
   );

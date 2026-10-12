@@ -15,7 +15,7 @@ import { formatMoney } from "@/lib/reference-data";
 import { createBillAction, createOrderAction as createPurchaseOrderAction, updateBillAction, updateOrderAction as updatePurchaseOrderAction } from "@/modules/purchasing/actions";
 import { createInvoiceAction, createOrderAction, createQuoteAction, updateInvoiceAction, updateOrderAction, updateQuoteAction } from "../actions";
 
-export interface ProductOpt { id: string; name: string; sku: string; unit: string; salePrice: number; costPrice: number; taxId: string | null }
+export interface ProductOpt { id: string; name: string; sku: string; barcode?: string | null; unit: string; salePrice: number; costPrice: number; taxId: string | null }
 export interface TaxOpt { id: string; name: string; rate: number; isDefault: boolean }
 interface LineState { key: number; productId: string; description: string; unit: string; quantity: string; unitPrice: string; discountPct: string; taxId: string }
 

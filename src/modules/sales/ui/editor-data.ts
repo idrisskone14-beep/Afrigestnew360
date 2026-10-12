@@ -11,7 +11,7 @@ export async function loadEditorData(ctx: TenantContext, opts: { parties?: "cust
       ? ctx.db.supplier.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" }, take: 1000 })
       : ctx.db.customer.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" }, take: 1000 }),
     ctx.can("inventory.product.read") || ctx.hasModule("inventory")
-      ? ctx.db.product.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true, name: true, sku: true, unit: true, salePrice: true, costPrice: true, taxId: true }, orderBy: { name: "asc" }, take: 1000 })
+      ? ctx.db.product.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true, name: true, sku: true, barcode: true, unit: true, salePrice: true, costPrice: true, taxId: true }, orderBy: { name: "asc" }, take: 1000 })
       : Promise.resolve([]),
     ctx.db.tax.findMany({ where: { isActive: true }, orderBy: [{ isDefault: "desc" }, { name: "asc" }] }),
     ctx.hasModule("inventory") ? ctx.db.warehouse.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }) : Promise.resolve([]),
@@ -21,7 +21,7 @@ export async function loadEditorData(ctx: TenantContext, opts: { parties?: "cust
   ]);
   return {
     customers,
-    products: products.map((p): ProductOpt => ({ id: p.id, name: p.name, sku: p.sku, unit: p.unit, salePrice: num(p.salePrice), costPrice: num(p.costPrice), taxId: p.taxId })),
+    products: products.map((p): ProductOpt => ({ id: p.id, name: p.name, sku: p.sku, barcode: p.barcode, unit: p.unit, salePrice: num(p.salePrice), costPrice: num(p.costPrice), taxId: p.taxId })),
     taxes: taxes.map((t): TaxOpt => ({ id: t.id, name: t.name, rate: num(t.rate), isDefault: t.isDefault })),
     warehouses,
     branches,
