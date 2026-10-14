@@ -232,7 +232,7 @@ describe("congés", () => {
     await decideApproval(s.ctx, { id: appr.id, decision: "REJECTED", comment: "Période de clôture" });
     expect((await lv.getLeaveRequest(ctx, r.id)).status).toBe("REJECTED");
     await expect(lv.requestLeave(ctx, leaveInput(e.id, type.id, "2027-12-30", "2028-01-04"))).rejects.toMatchObject({ code: "BUSINESS_RULE", message: expect.stringContaining("deux années") });
-    await expect(lv.requestLeave(ctx, leaveInput(e.id, type.id, "2027-03-06", "2027-03-07"))).rejects.toMatchObject({ code: "BUSINESS_RULE", message: expect.stringContaining("jour ouvré") });
+    await expect(lv.requestLeave(ctx, leaveInput(e.id, type.id, "2027-03-06", "2027-03-07"))).rejects.toMatchObject({ code: "BUSINESS_RULE", message: expect.stringContaining("jour travaillé") });
     await expect(lv.requestLeave(ctx, leaveInput(e.id, type.id, "2026-03-02", "2026-03-03"))).rejects.toMatchObject({ code: "BUSINESS_RULE", message: expect.stringContaining("embauche") });
     await expect(lv.requestLeave(ctx, leaveInput(e.id, type.id, "2027-03-05", "2027-03-01"))).rejects.toMatchObject({ code: "BUSINESS_RULE" });
   });

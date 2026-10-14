@@ -24,7 +24,7 @@
 
 Une permission n'est effective que si son module est actif pour l'entreprise (offre + surcharges) **et** que le rôle de l'utilisateur la détient. Un module désactivé est invisible et répond 403 par URL directe.
 
-## Permissions (150)
+## Permissions (151)
 
 ### Cœur (`core`) — 21
 
@@ -173,7 +173,7 @@ Une permission n'est effective que si son module est actif pour l'entreprise (of
 | `inventory.warehouse.manage` | Gérer — Entrepôts |
 | `inventory.count.manage` | Gérer — Inventaires |
 
-### Ressources humaines (`hr`) — 11
+### Ressources humaines (`hr`) — 12
 
 | Clé | Libellé |
 |---|---|
@@ -188,6 +188,7 @@ Une permission n'est effective que si son module est actif pour l'entreprise (of
 | `hr.leave.request` | Demander — Congés |
 | `hr.leave.approve` | Approuver — Congés |
 | `hr.evaluation.manage` | Gérer — Évaluations et formations |
+| `hr.holiday.manage` | Gérer — Jours fériés et calendrier de travail |
 
 ### Paie (`payroll`) — 2
 
@@ -257,15 +258,15 @@ Copiés dans chaque nouvelle entreprise, puis **librement modifiables** (les rô
 
 | Rôle | Description | Permissions | Motifs |
 |---|---|---|---|
-| Administrateur (administrateur) | Accès complet à l'entreprise. | 150 / 150 | `*` |
-| Directeur Général | Vision globale et validations. | 49 / 150 | `*.read`, `workflow.request.*`, `reports.*`, `data.export.run`, `intelligence.*` |
-| Directeur Financier | Finance, comptabilité, budgets, approbations. | 43 / 150 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `finance.*`, `accounting.*`, `reports.*`, `workflow.request.approve`, `sales.discount.approve`, … |
-| Comptable | Saisie et suivi comptable. | 23 / 150 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `finance.invoice.read`, `finance.payment.*`, `finance.expense.*`, `finance.category.manage`, `finance.account.read`, … |
-| RH | Employés, présences, congés, paie. | 24 / 150 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `hr.*`, `workflow.request.approve`, `reports.report.read`, `documents.document.*`, `org.structure.read` |
-| Responsable Commercial | Pilotage des ventes et du CRM. | 45 / 150 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `crm.*`, `sales.*`, `finance.invoice.*`, `finance.credit_note.*`, `inventory.product.read`, … |
-| Commercial | Prospection et devis. | 25 / 150 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `crm.customer.read`, `crm.customer.create`, `crm.customer.update`, `crm.lead.*`, `crm.opportunity.*`, … |
-| Responsable Stock | Produits, entrepôts, mouvements. | 20 / 150 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `inventory.*`, `purchases.supplier.read`, `purchases.receipt.*`, `sales.delivery.*`, `reports.report.read` |
-| Chef de Projet | Projets, tâches, temps et budgets. | 19 / 150 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `project.*`, `documents.document.*`, `construction.*`, `reports.report.read`, `hr.employee.read` |
-| Responsable Flotte | Véhicules, chauffeurs, entretiens, contraventions. | 18 / 150 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `fleet.*`, `documents.document.*`, `finance.expense.read`, `reports.report.read` |
-| Employé | Accès de base : congés et tâches. | 7 / 150 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `hr.leave.request`, `hr.leave.read`, `project.task.manage`, `hr.payslip.read` |
-| Consultation uniquement | Lecture seule. | 44 / 150 | `*.read` |
+| Administrateur (administrateur) | Accès complet à l'entreprise. | 151 / 151 | `*` |
+| Directeur Général | Vision globale et validations. | 49 / 151 | `*.read`, `workflow.request.*`, `reports.*`, `data.export.run`, `intelligence.*` |
+| Directeur Financier | Finance, comptabilité, budgets, approbations. | 43 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `finance.*`, `accounting.*`, `reports.*`, `workflow.request.approve`, `sales.discount.approve`, … |
+| Comptable | Saisie et suivi comptable. | 23 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `finance.invoice.read`, `finance.payment.*`, `finance.expense.*`, `finance.category.manage`, `finance.account.read`, … |
+| RH | Employés, présences, congés, paie. | 25 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `hr.*`, `workflow.request.approve`, `reports.report.read`, `documents.document.*`, `org.structure.read` |
+| Responsable Commercial | Pilotage des ventes et du CRM. | 45 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `crm.*`, `sales.*`, `finance.invoice.*`, `finance.credit_note.*`, `inventory.product.read`, … |
+| Commercial | Prospection et devis. | 25 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `crm.customer.read`, `crm.customer.create`, `crm.customer.update`, `crm.lead.*`, `crm.opportunity.*`, … |
+| Responsable Stock | Produits, entrepôts, mouvements. | 20 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `inventory.*`, `purchases.supplier.read`, `purchases.receipt.*`, `sales.delivery.*`, `reports.report.read` |
+| Chef de Projet | Projets, tâches, temps et budgets. | 19 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `project.*`, `documents.document.*`, `construction.*`, `reports.report.read`, `hr.employee.read` |
+| Responsable Flotte | Véhicules, chauffeurs, entretiens, contraventions. | 18 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `fleet.*`, `documents.document.*`, `finance.expense.read`, `reports.report.read` |
+| Employé | Accès de base : congés et tâches. | 7 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `hr.leave.request`, `hr.leave.read`, `project.task.manage`, `hr.payslip.read` |
+| Consultation uniquement | Lecture seule. | 44 / 151 | `*.read` |

@@ -125,6 +125,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
     attendance: ["Présences", ["read", "manage"]],
     leave: ["Congés", ["read", "request", "approve"]],
     evaluation: ["Évaluations et formations", ["manage"]],
+    holiday: ["Jours fériés et calendrier de travail", ["manage"]],
   }),
   ...build("hr", "payroll", { payroll: ["Paie", ["manage"]], payslip: ["Bulletins", ["read"]] }),
 

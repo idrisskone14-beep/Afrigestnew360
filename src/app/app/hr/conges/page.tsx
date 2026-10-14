@@ -7,7 +7,7 @@ import { ListToolbar } from "@/components/app/list-kit";
 import { EmptyState } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
 import { Status } from "@/components/app/status-badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { canDecide } from "@/core/approvals";
 import { num } from "@/core/money";
@@ -17,6 +17,7 @@ import { fmtDate } from "@/lib/format";
 import { PAGE_SIZE, enumParam, param, parseListParams, type SearchParams } from "@/lib/list-params";
 import { cancelLeaveAction } from "@/modules/hr/actions";
 import { employeeOfUser } from "@/modules/hr/employees";
+import { BalanceCard } from "@/modules/hr/ui/balance-card";
 import { leaveBalances, listLeaveRequests, listLeaveTypes, seesAllLeaves } from "@/modules/hr/leave";
 import { LeaveRequestDialog, LeaveTypesDialog } from "@/modules/hr/ui/leave-dialogs";
 import { DecisionButtons } from "@/modules/purchasing/ui/purchase-dialogs";
@@ -49,13 +50,13 @@ export default async function LeavesPage({ searchParams }: { searchParams: Promi
         { name: "statut", label: "Statut", options: [{ value: "PENDING", label: "En attente" }, { value: "APPROVED", label: "Approuvés" }, { value: "REJECTED", label: "Refusés" }, { value: "CANCELLED", label: "Annulés" }] },
         { name: "type", label: "Type", options: allTypes.map((t) => ({ value: t.id, label: t.name })) },
       ]}>
-        {hrMode && <LeaveTypesDialog types={allTypes.map((t) => ({ id: t.id, name: t.name, annualDays: num(t.annualDays), paid: t.paid, isActive: t.isActive }))} />}
+        {hrMode && <LeaveTypesDialog types={allTypes.map((t) => ({ id: t.id, name: t.name, annualDays: num(t.annualDays), paid: t.paid, isActive: t.isActive, accrual: t.accrual, carryOverMax: num(t.carryOverMax), carryOverExpiryMonth: t.carryOverExpiryMonth }))} />}
         {employees.length > 0 && <LeaveRequestDialog employees={employees} types={allTypes.filter((t) => t.isActive).map((t) => ({ id: t.id, name: t.name }))} defaultEmployeeId={me?.id} />}
       </ListToolbar>
 
       {balances.length > 0 && (
         <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {balances.map((b) => <Card key={b.type.id}><CardContent className="space-y-0.5 p-4"><p className="text-xs text-muted-foreground">Mes jours — {b.type.name}</p><p className="text-lg font-semibold tabular">{b.remaining ? `${b.remaining.toNumber()} j restants` : `${b.taken.toNumber()} j pris`}</p><p className="text-xs text-muted-foreground">{b.entitlement ? `sur ${b.entitlement.toNumber()} · ` : ""}{b.pending.toNumber()} en attente</p></CardContent></Card>)}
+          {balances.map((b) => <BalanceCard key={b.type.id} b={b} compact label={`Mes jours — ${b.type.name}`} />)}
         </div>
       )}
       <SelectionBar />

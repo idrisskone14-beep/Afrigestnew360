@@ -216,6 +216,8 @@ model Company {
   recurringInvoices     RecurringInvoice[]
   priceLists            PriceList[]
   priceListItems        PriceListItem[]
+  holidays              Holiday[]
+  hrSettings            HrSettings?
   suppliers             Supplier[]
   purchaseRequests      PurchaseRequest[]
   purchaseRequestLines  PurchaseRequestLine[]

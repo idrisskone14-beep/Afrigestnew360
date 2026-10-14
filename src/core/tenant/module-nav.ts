@@ -70,9 +70,12 @@ const ITEMS: Record<string, (ctx: Pick<TenantContext, "can">) => ItemDef[]> = {
   ],
   hr: () => [
     { href: "/app/hr", label: "Vue d'ensemble", exact: true, show: always },
+    { href: "/app/hr/indicateurs", label: "Indicateurs RH", show: any("hr.employee.read") },
     { href: "/app/hr/salaries", label: "Salariés", show: any("hr.employee.read") },
     { href: "/app/hr/conges", label: "Congés", show: any("hr.leave.read", "hr.leave.request") },
+    { href: "/app/hr/suivi-conges", label: "Suivi des congés", show: any("hr.employee.read", "hr.leave.approve") },
     { href: "/app/hr/presences", label: "Présences", show: any("hr.attendance.read") },
+    { href: "/app/hr/feries", label: "Jours fériés", show: any("hr.employee.read", "hr.holiday.manage") },
   ],
   payroll: ({ can }) => {
     const manage = can("hr.payroll.manage");

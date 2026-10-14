@@ -25,6 +25,13 @@ Format : une entrée par phase livrée, des changements les plus récents aux pl
 
 **Déploiement** : script `vercel-build` (migrations automatiques avant la construction), `vercel.json` (région, cron des alertes).
 
+## RH : calendrier de travail, congés corrigés, tableaux de bord (2026-10)
+- **Jours fériés** par entreprise (page RH › Jours fériés) : ajout, suppression, génération des fêtes fixes et des fêtes liées à Pâques pour la Côte d'Ivoire et le Sénégal (autres pays : fêtes communes à compléter). Les fêtes musulmanes dépendent de la lune et d'un décret : elles se saisissent chaque année. Droit `hr.holiday.manage`.
+- **Semaine travaillée** configurable (lundi-vendredi par défaut, samedi possible). Elle et les jours fériés alimentent **le décompte des congés ET le prorata de la paie** : jusqu'ici un férié comptait comme jour ouvré (congé décompté trop long, jours non payés et base du mois faux).
+- **Droit à congés** : droit annuel proratisé l'année d'arrivée ou de départ (au demi-jour) ; **acquisition progressive** (on ne pose que ce qui est constitué à la fin de la période) ou à l'avance ; **report** des jours non pris avec plafond et date limite d'utilisation, consommé avant le droit de l'année. Réglable par type de congé.
+- **Indicateurs RH** : effectif, mouvements, rotation, ancienneté, pyramide des âges, motifs de départ, absentéisme (jours pointés), congés, masse salariale réelle (paies validées) ou estimée — salaires réservés aux droits contrats / paie.
+- **Suivi des congés** : calendrier d'absences du mois (jours fériés et week-ends marqués, congés en attente hachurés), pic d'absence, demandes à valider, soldes de chaque salarié triés du plus bas au plus haut.
+
 ## Mobile : application installable, barre du bas, scan, photo, push (2026-10)
 - **Application installable (PWA)** : manifeste, icônes (aussi favicon et icône iPhone), service worker. Hors connexion, une page claire s'affiche ; **aucune donnée d'entreprise n'est mise en cache** sur l'appareil.
 - **Barre de navigation du bas** (téléphone) : Accueil, module principal, bouton « + » de gestes rapides (devis, facture, commande, scan, photo de justificatif, achats — selon les droits et modules), Alertes, Menu. Cibles tactiles de 44 px sur écran tactile.

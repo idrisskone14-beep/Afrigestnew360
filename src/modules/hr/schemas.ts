@@ -50,7 +50,12 @@ export const contractSchema = z.object({
   notes: text(500),
 });
 
-export const leaveTypeSchema = z.object({ name: z.string().trim().min(2, "Nom requis").max(80), annualDays: z.coerce.number().min(0).max(366).default(0), paid: z.boolean().default(true) });
+export const leaveTypeSchema = z.object({
+  name: z.string().trim().min(2, "Nom requis").max(80), annualDays: z.coerce.number().min(0).max(366).default(0), paid: z.boolean().default(true),
+  accrual: z.enum(["UPFRONT", "MONTHLY"]).default("UPFRONT"),
+  carryOverMax: z.coerce.number().min(0).max(366).default(0),
+  carryOverExpiryMonth: z.coerce.number().int().min(1).max(12).nullable().optional(),
+});
 export const updateLeaveTypeSchema = leaveTypeSchema.extend({ id: uuid, isActive: z.boolean().default(true) });
 export const leaveRequestSchema = z.object({ employeeId: uuid, typeId: uuid, startDate: dateStr, endDate: dateStr, reason: text(500) });
 

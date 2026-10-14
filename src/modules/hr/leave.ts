@@ -8,30 +8,28 @@ import { d } from "@/core/money";
 import type { TenantContext } from "@/core/tenant/context";
 import "@/modules/registry";
 import type { z } from "zod";
+import { loadCalendar } from "./calendar";
 import { employeeOfUser } from "./employees";
+import { computeBalance, workingDays, type LeaveRow, type LeaveRule } from "./leave-calc";
 import type { leaveRequestSchema, leaveTypeSchema, updateLeaveTypeSchema } from "./schemas";
 
 type Ctx = TenantContext;
 const blank = (v?: string | null) => (v && v.trim() ? v.trim() : null);
-const DAY = 86_400_000;
 const day = (v: Date) => new Date(Date.UTC(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate()));
 const iso = (v: Date) => v.toISOString().slice(0, 10);
 const fr = (v: Date) => v.toLocaleDateString("fr-FR", { timeZone: "UTC" });
 
-/** Jours ouvrés (lundi à vendredi) entre deux dates incluses. Les jours fériés ne sont pas déduits (non paramétrés). */
-export function workingDays(start: Date, end: Date): number {
-  let n = 0;
-  for (let t = day(start).getTime(); t <= day(end).getTime(); t += DAY) { const w = new Date(t).getUTCDay(); if (w !== 0 && w !== 6) n++; }
-  return n;
-}
+export { workingDays };
 
 // ═══ Types de congé ═══════════════════════════════════════════
+
+const ruleOf = (t: { annualDays: unknown; accrual: "UPFRONT" | "MONTHLY"; carryOverMax: unknown; carryOverExpiryMonth: number | null }): LeaveRule => ({ annualDays: Number(t.annualDays), accrual: t.accrual, carryOverMax: Number(t.carryOverMax), carryOverExpiryMonth: t.carryOverExpiryMonth });
 
 export const listLeaveTypes = (ctx: Ctx, includeInactive = false) => ctx.db.leaveType.findMany({ where: includeInactive ? {} : { isActive: true }, orderBy: { name: "asc" } });
 
 export async function createLeaveType(ctx: Ctx, input: z.output<typeof leaveTypeSchema>) {
   if (await ctx.db.leaveType.findFirst({ where: { name: input.name.trim() } })) throw businessRule("Ce type de congé existe déjà.");
-  const t = await ctx.db.leaveType.create({ data: { companyId: ctx.company.id, name: input.name.trim(), annualDays: input.annualDays, paid: input.paid } });
+  const t = await ctx.db.leaveType.create({ data: { companyId: ctx.company.id, name: input.name.trim(), annualDays: input.annualDays, paid: input.paid, accrual: input.accrual, carryOverMax: input.carryOverMax, carryOverExpiryMonth: input.carryOverMax > 0 ? input.carryOverExpiryMonth || null : null } });
   await audit(ctx, { action: "hr.leave_type.create", resource: "LeaveType", resourceId: t.id, summary: `${ctx.user.name} a créé le type de congé « ${t.name} ».` });
   return t;
 }
@@ -40,7 +38,7 @@ export async function updateLeaveType(ctx: Ctx, input: z.output<typeof updateLea
   const t = await ctx.db.leaveType.findFirst({ where: { id: input.id } });
   if (!t) throw notFound("Type de congé");
   if (await ctx.db.leaveType.findFirst({ where: { name: input.name.trim(), id: { not: input.id } } })) throw businessRule("Ce type de congé existe déjà.");
-  const after = await ctx.db.leaveType.update({ where: { id: input.id }, data: { name: input.name.trim(), annualDays: input.annualDays, paid: input.paid, isActive: input.isActive } });
+  const after = await ctx.db.leaveType.update({ where: { id: input.id }, data: { name: input.name.trim(), annualDays: input.annualDays, paid: input.paid, isActive: input.isActive, accrual: input.accrual, carryOverMax: input.carryOverMax, carryOverExpiryMonth: input.carryOverMax > 0 ? input.carryOverExpiryMonth || null : null } });
   await audit(ctx, { action: "hr.leave_type.update", resource: "LeaveType", resourceId: t.id, summary: `${ctx.user.name} a modifié le type de congé « ${after.name} ».`, before: { annualDays: t.annualDays }, after: { annualDays: after.annualDays } });
   return after;
 }
@@ -50,15 +48,27 @@ export async function updateLeaveType(ctx: Ctx, input: z.output<typeof updateLea
 /** Visibilité : RH et valideurs voient toutes les demandes, les autres uniquement les leurs. */
 export const seesAllLeaves = (ctx: Pick<Ctx, "can">) => ctx.can("hr.employee.read") || ctx.can("hr.leave.approve");
 
-export async function leaveBalances(ctx: Ctx, employeeId: string, year: number) {
-  const types = await listLeaveTypes(ctx);
-  const from = new Date(Date.UTC(year, 0, 1)), to = new Date(Date.UTC(year, 11, 31));
-  const reqs = await ctx.db.leaveRequest.findMany({ where: { employeeId, status: { in: ["APPROVED", "PENDING"] }, startDate: { gte: from, lte: to } }, select: { typeId: true, status: true, days: true } });
+/**
+ * Soldes d'un salarié pour une année : droit annuel (proratisé à la présence), acquis à la date demandée, report de l'année précédente,
+ * pris, en attente, reste. `asOf` : date de référence (par défaut aujourd'hui, ramenée dans l'année). Règles : voir leave-calc.ts.
+ */
+export async function leaveBalances(ctx: Ctx, employeeId: string, year: number, asOf?: Date) {
+  const [types, emp] = await Promise.all([listLeaveTypes(ctx), ctx.db.employee.findFirst({ where: { id: employeeId }, select: { hireDate: true, endDate: true } })]);
+  if (!emp) throw notFound("Salarié");
+  const ref = asOf ?? new Date();
+  const clamped = new Date(Math.min(Math.max(day(ref).getTime(), Date.UTC(year, 0, 1)), Date.UTC(year, 11, 31)));
+  const reqs = await ctx.db.leaveRequest.findMany({
+    where: { employeeId, status: { in: ["APPROVED", "PENDING"] }, endDate: { gte: new Date(Date.UTC(year - 6, 0, 1)), lte: new Date(Date.UTC(year, 11, 31)) } },
+    select: { typeId: true, status: true, days: true, endDate: true },
+  });
   return types.map((t) => {
-    const taken = reqs.filter((r) => r.typeId === t.id && r.status === "APPROVED").reduce((a, r) => a.plus(r.days), d(0));
-    const pending = reqs.filter((r) => r.typeId === t.id && r.status === "PENDING").reduce((a, r) => a.plus(r.days), d(0));
+    const rows: LeaveRow[] = reqs.filter((r) => r.typeId === t.id).map((r) => ({ year: r.endDate.getUTCFullYear(), status: r.status as "APPROVED" | "PENDING", days: Number(r.days), endDate: r.endDate }));
+    const b = computeBalance(ruleOf(t), emp, year, clamped, rows);
     const capped = d(t.annualDays).gt(0);
-    return { type: t, entitlement: capped ? d(t.annualDays) : null, taken, pending, remaining: capped ? d(t.annualDays).minus(taken).minus(pending) : null };
+    return {
+      type: t, capped, entitlement: capped ? d(b.entitlement) : null, taken: d(b.taken), pending: d(b.pending), remaining: capped ? d(b.remaining) : null,
+      accrued: capped ? b.accrued : null, carryOver: b.carryOver, carryExpiresOn: b.carryExpiresOn, available: capped ? b.available : null,
+    };
   });
 }
 
@@ -103,12 +113,14 @@ export async function requestLeave(ctx: Ctx, input: z.output<typeof leaveRequest
   if (end < start) throw businessRule("La fin du congé précède son début.");
   if (start.getUTCFullYear() !== end.getUTCFullYear()) throw businessRule("Une demande ne peut pas chevaucher deux années : faites-en une par année.");
   if (start < emp.hireDate) throw businessRule("Le congé précède la date d'embauche.");
-  const days = workingDays(start, end);
-  if (days <= 0) throw businessRule("La période ne comporte aucun jour ouvré.");
+  const cal = await loadCalendar(ctx.db, start, end);
+  const days = workingDays(start, end, cal);
+  if (days <= 0) throw businessRule("La période ne comporte aucun jour travaillé (week-ends et jours fériés exclus).");
   if (await ctx.db.leaveRequest.findFirst({ where: { employeeId: emp.id, status: { in: ["PENDING", "APPROVED"] }, startDate: { lte: end }, endDate: { gte: start } } })) throw businessRule("Une demande de congé existe déjà sur tout ou partie de cette période.");
   if (d(type.annualDays).gt(0)) {
-    const bal = (await leaveBalances(ctx, emp.id, start.getUTCFullYear())).find((b) => b.type.id === type.id)!;
-    if (bal.remaining!.lt(days)) throw businessRule(`Solde insuffisant pour « ${type.name} » : ${bal.remaining!.toNumber()} jour(s) restant(s), ${days} demandé(s).`);
+    // solde utilisable pour une période se terminant à cette date (acquisition progressive : seul le constitué à la fin de la période compte)
+    const bal = (await leaveBalances(ctx, emp.id, start.getUTCFullYear(), end)).find((b) => b.type.id === type.id)!;
+    if (bal.available! < days) throw businessRule(`Solde insuffisant pour « ${type.name} » : ${bal.available} jour(s) disponible(s) à la fin de cette période${type.accrual === "MONTHLY" ? " (droit acquis progressivement)" : ""}, ${days} demandé(s).`);
   }
   const title = `Congé ${emp.firstName} ${emp.lastName} du ${fr(start)} au ${fr(end)}`;
   const { req, auto } = await ctx.tx(async (tx) => {

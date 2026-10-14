@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { defineTenantAction } from "@/core/actions/define";
+import * as cal from "./calendar";
 import * as emp from "./employees";
 import * as lv from "./leave";
 import * as pp from "./people";
@@ -18,6 +19,12 @@ export const createEmployeeAction = defineTenantAction({ input: employeeSchema, 
 export const updateEmployeeAction = defineTenantAction({ input: updateEmployeeSchema, module: M, permission: "hr.employee.update", handler: async ({ ctx, input }) => { await emp.updateEmployee(ctx, input); bust(); } });
 export const terminateEmployeeAction = defineTenantAction({ input: terminateSchema, module: M, permission: "hr.employee.update", handler: async ({ ctx, input }) => { await emp.terminateEmployee(ctx, input); bust(); } });
 export const addContractAction = defineTenantAction({ input: contractSchema, module: M, permission: "hr.contract.manage", handler: async ({ ctx, input }) => { const c = await emp.addContract(ctx, input); bust(); return { id: c.id }; } });
+
+// Calendrier de travail (jours fériés, semaine travaillée)
+export const addHolidayAction = defineTenantAction({ input: cal.holidaySchema, module: M, permission: "hr.holiday.manage", handler: async ({ ctx, input }) => { await cal.addHoliday(ctx, input); bust(); } });
+export const deleteHolidayAction = defineTenantAction({ input: idSchema, module: M, permission: "hr.holiday.manage", handler: async ({ ctx, input }) => { await cal.deleteHoliday(ctx, input.id); bust(); } });
+export const generateHolidaysAction = defineTenantAction({ input: cal.generateHolidaysSchema, module: M, permission: "hr.holiday.manage", handler: async ({ ctx, input }) => { const r = await cal.generateHolidays(ctx, input); bust(); return r; } });
+export const setWorkDaysAction = defineTenantAction({ input: cal.workDaysSchema, module: M, permission: "hr.holiday.manage", handler: async ({ ctx, input }) => { await cal.setWorkDays(ctx, input); bust(); } });
 
 // Congés
 export const createLeaveTypeAction = defineTenantAction({ input: leaveTypeSchema, module: M, permission: "hr.employee.update", handler: async ({ ctx, input }) => { await lv.createLeaveType(ctx, input); bust(); } });

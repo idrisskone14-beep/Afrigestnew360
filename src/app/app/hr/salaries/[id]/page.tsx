@@ -16,6 +16,7 @@ import { enumParam, type SearchParams } from "@/lib/list-params";
 import { formatMoney } from "@/lib/reference-data";
 import { canSeePay, getEmployee, listContracts } from "@/modules/hr/employees";
 import { leaveBalances } from "@/modules/hr/leave";
+import { BalanceCard } from "@/modules/hr/ui/balance-card";
 import { CONTRACT_TYPES, PAYOUT_METHODS } from "@/modules/hr/schemas";
 import { ContractDialog, EmployeeFormDialog, TerminateDialog } from "@/modules/hr/ui/employee-dialogs";
 import { DeleteEvaluationButton, DeleteTrainingButton, EvaluationDialog, TrainingDialog } from "@/modules/hr/ui/evaluation-panels";
@@ -143,7 +144,7 @@ async function LeaveTab({ ctx, employeeId }: { ctx: PageCtx; employeeId: string 
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {balances.map((b) => (
-          <Card key={b.type.id}><CardContent className="space-y-0.5 p-4"><p className="text-xs text-muted-foreground">{b.type.name} {year}</p><p className="text-lg font-semibold tabular">{b.remaining ? `${b.remaining.toNumber()} j restants` : `${b.taken.toNumber()} j pris`}</p><p className="text-xs text-muted-foreground">{b.entitlement ? `sur ${b.entitlement.toNumber()} · ` : ""}{b.pending.toNumber()} en attente</p></CardContent></Card>
+          <BalanceCard key={b.type.id} b={b} compact label={`${b.type.name} ${year}`} />
         ))}
       </div>
       <Card className="divide-y p-0">

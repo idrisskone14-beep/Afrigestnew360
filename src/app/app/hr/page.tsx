@@ -6,6 +6,7 @@ import { requireTenantContext } from "@/core/tenant/guards";
 import { fmtDate } from "@/lib/format";
 import { canSeePay, employeeOfUser, endingContracts } from "@/modules/hr/employees";
 import { leaveBalances, onLeaveOn } from "@/modules/hr/leave";
+import { BalanceCard } from "@/modules/hr/ui/balance-card";
 import { LeaveRequestDialog } from "@/modules/hr/ui/leave-dialogs";
 import { listLeaveTypes } from "@/modules/hr/leave";
 
@@ -27,7 +28,7 @@ export default async function HrOverview() {
         <div className="flex flex-wrap items-center gap-3"><p className="mr-auto text-sm text-muted-foreground">Bonjour {me.firstName}. Voici vos soldes de congés {now.getUTCFullYear()}.</p>{ctx.can("hr.leave.request") && <LeaveRequestDialog employees={[{ id: me.id, name: `${me.firstName} ${me.lastName}` }]} types={types.map((t) => ({ id: t.id, name: t.name }))} defaultEmployeeId={me.id} />}</div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {balances.map((b) => (
-            <Card key={b.type.id}><CardContent className="space-y-1 p-5"><p className="text-sm text-muted-foreground">{b.type.name}</p><p className="text-2xl font-semibold tabular">{b.remaining ? `${b.remaining.toNumber()} j` : `${b.taken.toNumber()} j pris`}</p><p className="text-xs text-muted-foreground">{b.entitlement ? `sur ${b.entitlement.toNumber()} j · ${b.taken.toNumber()} pris · ${b.pending.toNumber()} en attente` : `${b.pending.toNumber()} en attente`}</p></CardContent></Card>
+            <BalanceCard key={b.type.id} b={b} />
           ))}
         </div>
       </div>

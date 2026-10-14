@@ -11,3 +11,4 @@ const placeholder = () => <Skeleton className="h-72 w-full" role="status" aria-b
 
 export const BarsChart = dynamic(() => import("./bars-chart").then((m) => m.BarsChart), { ssr: false, loading: placeholder });
 export const CashflowChart = dynamic(() => import("./cashflow-chart").then((m) => m.CashflowChart), { ssr: false, loading: placeholder });
+export const SeriesChart = dynamic(() => import("./series-chart").then((m) => m.SeriesChart), { ssr: false, loading: placeholder });

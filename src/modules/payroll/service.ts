@@ -9,7 +9,8 @@ import { nextNumber } from "@/core/numbering";
 import type { TenantContext } from "@/core/tenant/context";
 import "@/modules/registry";
 import { formatMoney } from "@/lib/reference-data";
-import { workingDays } from "@/modules/hr/leave";
+import { loadCalendar } from "@/modules/hr/calendar";
+import { workingDays } from "@/modules/hr/leave-calc";
 import type { z } from "zod";
 import { computePayslip, type Bracket, type ExtraItem, type ItemDef } from "./calc";
 import type { employeeItemSchema, payRunSchema, payrollItemSchema, runSchema } from "./schemas";
@@ -125,7 +126,9 @@ async function calculate(tx: Db, ctx: Ctx, runId: string) {
   if (run.status !== "DRAFT") throw businessRule("Seule une campagne en brouillon se calcule.");
   const { start, end } = monthBounds(run.year, run.month);
   const items = await itemsAt(tx, end);
-  const monthWorkdays = workingDays(start, end);
+  // calendrier de l'entreprise : jours travaillés de la semaine et jours fériés, les mêmes que pour le décompte des congés
+  const cal = await loadCalendar(tx, start, end);
+  const monthWorkdays = workingDays(start, end, cal);
   const employees = await tx.employee.findMany({ where: { deletedAt: null, hireDate: { lte: end }, OR: [{ endDate: null }, { endDate: { gte: start } }] }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] });
   await tx.payslip.deleteMany({ where: { runId } });
   let tGross = d(0), tDed = d(0), tNet = d(0), tEmp = d(0);
@@ -134,9 +137,9 @@ async function calculate(tx: Db, ctx: Ctx, runId: string) {
   for (const e of employees) {
     const from = e.hireDate > start ? e.hireDate : start;
     const to = e.endDate && e.endDate < end ? e.endDate : end;
-    const presentDays = workingDays(from, to);
+    const presentDays = workingDays(from, to, cal);
     const leaves = await tx.leaveRequest.findMany({ where: { employeeId: e.id, status: "APPROVED", type: { paid: false }, startDate: { lte: to }, endDate: { gte: from } }, select: { startDate: true, endDate: true } });
-    const unpaid = leaves.reduce((a, l) => a + workingDays(l.startDate > from ? l.startDate : from, l.endDate < to ? l.endDate : to), 0);
+    const unpaid = leaves.reduce((a, l) => a + workingDays(l.startDate > from ? l.startDate : from, l.endDate < to ? l.endDate : to, cal), 0);
     const prorata = monthWorkdays > 0 ? d(Math.max(0, presentDays - unpaid)).div(monthWorkdays) : d(0);
     const extrasRows = await tx.employeePayrollItem.findMany({ where: { employeeId: e.id, isActive: true, startDate: { lte: end }, OR: [{ endDate: null }, { endDate: { gte: start } }] } });
     const extras: ExtraItem[] = extrasRows.map((x) => ({ name: x.name, type: x.type as "EARNING" | "DEDUCTION", category: x.category, amount: d(x.amount), taxable: x.taxable }));

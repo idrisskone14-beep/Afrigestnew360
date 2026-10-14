@@ -31,6 +31,13 @@ enum AttendanceStatus {
   HALF_DAY
 }
 
+enum LeaveAccrual {
+  // le droit annuel est acquis dès le 1er janvier (au prorata de la présence l'année d'arrivée ou de départ)
+  UPFRONT
+  // le droit s'acquiert jour après jour : on ne peut poser que ce qui est acquis à la fin de la période demandée
+  MONTHLY
+}
+
 enum PayoutMethod {
   BANK_TRANSFER
   CASH
@@ -114,14 +121,18 @@ model EmploymentContract {
 }
 
 model LeaveType {
-  id         String   @id @default(uuid()) @db.Uuid
-  companyId  String   @db.Uuid
-  name       String
+  id                   String       @id @default(uuid()) @db.Uuid
+  companyId            String       @db.Uuid
+  name                 String
   // Droit annuel en jours ouvrés ; 0 = non plafonné (maladie, maternité…)
-  annualDays Decimal  @default(0) @db.Decimal(5, 1)
-  paid       Boolean  @default(true)
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  annualDays           Decimal      @default(0) @db.Decimal(5, 1)
+  paid                 Boolean      @default(true)
+  isActive             Boolean      @default(true)
+  accrual              LeaveAccrual @default(UPFRONT)
+  // report sur l'année suivante : maximum de jours reportés (0 = pas de report) et mois (1-12) de l'année suivante après lequel les jours reportés non pris sont perdus
+  carryOverMax         Decimal      @default(0) @db.Decimal(5, 1)
+  carryOverExpiryMonth Int?
+  createdAt            DateTime     @default(now())
 
   company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   requests LeaveRequest[]
@@ -206,4 +217,28 @@ model Training {
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([companyId, employeeId, date])
+}
+
+// ── Calendrier de travail : jours fériés et semaine travaillée ─────────────────────────────────────────────
+model Holiday {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  date        DateTime @db.Date
+  name        String
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, date])
+}
+
+model HrSettings {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @unique @db.Uuid
+  // jours travaillés de la semaine (0 = dimanche … 6 = samedi) ; par défaut du lundi au vendredi
+  workDays  Int[]    @default([1, 2, 3, 4, 5])
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
