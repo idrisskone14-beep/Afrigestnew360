@@ -12,6 +12,7 @@ import { requirePagePermission } from "@/core/tenant/guards";
 import { PAGE_SIZE, enumParam, parseListParams, type SearchParams } from "@/lib/list-params";
 import { listSuppliers } from "@/modules/purchasing/suppliers";
 import { SupplierFormDialog } from "@/modules/purchasing/ui/supplier-form";
+import { ImportButton } from "@/modules/data/ui/import-button";
 
 export const metadata: Metadata = { title: "Fournisseurs" };
 
@@ -25,6 +26,7 @@ export default async function SuppliersPage({ searchParams }: { searchParams: Pr
   return (
     <ListScope filename="fournisseurs">
       <ListToolbar placeholder="Rechercher un fournisseur…" filters={[{ name: "statut", label: "Statut", options: [{ value: "actifs", label: "Actifs" }, { value: "inactifs", label: "Inactifs" }] }]}>
+        <ImportButton ctx={ctx} entity="suppliers" />
         {ctx.can("purchases.supplier.create") && <SupplierFormDialog defaultCountry={ctx.company.country} />}
       </ListToolbar>
       {rows.length === 0 ? (

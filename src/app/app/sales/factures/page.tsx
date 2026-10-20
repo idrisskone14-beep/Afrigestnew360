@@ -19,6 +19,7 @@ import { formatMoney } from "@/lib/reference-data";
 import { invoiceBalance, isOverdue, listInvoices } from "@/modules/sales/invoices";
 import { SentCell } from "@/modules/sales/ui/dispatch-history";
 import { invoiceKpis } from "@/modules/sales/kpis";
+import { ImportButton } from "@/modules/data/ui/import-button";
 
 export const metadata: Metadata = { title: "Factures" };
 const STATUSES = ["DRAFT", "ISSUED", "PARTIALLY_PAID", "PAID", "CANCELLED", "OVERDUE"] as const;
@@ -38,6 +39,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
     <ListScope filename="factures">
       <KpiCards items={kpis} />
       <ListToolbar placeholder="N° ou client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "DRAFT", label: "Brouillons" }, { value: "ISSUED", label: "Émises" }, { value: "PARTIALLY_PAID", label: "Payées en partie" }, { value: "OVERDUE", label: "Échues" }, { value: "PAID", label: "Payées" }, { value: "CANCELLED", label: "Annulées" }] }, { name: "emission", label: "Émission", kind: "date" as const }, { name: "echeance", label: "Échéance", kind: "date" as const }]}>
+        <ImportButton ctx={ctx} entity="invoices" />
         {ctx.can("finance.invoice.create") && <Button asChild><Link href="/app/sales/factures/nouveau"><Plus className="size-4" /> Nouvelle facture</Link></Button>}
       </ListToolbar>
       {rows.length === 0 ? <EmptyState icon={<Receipt className="size-8" />} title="Aucune facture" description="Facturez une commande, convertissez un devis ou saisissez une facture." /> : (

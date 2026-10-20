@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requirePagePermission } from "@/core/tenant/guards";
 import { listLedgerAccounts, listMappings } from "@/modules/accounting/service";
 import { ChartPanel, MappingsPanel } from "@/modules/accounting/ui/chart-panels";
+import { ImportButton } from "@/modules/data/ui/import-button";
 
 export const metadata: Metadata = { title: "Plan comptable" };
 
@@ -12,6 +13,7 @@ export default async function ChartPage() {
   const canManage = ctx.can("accounting.chart.manage");
   return (
     <div className="space-y-8">
+      <div className="flex justify-end"><ImportButton ctx={ctx} entity="ledger" /></div>
       <MappingsPanel canManage={canManage} accounts={rows} mappings={mappings.map((m) => ({ key: m.key, label: m.label, expectedClass: m.expectedClass, accountId: m.account?.id ?? null }))} />
       <ChartPanel canManage={canManage} accounts={rows} />
     </div>

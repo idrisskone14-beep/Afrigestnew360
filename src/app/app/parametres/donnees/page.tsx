@@ -23,7 +23,8 @@ const STATUS: Record<string, { label: string; variant: "default" | "secondary" |
   UPLOADED: { label: "Fichier chargé", variant: "outline" }, VALIDATED: { label: "Vérifié, non importé", variant: "outline" }, RUNNING: { label: "En cours", variant: "secondary" }, DONE: { label: "Terminé", variant: "default" }, FAILED: { label: "Échec", variant: "destructive" },
 };
 
-export default async function DataPage() {
+export default async function DataPage({ searchParams }: { searchParams: Promise<{ entite?: string }> }) {
+  const { entite } = await searchParams;
   const ctx = await requireTenantContext();
   const exports = EXPORT_LIST.filter((e) => { const x = EXPORTERS[e.kind]!; return (!x.module || ctx.hasModule(x.module)) && x.permissions.every((p) => ctx.can(p)); });
   const imports = IMPORT_ENTITIES.map((k) => ENTITIES[k]).filter((e) => canImport(ctx, e));
@@ -49,12 +50,13 @@ export default async function DataPage() {
         )}
       </section>
 
-      <section aria-labelledby="imp-title" className="space-y-3">
+      <section id="import" aria-labelledby="imp-title" className="scroll-mt-20 space-y-3">
         <div>
           <h2 id="imp-title" className="text-base font-semibold">Importer des données</h2>
-          <p className="text-sm text-muted-foreground">Clients, fournisseurs, salariés, produits et quantités en stock depuis un fichier CSV ou Excel : correspondance des colonnes, vérification ligne par ligne, puis import avec rapport d&apos;erreurs. Les lignes déjà présentes sont ignorées, jamais dupliquées.</p>
+          <p className="text-sm text-muted-foreground">Reprenez les données de votre ancienne application (Sage, Ciel, Odoo, Zoho Books, QuickBooks, Excel…) depuis un fichier CSV ou Excel : correspondance des colonnes, vérification ligne par ligne, puis import avec rapport d&apos;erreurs. Les lignes déjà présentes sont ignorées, jamais dupliquées.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Ordre conseillé : plan comptable, clients et fournisseurs, produits, stocks, factures impayées, puis balance d&apos;ouverture.</p>
         </div>
-        {imports.length === 0 ? <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">Vous n&apos;avez pas le droit d&apos;importer des données (« Imports de données » et droit de création des éléments concernés).</p> : <ImportWizard entities={imports.map((e) => ({ key: e.key, label: e.label }))} />}
+        {imports.length === 0 ? <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">Vous n&apos;avez pas le droit d&apos;importer des données (« Imports de données » et droit de création des éléments concernés).</p> : <ImportWizard entities={imports.map((e) => ({ key: e.key, label: e.label, ...(e.note ? { note: e.note } : {}) }))} {...(entite ? { initialEntity: entite } : {})} />}
       </section>
 
       {history.length > 0 && (

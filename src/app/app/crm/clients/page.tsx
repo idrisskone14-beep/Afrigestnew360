@@ -12,6 +12,7 @@ import { requirePagePermission } from "@/core/tenant/guards";
 import { PAGE_SIZE, enumParam, parseListParams, type SearchParams } from "@/lib/list-params";
 import { listCustomers } from "@/modules/crm/service";
 import { CustomerFormDialog } from "@/modules/crm/ui/customer-form";
+import { ImportButton } from "@/modules/data/ui/import-button";
 
 export const metadata: Metadata = { title: "Clients" };
 
@@ -26,6 +27,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   return (
     <ListScope filename="clients">
       <ListToolbar placeholder="Rechercher un client…" filters={[{ name: "statut", label: "Statut", options: [{ value: "actifs", label: "Actifs" }, { value: "inactifs", label: "Inactifs" }] }]}>
+        <ImportButton ctx={ctx} entity="customers" />
         {ctx.can("crm.customer.create") && <CustomerFormDialog defaultCountry={ctx.company.country} priceLists={priceLists} />}
       </ListToolbar>
       {rows.length === 0 ? (

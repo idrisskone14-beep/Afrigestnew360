@@ -16,6 +16,7 @@ import { formatMoney } from "@/lib/reference-data";
 import { listCategories, listProducts, listWarehouses } from "@/modules/inventory/service";
 import { ProductFormDialog } from "@/modules/inventory/ui/product-form";
 import { listTaxes } from "@/modules/settings/config";
+import { ImportButton } from "@/modules/data/ui/import-button";
 
 export const metadata: Metadata = { title: "Produits" };
 
@@ -42,6 +43,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         ]}
       >
         <ScanToSearchButton />
+        <ImportButton ctx={ctx} entity="products" />
         {canCreate && <ProductFormDialog categories={categories} warehouses={warehouses.map((w) => ({ id: w.id, name: w.name }))} taxes={taxes.filter((t) => t.isActive).map((t) => ({ id: t.id, name: t.name, rate: num(t.rate), isDefault: t.isDefault }))} />}
       </ListToolbar>
       <SelectionBar />

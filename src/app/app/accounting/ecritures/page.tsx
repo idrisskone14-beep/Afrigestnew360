@@ -17,6 +17,7 @@ import { formatMoney } from "@/lib/reference-data";
 import { defaultFiscalYear, journalListing } from "@/modules/accounting/reports";
 import { listFiscalYears, listJournals } from "@/modules/accounting/service";
 import { YearSwitch } from "@/modules/accounting/ui/year-switch";
+import { ImportButton } from "@/modules/data/ui/import-button";
 
 export const metadata: Metadata = { title: "Écritures comptables" };
 const isDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? new Date(`${v}T00:00:00.000Z`) : undefined);
@@ -40,6 +41,7 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
         { name: "journal", label: "Journal", options: journals.map((j) => ({ value: j.id, label: `${j.code} — ${j.name}` })) },
         { name: "statut", label: "Statut", options: [{ value: "POSTED", label: "Validées" }, { value: "DRAFT", label: "Brouillons" }] },
       ]}>
+        <ImportButton ctx={ctx} entity="entries" />
         {ctx.can("accounting.entry.create") && <Button asChild><Link href="/app/accounting/ecritures/nouveau"><Plus className="size-4" /> Nouvelle écriture</Link></Button>}
       </ListToolbar>
       <SelectionBar />

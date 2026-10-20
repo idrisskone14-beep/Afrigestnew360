@@ -19,6 +19,7 @@ import { formatMoney } from "@/lib/reference-data";
 import { billBalance, isBillOverdue, listBills } from "@/modules/purchasing/bills";
 
 import { billKpis } from "@/modules/purchasing/kpis";
+import { ImportButton } from "@/modules/data/ui/import-button";
 
 export const metadata: Metadata = { title: "Factures fournisseur" };
 const STATUSES = ["DRAFT", "POSTED", "PARTIALLY_PAID", "PAID", "CANCELLED", "OVERDUE"] as const;
@@ -38,6 +39,7 @@ export default async function BillsPage({ searchParams }: { searchParams: Promis
     <ListScope filename="factures-fournisseur">
       <KpiCards items={kpis} />
       <ListToolbar placeholder="N°, n° fournisseur ou fournisseur…" filters={[{ name: "statut", label: "Statut", options: [{ value: "DRAFT", label: "Brouillons" }, { value: "POSTED", label: "À payer" }, { value: "PARTIALLY_PAID", label: "Payées en partie" }, { value: "OVERDUE", label: "Échues" }, { value: "PAID", label: "Payées" }, { value: "CANCELLED", label: "Annulées" }] }, { name: "facture", label: "Date", kind: "date" as const }, { name: "echeance", label: "Échéance", kind: "date" as const }]}>
+        <ImportButton ctx={ctx} entity="bills" />
         {ctx.can("purchases.bill.create") && <Button asChild><Link href="/app/purchases/factures/nouveau"><Plus className="size-4" /> Saisir une facture</Link></Button>}
       </ListToolbar>
       {rows.length === 0 ? <EmptyState icon={<Receipt className="size-8" />} title="Aucune facture fournisseur" description="Saisissez une facture reçue ou générez-la depuis une commande réceptionnée." /> : (

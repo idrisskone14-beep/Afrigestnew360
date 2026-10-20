@@ -3,8 +3,9 @@ import { audit } from "@/core/audit";
 import { Prisma } from "@/core/db/client";
 import { AppError, businessRule, forbidden, notFound } from "@/core/errors";
 import type { TenantContext } from "@/core/tenant/context";
-import { ENTITIES, fieldsFor, isImportEntity, suggestMapping, type EntityDef, type FieldDef, type Prepared } from "./entities";
-import { IMPORT_MAX_ROWS, parseTable } from "./parse";
+import { ENTITIES, fieldsFor, isImportEntity, type EntityDef, type FieldDef, type Prepared } from "./entities";
+import { IMPORT_MAX_ROWS, normHeader, parseTable } from "./parse";
+import { IMPORT_SOURCES, detectSource, suggestBySource } from "./sources";
 
 type Ctx = TenantContext;
 
@@ -15,7 +16,7 @@ const PREVIEW_ROWS = 25;
 export interface ReportEntry { line: number; kind: "error" | "ignored"; message: string; values: string[] }
 export type Mapping = Record<string, number>;
 
-interface RowResult { line: number; raw: string[]; status: "ok" | "error" | "ignored"; messages: string[]; prepared?: Prepared; values: Record<string, string> }
+interface RowResult { line: number; raw: string[]; status: "ok" | "error" | "ignored"; messages: string[]; prepared?: Prepared; values: Record<string, string>; group?: string }
 
 function definition(ctx: Ctx, entity: string): EntityDef {
   if (!isImportEntity(entity)) throw notFound("Type de données");
@@ -42,17 +43,36 @@ const valuesOf = (raw: string[], mapping: Mapping) => Object.fromEntries(Object.
 async function evaluate(ctx: Ctx, def: EntityDef, rows: string[][], mapping: Mapping): Promise<RowResult[]> {
   const lookups = await def.loadLookups(ctx);
   const seen = new Map<string, number>();
-  return rows.map((raw, i): RowResult => {
+  const results = rows.map((raw, i): RowResult => {
     const line = i + 2; // la ligne 1 contient les en-têtes
     const values = valuesOf(raw, mapping);
     const prepared = def.prepare(ctx, values, lookups);
-    if (prepared.errors.length > 0 || prepared.input === undefined) return { line, raw, status: "error", messages: prepared.errors.length ? prepared.errors : ["Ligne invalide."], values };
-    const first = seen.get(prepared.identity);
-    if (first !== undefined) return { line, raw, status: "error", messages: [`Doublon dans le fichier (identique à la ligne ${first}).`], values };
-    seen.set(prepared.identity, line);
-    if (def.exists(lookups, prepared)) return { line, raw, status: "ignored", messages: ["Existe déjà : ignorée."], prepared, values };
-    return { line, raw, status: "ok", messages: [], prepared, values };
+    const group = prepared.group;
+    if (prepared.errors.length > 0 || prepared.input === undefined) return { line, raw, status: "error", messages: prepared.errors.length ? prepared.errors : ["Ligne invalide."], values, ...(group ? { group } : {}) };
+    // une pièce comptable comporte légitimement plusieurs lignes semblables : pas de détection de doublon entre ses lignes
+    if (!def.group) {
+      const first = seen.get(prepared.identity);
+      if (first !== undefined) return { line, raw, status: "error", messages: [`Doublon dans le fichier (identique à la ligne ${first}).`], values };
+      seen.set(prepared.identity, line);
+    }
+    if (def.exists(lookups, prepared)) return { line, raw, status: "ignored", messages: ["Existe déjà : ignorée."], prepared, values, ...(group ? { group } : {}) };
+    return { line, raw, status: "ok", messages: [], prepared, values, ...(group ? { group } : {}) };
   });
+  if (def.group) validateGroups(def.group, results);
+  return results;
+}
+
+/** Une pièce est reprise en entier ou pas du tout : une ligne en erreur, ou une pièce déséquilibrée, écarte toutes ses lignes. */
+function validateGroups(group: NonNullable<EntityDef["group"]>, results: RowResult[]) {
+  const byGroup = new Map<string, RowResult[]>();
+  for (const r of results) if (r.group) byGroup.set(r.group, [...(byGroup.get(r.group) ?? []), r]);
+  for (const rows of byGroup.values()) {
+    const ok = rows.filter((r) => r.status === "ok");
+    if (ok.length === 0) continue;
+    const invalid = rows.find((r) => r.status === "error");
+    const message = invalid ? `Pièce incomplète : la ligne ${invalid.line} de cette pièce est en erreur.` : group.check(ok.map((r) => r.prepared!.input));
+    if (message) for (const r of ok) { r.status = "error"; r.messages = [message]; }
+  }
 }
 
 const countOf = (r: RowResult[], s: RowResult["status"]) => r.filter((x) => x.status === s).length;
@@ -69,7 +89,29 @@ export async function analyzeImport(ctx: Ctx, entity: string, file: { name: stri
     data: { companyId: ctx.company.id, entity: def.key, fileName: file.name.replace(/^.*[\\/]/, "").slice(0, 150), headers: t.headers, rows: t.rows, rowCount: t.rows.length, createdById: ctx.user.id },
   });
   await audit(ctx, { action: "import.upload", resource: "ImportJob", resourceId: job.id, summary: `${ctx.user.name} a chargé un fichier d'import « ${def.label} » (${job.fileName}, ${t.rows.length} ligne${t.rows.length > 1 ? "s" : ""}).` });
-  return { id: job.id, entity: def.key, headers: t.headers, rowCount: t.rows.length, sample: t.rows.slice(0, 5), suggested: suggestMapping(t.headers, fields), fields: fields.map(({ key, label, required, hint }) => ({ key, label, required: Boolean(required), hint })) };
+  // correspondance proposée : celle d'un import précédent du même fichier-type, sinon celle de l'application d'origine détectée
+  const suggestions = suggestBySource(def.key, t.headers, fields);
+  const source = detectSource(suggestions);
+  const memo = await rememberedMapping(ctx, def.key, fields, t.headers);
+  return {
+    id: job.id, entity: def.key, headers: t.headers, rowCount: t.rows.length, sample: t.rows.slice(0, 5),
+    suggested: memo ?? suggestions[source], suggestions, source, remembered: memo !== null, memo,
+    sources: IMPORT_SOURCES.map(({ key, label }) => ({ key, label })),
+    fields: fields.map(({ key, label, required, hint }) => ({ key, label, required: Boolean(required), hint })),
+  };
+}
+
+const headerSignature = (headers: string[]) => headers.map(normHeader).join("|");
+
+/** Correspondance du dernier import terminé dont le fichier avait exactement les mêmes colonnes (un export récurrent se réimporte en un clic). */
+async function rememberedMapping(ctx: Ctx, entity: string, fields: FieldDef[], headers: string[]): Promise<Mapping | null> {
+  const jobs = await ctx.db.importJob.findMany({ where: { entity, status: "DONE" }, orderBy: { completedAt: "desc" }, take: 25, select: { headers: true, mapping: true } });
+  const want = headerSignature(headers);
+  const hit = jobs.find((j) => Array.isArray(j.headers) && j.mapping && headerSignature(j.headers as string[]) === want);
+  if (!hit) return null;
+  const allowed = new Set(fields.map((f) => f.key));
+  const mapping = Object.fromEntries(Object.entries(hit.mapping as Mapping).filter(([k, i]) => allowed.has(k) && Number.isInteger(i) && i >= 0 && i < headers.length));
+  return Object.keys(mapping).length > 0 ? mapping : null;
 }
 
 // ── Étape 2 : correspondance + prévisualisation ───────────────
@@ -124,18 +166,28 @@ export async function runImport(ctx: Ctx, id: string) {
     const results = await evaluate(ctx, def, job.rows as string[][], job.mapping as Mapping);
     const failures: ReportEntry[] = [];
     let created = 0, failed = 0, limit: string | null = null;
-    for (const r of results) {
-      if (r.status !== "ok") continue;
-      if (limit) { failed++; failures.push({ line: r.line, kind: "error", message: limit, values: r.raw }); continue; }
+    // unités à créer : une ligne du fichier, ou une pièce entière (plusieurs lignes) pour les écritures comptables
+    const units: RowResult[][] = [];
+    if (def.group) {
+      const byGroup = new Map<string, RowResult[]>();
+      for (const r of results) if (r.status === "ok" && r.group) byGroup.set(r.group, [...(byGroup.get(r.group) ?? []), r]);
+      units.push(...byGroup.values());
+    } else {
+      for (const r of results) if (r.status === "ok") units.push([r]);
+    }
+    for (const unit of units) {
+      const head = unit[0]!;
+      if (limit) { failed++; failures.push({ line: head.line, kind: "error", message: limit, values: head.raw }); continue; }
       try {
-        await def.create(ctx, r.prepared!.input as never);
+        if (def.group) await def.group.create(ctx, unit.map((r) => r.prepared!.input));
+        else await def.create!(ctx, head.prepared!.input as never);
         created++;
       } catch (e) {
         failed++;
         const msg = e instanceof AppError ? e.message : "Erreur inattendue lors de l'enregistrement.";
-        if (!(e instanceof AppError)) console.error("[import]", id, r.line, e);
+        if (!(e instanceof AppError)) console.error("[import]", id, head.line, e);
         if (e instanceof AppError && e.code === "LIMIT_REACHED") limit = msg;
-        failures.push({ line: r.line, kind: "error", message: msg, values: r.raw });
+        failures.push({ line: head.line, kind: "error", message: msg, values: head.raw });
       }
     }
     const report = [...reportOf(results), ...failures].slice(0, REPORT_MAX);

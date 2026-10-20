@@ -162,6 +162,7 @@ export function OnboardingForm({ defaultName, isFirst }: { defaultName: string; 
             <dt className="text-muted-foreground">Offre</dt><dd>Starter — essai gratuit (modifiable ensuite)</dd>
           </dl>
           <p className="text-xs text-muted-foreground">Rôles par défaut, siège et modules de votre offre seront créés automatiquement ; vous serez administrateur.</p>
+          <p className="text-xs text-muted-foreground">Vos clients, produits, factures impayées ou comptes sont dans une autre application ? Une fois l&apos;entreprise créée, importez-les depuis Paramètres → Import / export (Excel ou CSV).</p>
         </>)}
 
         <div className="mt-2 flex items-center justify-between gap-3">

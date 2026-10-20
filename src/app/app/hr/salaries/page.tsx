@@ -15,6 +15,7 @@ import { PAGE_SIZE, enumParam, param, parseListParams, type SearchParams } from 
 import { formatMoney } from "@/lib/reference-data";
 import { canSeePay, listEmployees } from "@/modules/hr/employees";
 import { EmployeeFormDialog } from "@/modules/hr/ui/employee-dialogs";
+import { ImportButton } from "@/modules/data/ui/import-button";
 
 export const metadata: Metadata = { title: "Salariés" };
 
@@ -44,6 +45,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
         { name: "departement", label: "Département", options: departments.map((d) => ({ value: d.id, label: d.name })) },
         { name: "agence", label: "Agence", options: branches.map((b) => ({ value: b.id, label: b.name })) },
       ]}>
+        <ImportButton ctx={ctx} entity="employees" />
         {create && <EmployeeFormDialog departments={departments} branches={branches} managers={managers.map((m) => ({ id: m.id, name: `${m.lastName} ${m.firstName}` }))} users={members.map((m) => ({ id: m.userId, name: `${m.user.name} (${m.user.email})` }))} canPay={pay} />}
       </ListToolbar>
       <SelectionBar />

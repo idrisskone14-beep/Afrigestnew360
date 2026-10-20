@@ -12,20 +12,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FormAlert } from "@/components/app/form-kit";
 import { discardImportAction, previewImportAction, runImportAction, uploadImportAction } from "../actions";
 
-export interface ImportEntityOption { key: string; label: string }
-interface Analysis { id: string; entity: string; headers: string[]; rowCount: number; sample: string[][]; suggested: Record<string, number>; fields: { key: string; label: string; required: boolean }[] }
+export interface ImportEntityOption { key: string; label: string; note?: string }
+interface Analysis {
+  id: string; entity: string; headers: string[]; rowCount: number; sample: string[][]; suggested: Record<string, number>; fields: { key: string; label: string; required: boolean; hint?: string }[];
+  suggestions: Record<string, Record<string, number>>; source: string; remembered: boolean; memo: Record<string, number> | null; sources: { key: string; label: string }[];
+}
 interface Preview { id: string; valid: number; errors: number; ignored: number; total: number; preview: { line: number; status: "ok" | "error" | "ignored"; messages: string[]; values: Record<string, string> }[]; previewMore: number }
 interface Result { created: number; ignored: number; errors: number; failed: number; id: string }
 
 const NONE = "__none";
+const MEMO = "__memo";
 const MAX_MB = 5;
 const errText = (e: { message: string; fieldErrors?: Record<string, string[]> }) => (e.fieldErrors ? Object.values(e.fieldErrors).flat()[0] ?? e.message : e.message);
 
-export function ImportWizard({ entities }: { entities: ImportEntityOption[] }) {
+export function ImportWizard({ entities, initialEntity }: { entities: ImportEntityOption[]; initialEntity?: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [entity, setEntity] = useState(entities[0]?.key ?? "");
+  const [entity, setEntity] = useState(entities.some((e) => e.key === initialEntity) ? initialEntity! : entities[0]?.key ?? "");
+  const [source, setSource] = useState("excel");
   const [file, setFile] = useState<File | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
@@ -42,8 +47,15 @@ export function ImportWizard({ entities }: { entities: ImportEntityOption[] }) {
     fd.set("entity", entity); fd.set("file", file);
     const r = await uploadImportAction(fd);
     if (!r.ok) return setError(errText(r.error));
-    setAnalysis(r.data); setMapping(r.data.suggested); setPreview(null);
+    setAnalysis(r.data); setMapping(r.data.suggested); setSource(r.data.remembered ? MEMO : r.data.source); setPreview(null);
   });
+
+  /** Changer d'application d'origine recalcule la correspondance proposée (l'utilisateur peut ensuite la corriger champ par champ). */
+  const pickSource = (key: string) => {
+    if (!analysis) return;
+    setSource(key); setPreview(null);
+    setMapping(key === MEMO ? analysis.memo ?? {} : analysis.suggestions[key] ?? {});
+  };
 
   const check = () => start(async () => {
     if (!analysis) return;
@@ -72,6 +84,7 @@ export function ImportWizard({ entities }: { entities: ImportEntityOption[] }) {
   const missing = analysis?.fields.filter((f) => f.required && mapping[f.key] === undefined) ?? [];
   const duplicated = Object.values(mapping).length !== new Set(Object.values(mapping)).size;
   const entityLabel = entities.find((e) => e.key === entity)?.label ?? "";
+  const entityNote = entities.find((e) => e.key === entity)?.note;
 
   // ── Résultat ──
   if (result) {
@@ -112,7 +125,8 @@ export function ImportWizard({ entities }: { entities: ImportEntityOption[] }) {
             <Input ref={input} type="file" accept=".csv,.xlsx,.txt" onChange={(e) => { const f = e.target.files?.[0] ?? null; if (f && f.size > MAX_MB * 1024 * 1024) { setError(`Le fichier dépasse ${MAX_MB} Mo.`); setFile(null); } else { setError(null); setFile(f); } }} />
           </label>
         </div>
-        <p className="text-xs text-muted-foreground">La première ligne doit contenir les noms des colonnes. Vous associerez ensuite chaque colonne à un champ, puis vérifierez les données avant tout enregistrement.</p>
+        {entityNote && <p className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">{entityNote}</p>}
+        <p className="text-xs text-muted-foreground">Fichier exporté de votre ancienne application (Sage, Ciel, Odoo, Zoho Books, QuickBooks, Excel…) : la première ligne doit contenir les noms des colonnes. Les colonnes sont reconnues automatiquement ; vous vérifiez la correspondance, puis les données, avant tout enregistrement.</p>
         <div className="flex flex-wrap items-center gap-2">
           <Button disabled={pending || !file || !entity} onClick={upload}><Upload className="size-4" /> {pending ? "Analyse…" : "Analyser le fichier"}</Button>
           <Button asChild variant="ghost" size="sm"><a href={`/api/export/modele-${entity}?format=xlsx`}><FileSpreadsheet className="size-4" /> Télécharger le modèle Excel</a></Button>
@@ -133,6 +147,18 @@ export function ImportWizard({ entities }: { entities: ImportEntityOption[] }) {
 
       <section aria-labelledby="map-title" className="space-y-2">
         <h3 id="map-title" className="text-sm font-semibold">1. Correspondance des colonnes</h3>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <label htmlFor="import-source" className="text-muted-foreground">Application d&apos;origine</label>
+          <Select value={source} onValueChange={pickSource}>
+            <SelectTrigger id="import-source" className="h-8 w-64" aria-label="Application d'origine"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {analysis.memo && <SelectItem value={MEMO}>Correspondance de votre dernier import</SelectItem>}
+              {analysis.sources.map((s) => <SelectItem key={s.key} value={s.key}>{s.label}{s.key === analysis.source && !analysis.remembered ? " — détectée" : ""}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {analysis.remembered && source === MEMO && <span className="text-xs text-muted-foreground">Mêmes colonnes qu&apos;un import précédent : correspondance reprise.</span>}
+        </div>
+        {entityNote && <p className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">{entityNote}</p>}
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs text-muted-foreground"><tr><th className="px-3 py-2 text-left font-medium">Champ</th><th className="px-3 py-2 text-left font-medium">Colonne du fichier</th><th className="hidden px-3 py-2 text-left font-medium sm:table-cell">Exemple</th></tr></thead>
@@ -141,7 +167,7 @@ export function ImportWizard({ entities }: { entities: ImportEntityOption[] }) {
                 const col = mapping[f.key];
                 return (
                   <tr key={f.key} className="border-t">
-                    <td className="px-3 py-1.5">{f.label}{f.required && <span className="text-destructive" aria-label="obligatoire"> *</span>}</td>
+                    <td className="px-3 py-1.5">{f.label}{f.required && <span className="text-destructive" aria-label="obligatoire"> *</span>}{f.hint && <span className="block text-[11px] text-muted-foreground">{f.hint}</span>}</td>
                     <td className="px-3 py-1.5">
                       <Select value={col === undefined ? NONE : String(col)} onValueChange={(v) => setCol(f.key, v)}>
                         <SelectTrigger className="h-8 w-56" aria-label={`Colonne pour ${f.label}`}><SelectValue /></SelectTrigger>
