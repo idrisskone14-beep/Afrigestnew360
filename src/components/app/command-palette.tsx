@@ -81,7 +81,7 @@ export function CommandPalette({ modules, companies, activeCompanyId, canSeeSett
         <span className="hidden text-sm font-normal sm:inline">Rechercher…</span>
         <kbd className="ml-auto hidden rounded border bg-muted px-1.5 font-sans text-[10px] font-medium sm:inline">Ctrl K</kbd>
       </Button>
-      <CommandDialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }} title="Palette de commandes" description="Naviguez rapidement dans AfriGest 360">
+      <CommandDialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }} title="Palette de commandes" description="Naviguez rapidement dans KAKO Gestion">
         <CommandInput placeholder="Rechercher un client, une facture, un salarié… ou aller à…" value={query} onValueChange={setQuery} />
         <CommandList>
           <CommandEmpty>{searching ? "Recherche…" : "Aucun résultat."}</CommandEmpty>

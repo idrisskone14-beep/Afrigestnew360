@@ -67,11 +67,11 @@ export async function sendSalesDocument(ctx: Ctx, input: SendInput) {
   const company = ctx.company.tradeName ?? ctx.company.legalName;
   const companyRow = await ctx.db.company.findFirst({ where: { id: ctx.company.id }, select: { email: true } });
   const action = input.kind === "quote" ? "Consulter et répondre au devis" : "Consulter la facture";
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#0b1f44;max-width:560px;margin:0 auto;padding:24px">
-<p style="font-size:13px;color:#51607a;margin:0 0 16px">${esc(company)}</p>
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#0b0c24;max-width:560px;margin:0 auto;padding:24px">
+<p style="font-size:13px;color:#5a5b7a;margin:0 0 16px">${esc(company)}</p>
 <div style="font-size:15px;line-height:1.55">${esc(input.message).replace(/\n/g, "<br>")}</div>
-<p style="margin:28px 0"><a href="${esc(link.url)}" style="background:#ea580c;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 20px;border-radius:6px;display:inline-block">${action}</a></p>
-<p style="font-size:12px;color:#51607a;margin:0">Si le bouton ne fonctionne pas, copiez ce lien : <br>${esc(link.url)}</p>
+<p style="margin:28px 0"><a href="${esc(link.url)}" style="background:#5c08da;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 20px;border-radius:6px;display:inline-block">${action}</a></p>
+<p style="font-size:12px;color:#5a5b7a;margin:0">Si le bouton ne fonctionne pas, copiez ce lien : <br>${esc(link.url)}</p>
 </div>`;
 
   const log = (status: "SENT" | "FAILED", error?: string) => ctx.db.documentDispatch.create({ data: { companyId: ctx.company.id, docType, docId: input.id, toEmail: input.to, subject: input.subject, status, error: error ?? null, sentById: ctx.user.id } });

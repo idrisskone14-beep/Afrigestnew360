@@ -48,7 +48,7 @@ export async function flushPendingEmails(): Promise<{ sent: number; failed: numb
   for (const n of pending) {
     const to = email.get(n.userId);
     try {
-      if (to) await sendMail({ to, subject: n.title, text: `${n.title}${n.body ? `\n\n${n.body}` : ""}${n.link ? `\n\nOuvrir : ${appUrl(n.link)}` : ""}\n\n— AfriGest 360 (vous pouvez modifier vos préférences de notification dans Paramètres).` });
+      if (to) await sendMail({ to, subject: n.title, text: `${n.title}${n.body ? `\n\n${n.body}` : ""}${n.link ? `\n\nOuvrir : ${appUrl(n.link)}` : ""}\n\n— KAKO Gestion (vous pouvez modifier vos préférences de notification dans Paramètres).` });
       await platformDb.notification.update({ where: { id: n.id }, data: { emailPending: false, emailedAt: to ? new Date() : null } });
       if (to) sent++;
     } catch (e) {

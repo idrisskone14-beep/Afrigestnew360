@@ -4,15 +4,15 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/app/dashboard",
-    name: "AfriGest 360",
-    short_name: "AfriGest",
+    name: "KAKO Gestion",
+    short_name: "KAKO",
     description: "Gestion d'entreprise : ventes, stock, finance, RH, chantiers et flotte.",
     start_url: "/app/dashboard",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
     background_color: "#ffffff",
-    theme_color: "#0b2a5b",
+    theme_color: "#0b0a35",
     lang: "fr",
     categories: ["business", "productivity", "finance"],
     icons: [

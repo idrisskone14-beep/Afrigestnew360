@@ -16,7 +16,7 @@ export default async function ModulesSettingsPage() {
   return (
     <div className="space-y-4">
       <p className="max-w-2xl text-sm text-muted-foreground">
-        Les modules actifs dépendent de l'offre de l'entreprise. Pour en activer d'autres, {ctx.can("settings.billing.read") ? <>consultez l'<Link href="/app/parametres/abonnement" className="text-brand hover:underline">abonnement</Link> ou </> : null}contactez votre gestionnaire de compte AfriGest 360.
+        Les modules actifs dépendent de l'offre de l'entreprise. Pour en activer d'autres, {ctx.can("settings.billing.read") ? <>consultez l'<Link href="/app/parametres/abonnement" className="text-brand hover:underline">abonnement</Link> ou </> : null}contactez votre gestionnaire de compte KAKO Gestion.
       </p>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {modules.map((m) => {

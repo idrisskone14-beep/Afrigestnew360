@@ -20,8 +20,8 @@ import { COUNTRIES } from "@/lib/reference-data";
 import { getPublicPlans } from "@/modules/platform/demo";
 
 export const metadata: Metadata = {
-  title: { absolute: "AfriGest 360 — Toute votre entreprise. Une seule plateforme." },
-  description: "Finances, ventes, clients, employés, stocks, projets et opérations : gérez toute votre entreprise depuis AfriGest 360, la plateforme de gestion pensée pour l'Afrique.",
+  title: { absolute: "KAKO Gestion — Toute votre entreprise. Une seule plateforme." },
+  description: "Finances, ventes, clients, employés, stocks, projets et opérations : gérez toute votre entreprise depuis KAKO Gestion, la plateforme de gestion pensée pour l'Afrique.",
   alternates: { canonical: "/" },
 };
 
@@ -42,10 +42,10 @@ export default async function LandingPage() {
           <Reveal>
             <p className="eyebrow mb-5 flex items-center gap-2"><Sparkles className="size-3.5" /> La plateforme de gestion pensée pour l'Afrique</p>
             <h1 className="font-display text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-[4.2rem]">Toute votre entreprise. <span className="relative inline-block italic text-brand">Une seule plateforme.<svg aria-hidden viewBox="0 0 300 12" preserveAspectRatio="none" className="absolute -bottom-1 left-0 h-2.5 w-full text-brand-2"><path d="M2 8 C60 2 120 11 180 5 S270 3 298 7" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" pathLength={1} strokeDasharray={1} className="animate-[draw-line_1.2s_ease-out_0.9s_backwards]" /></svg></span></h1>
-            <p className="mt-6 max-w-xl text-lg text-muted-foreground">Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis AfriGest 360.</p>
+            <p className="mt-6 max-w-xl text-lg text-muted-foreground">Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis KAKO Gestion.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" className="h-12 px-7 text-base" asChild><Link href="/demo">Demander une démo <ArrowRight className="size-4" /></Link></Button>
-              <Button size="lg" variant="outline" className="h-12 px-7 text-base" asChild><Link href="#presentation">Découvrir AfriGest 360</Link></Button>
+              <Button size="lg" variant="outline" className="h-12 px-7 text-base" asChild><Link href="#presentation">Découvrir KAKO Gestion</Link></Button>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               {["FCFA & multi-devises", "Multi-entreprises", "Données isolées et auditées"].map((t) => <li key={t} className="flex items-center gap-1.5"><Check className="size-4 text-brand-blue" />{t}</li>)}
@@ -87,7 +87,7 @@ export default async function LandingPage() {
       </Section>
 
       {/* 5. Présentation */}
-      <Section id="presentation" tone="muted" eyebrow="La solution" title="AfriGest 360 : le système central de votre entreprise" description="Un dirigeant doit pouvoir répondre en quelques secondes : combien gagnons-nous, qui nous doit de l'argent, que doit-on commander, quels projets sont en retard ?">
+      <Section id="presentation" tone="muted" eyebrow="La solution" title="KAKO Gestion : le système central de votre entreprise" description="Un dirigeant doit pouvoir répondre en quelques secondes : combien gagnons-nous, qui nous doit de l'argent, que doit-on commander, quels projets sont en retard ?">
         <div className="grid gap-6 lg:grid-cols-3">
           {PILLARS.map((p, i) => (
             <Reveal key={p.title} delay={i * 0.06}>
@@ -201,7 +201,7 @@ export default async function LandingPage() {
       </Section>
 
       {/* 12. Intelligence & Analytics */}
-      <Section eyebrow="Intelligence & Analytics" title="Des réponses, pas seulement des tableaux" description="Tableaux de bord exécutifs, rapports transversaux et assistant AfriGest Intelligence.">
+      <Section eyebrow="Intelligence & Analytics" title="Des réponses, pas seulement des tableaux" description="Tableaux de bord exécutifs, rapports transversaux et assistant KAKO Intelligence.">
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-2xl border bg-card p-7">
             <h3 className="flex items-center gap-2 font-semibold"><BarChart3 className="size-5 text-brand" /> Pilotage</h3>
@@ -210,7 +210,7 @@ export default async function LandingPage() {
             </ul>
           </div>
           <div className="rounded-2xl border bg-card p-7">
-            <h3 className="flex items-center gap-2 font-semibold"><Sparkles className="size-5 text-brand" /> AfriGest Intelligence <Badge variant="secondary">Bientôt</Badge></h3>
+            <h3 className="flex items-center gap-2 font-semibold"><Sparkles className="size-5 text-brand" /> KAKO Intelligence <Badge variant="secondary">Bientôt</Badge></h3>
             <p className="mt-4 text-sm text-muted-foreground">Posez vos questions en français :</p>
             <ul className="mt-3 space-y-2 text-sm">
               {["« Quelles factures sont en retard ? »", "« Quels clients me doivent le plus d'argent ? »", "« Quels produits arrivent en rupture ? »", "« Quels projets dépassent leur budget ? »"].map((t) => <li key={t} className="rounded-lg bg-muted/60 px-3 py-2 italic text-muted-foreground">{t}</li>)}
@@ -227,7 +227,7 @@ export default async function LandingPage() {
       </Section>
 
       {/* 14. Témoignages */}
-      <Section eyebrow="Témoignages" title="Ce que les dirigeants attendent d'AfriGest 360" description="Cas d'usage types, formulés d'après les besoins que nous entendons sur le terrain.">
+      <Section eyebrow="Témoignages" title="Ce que les dirigeants attendent de KAKO Gestion" description="Cas d'usage types, formulés d'après les besoins que nous entendons sur le terrain.">
         <div className="grid gap-6 md:grid-cols-3">
           {USE_CASES.map((u) => (
             <figure key={u.initials} className="flex h-full flex-col rounded-2xl border bg-card p-6">

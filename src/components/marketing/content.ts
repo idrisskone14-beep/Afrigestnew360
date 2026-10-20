@@ -50,7 +50,7 @@ export const SECURITY_POINTS = [
 ];
 
 export const FAQ = [
-  { q: "À qui s'adresse AfriGest 360 ?", a: "Aux PME et ETI qui veulent centraliser leur gestion : commerce, services, BTP, transport, industrie, ONG… Une même plateforme peut gérer une ou plusieurs entreprises." },
+  { q: "À qui s'adresse KAKO Gestion ?", a: "Aux PME et ETI qui veulent centraliser leur gestion : commerce, services, BTP, transport, industrie, ONG… Une même plateforme peut gérer une ou plusieurs entreprises." },
   { q: "Puis-je gérer plusieurs entreprises avec un seul compte ?", a: "Oui. Un utilisateur peut appartenir à plusieurs entreprises avec un rôle différent dans chacune (administrateur ici, consultation là) et bascule de l'une à l'autre en un clic. Les données restent strictement séparées." },
   { q: "Les montants sont-ils en FCFA ?", a: "La devise par défaut est le FCFA (XOF), avec une architecture multi-devises. Chaque entreprise choisit sa devise principale." },
   { q: "La comptabilité est-elle compatible SYSCOHADA ?", a: "L'architecture comptable (plan de comptes paramétrable, journaux, écritures, exercices) est conçue pour le SYSCOHADA. Le module Comptabilité est en cours de livraison : demandez-nous le calendrier." },
@@ -80,7 +80,7 @@ export const FEATURE_GROUPS = [
   { module: "reports", title: "Rapports & analytics", bullets: ["Ventes, dépenses, résultat, trésorerie", "Créances clients, dettes fournisseurs", "Filtres par période, agence, projet, centre de coûts", "Exports PDF et Excel, impression"] },
   { module: "fleet", title: "Transport & flotte", bullets: ["Véhicules, chauffeurs, missions", "Carburant, kilométrage, entretiens", "Assurances, visites techniques, alertes", "Contraventions et rentabilité par véhicule"] },
   { module: "construction", title: "Gestion de chantiers", bullets: ["Chantiers, équipes, engins, matériaux", "Sous-traitants et dépenses", "Avancement, rapports terrain, photos", "Connecté à Finance, Stock, RH, Projets, Achats"] },
-  { module: "intelligence", title: "AfriGest Intelligence", bullets: ["Posez vos questions en langage naturel", "Réponses limitées à vos données autorisées", "Jamais d'accès aux modules désactivés", "Insights et recommandations"] },
+  { module: "intelligence", title: "KAKO Intelligence", bullets: ["Posez vos questions en langage naturel", "Réponses limitées à vos données autorisées", "Jamais d'accès aux modules désactivés", "Insights et recommandations"] },
 ];
 
 export const SOLUTIONS = [

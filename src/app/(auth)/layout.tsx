@@ -28,7 +28,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               ))}
             </ul>
           </div>
-          <p className="text-xs text-[#eef3ff]/55">© {new Date().getFullYear()} AfriGest 360</p>
+          <p className="text-xs text-[#eef3ff]/55">© {new Date().getFullYear()} KAKO Gestion</p>
         </div>
       </aside>
       <main className="flex min-h-dvh flex-col justify-center px-5 py-10 sm:px-10">

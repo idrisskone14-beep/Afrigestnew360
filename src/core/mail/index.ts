@@ -25,7 +25,7 @@ export async function sendMail(msg: MailMessage): Promise<void> {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: process.env.MAIL_FROM ?? "AfriGest 360 <no-reply@afrigest360.com>",
+      from: process.env.MAIL_FROM ?? "KAKO Gestion <no-reply@afrigest360.com>",
       to: msg.to,
       subject: msg.subject,
       text: msg.text,

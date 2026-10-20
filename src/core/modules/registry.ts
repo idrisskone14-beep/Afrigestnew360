@@ -29,7 +29,7 @@ export const MODULES = [
   { key: "reports", name: "Rapports & Analytics", description: "Reporting transversal, exports PDF/Excel.", kind: "STANDARD", icon: "BarChart3", sortOrder: 90, status: "available" },
   { key: "fleet", name: "Transport & Flotte", description: "Véhicules, chauffeurs, missions, entretiens, contraventions.", kind: "EXTENSION", icon: "Truck", sortOrder: 100, status: "available" },
   { key: "construction", name: "Gestion de chantiers", description: "Chantiers, équipes, matériaux, rapports terrain.", kind: "EXTENSION", icon: "HardHat", sortOrder: 110, status: "available" },
-  { key: "intelligence", name: "AfriGest Intelligence", description: "Assistant d'analyse limité aux données autorisées.", kind: "EXTENSION", icon: "Sparkles", sortOrder: 120, status: "planned" },
+  { key: "intelligence", name: "KAKO Intelligence", description: "Assistant d'analyse limité aux données autorisées.", kind: "EXTENSION", icon: "Sparkles", sortOrder: 120, status: "planned" },
 ] as const satisfies readonly ModuleDef[];
 
 export type ModuleKey = (typeof MODULES)[number]["key"];

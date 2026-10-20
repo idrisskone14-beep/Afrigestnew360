@@ -96,7 +96,7 @@ export function PushCard({ publicKey, devices }: { publicKey: string | null; dev
       </div>
       {install.canInstall && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
-          <span className="flex items-center gap-2 text-sm"><Smartphone className="size-4 text-brand" aria-hidden="true" /> Installez AfriGest 360 sur l&apos;écran d&apos;accueil : plein écran, ouverture en un geste.</span>
+          <span className="flex items-center gap-2 text-sm"><Smartphone className="size-4 text-brand" aria-hidden="true" /> Installez KAKO Gestion sur l&apos;écran d&apos;accueil : plein écran, ouverture en un geste.</span>
           <Button variant="outline" size="sm" onClick={() => void install.install()}><Download className="size-4" /> Installer</Button>
         </div>
       )}

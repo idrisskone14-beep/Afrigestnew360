@@ -36,7 +36,7 @@ export async function sendVerificationEmail(userId: string) {
   const token = await issueToken(user.email, user.id, "EMAIL_VERIFY");
   await sendMail({
     to: user.email,
-    subject: "Confirmez votre adresse e-mail — AfriGest 360",
+    subject: "Confirmez votre adresse e-mail — KAKO Gestion",
     text: `Bonjour ${user.name},\n\nConfirmez votre adresse e-mail :\n${appUrl(`/verifier-email?token=${token}`)}\n\nCe lien est valable 48 heures.`,
   });
 }
@@ -47,7 +47,7 @@ async function notifyPlatformAdminsOfRegistration(name: string, email: string) {
     const admins = await platformDb.user.findMany({ where: { isPlatformAdmin: true, status: "ACTIVE", deletedAt: null }, select: { email: true } });
     await Promise.all(admins.map((a) => sendMail({
       to: a.email,
-      subject: "Nouvelle inscription à valider — AfriGest 360",
+      subject: "Nouvelle inscription à valider — KAKO Gestion",
       text: `${name} (${email}) vient de s'inscrire et attend votre validation :\n${appUrl("/super-admin/inscriptions")}`,
     }).catch((e) => console.error("[inscription] notification non envoyée", e))));
   } catch (e) {
@@ -80,7 +80,7 @@ export async function registerUser(input: { name: string; email: string; passwor
     try {
       await sendMail({
         to: email,
-        subject: "Tentative d'inscription — AfriGest 360",
+        subject: "Tentative d'inscription — KAKO Gestion",
         text: `Une inscription a été tentée avec cette adresse alors qu'un compte existe déjà.\nConnectez-vous : ${appUrl("/connexion")}\nMot de passe oublié : ${appUrl("/mot-de-passe-oublie")}`,
       });
       return { mode: "email" };
@@ -114,7 +114,7 @@ export async function requestPasswordReset(emailRaw: string) {
   try {
     await sendMail({
       to: user.email,
-      subject: "Réinitialisation de votre mot de passe — AfriGest 360",
+      subject: "Réinitialisation de votre mot de passe — KAKO Gestion",
       text: `Pour choisir un nouveau mot de passe :\n${appUrl(`/reinitialiser-mot-de-passe?token=${token}`)}\n\nCe lien est valable 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.`,
     });
   } catch (e) {

@@ -1,4 +1,4 @@
-# AfriGest 360 — Architecture & plan d'implémentation
+# KAKO Gestion — Architecture & plan d'implémentation
 
 > Document vivant. Il décrit l'architecture cible complète et l'état d'avancement par phase.
 
@@ -130,7 +130,7 @@ Les écritures inter-modules passent par des **services de domaine** (jamais par
 | 4 | RH, Paie, Projets, GED, Agences/centres de coûts | **livrée** (284 tests ; voir §12) |
 | 5 | Analytics/Reporting, Notifications, Workflows, Audit UI, Import/Export, Recherche globale | **livrée** (359 tests ; voir §13) |
 | 6 | Transport & Flotte, Contraventions, Chantiers | **livrée** (395 tests ; voir §14) |
-| 7 | AfriGest Intelligence | à faire |
+| 7 | KAKO Intelligence | à faire |
 | 8 | Durcissement, perfs, accessibilité, documentation | **livrée** (442 tests ; voir §15) |
 
 ## 11. Phase 3 — Cœur ERP (livré)

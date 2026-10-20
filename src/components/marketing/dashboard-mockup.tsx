@@ -1,14 +1,14 @@
-/** Illustration du tableau de bord AfriGest 360 (données fictives, purement décoratives). */
+/** Illustration du tableau de bord KAKO Gestion (données fictives, purement décoratives). */
 const BARS = [38, 52, 44, 61, 55, 72, 66, 84, 78, 92, 88, 100];
 const LINE = "M0,70 C30,62 50,66 80,48 C110,30 130,44 160,28 C190,12 220,22 250,8";
 
 export function DashboardMockup() {
   return (
-    <div className="relative" role="img" aria-label="Aperçu du tableau de bord AfriGest 360 : chiffre d'affaires, trésorerie, factures à encaisser et activité récente">
+    <div className="relative" role="img" aria-label="Aperçu du tableau de bord KAKO Gestion : chiffre d'affaires, trésorerie, factures à encaisser et activité récente">
             <div className="overflow-hidden rounded-xl border border-foreground/30 bg-card shadow-offset-lg">
         <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
           <span className="size-2.5 rounded-full bg-destructive/70" /><span className="size-2.5 rounded-full bg-warning/80" /><span className="size-2.5 rounded-full bg-success/80" />
-          <span className="ml-3 text-[11px] text-muted-foreground">app.afrigest360.com / dashboard</span>
+          <span className="ml-3 text-[11px] text-muted-foreground">KAKO Gestion / tableau de bord</span>
         </div>
         <div className="grid grid-cols-[3.2rem_1fr] sm:grid-cols-[9rem_1fr]">
           <aside className="space-y-1.5 border-r bg-sidebar p-2.5 sm:p-3">

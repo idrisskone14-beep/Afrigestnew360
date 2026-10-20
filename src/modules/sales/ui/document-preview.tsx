@@ -29,7 +29,7 @@ const num = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigit
 export function DocumentPreview({ data }: { data: PreviewData }) {
   const m = (n: number) => formatMoney(n, data.currency);
   return (
-    <article aria-label={`Aperçu du ${data.title.toLowerCase()}`} className="mx-auto w-full max-w-[860px] rounded-sm bg-white p-6 text-[#0b1f44] shadow-[0_2px_20px_rgb(11_31_68/0.18)] sm:p-9">
+    <article aria-label={`Aperçu du ${data.title.toLowerCase()}`} className="mx-auto w-full max-w-[860px] rounded-sm bg-white p-6 text-[#0b0c24] shadow-[0_2px_20px_rgb(11_12_36/0.18)] sm:p-9">
       <header className="flex items-start justify-between gap-4">
         <div className="min-h-16 min-w-0">
           {data.issuer.logoUrl && (
@@ -39,31 +39,31 @@ export function DocumentPreview({ data }: { data: PreviewData }) {
         </div>
         <div className="text-right">
           <h2 className="font-display text-3xl font-semibold leading-none sm:text-4xl">{data.title}</h2>
-          <p className="mt-2 text-xs text-[#51607a]">N° {data.number ?? data.numberPlaceholder ?? "attribué à l'enregistrement"}</p>
+          <p className="mt-2 text-xs text-[#5a5b7a]">N° {data.number ?? data.numberPlaceholder ?? "attribué à l'enregistrement"}</p>
         </div>
       </header>
 
       <section className="mt-8 grid gap-5 sm:grid-cols-2">
         <div>
-          <p className="text-[11px] text-[#c2410c]">Émetteur</p>
+          <p className="text-[11px] text-[#5c08da]">Émetteur</p>
           <p className="mt-0.5 text-sm font-bold uppercase">{data.issuer.name}</p>
-          {data.issuer.lines.map((l) => <p key={l} className="text-[11px] leading-snug text-[#51607a]">{l}</p>)}
+          {data.issuer.lines.map((l) => <p key={l} className="text-[11px] leading-snug text-[#5a5b7a]">{l}</p>)}
         </div>
         <div>
-          <p className="text-[11px] text-[#c2410c]">Client</p>
+          <p className="text-[11px] text-[#5c08da]">Client</p>
           {data.recipient ? (
             <>
               <p className="mt-0.5 text-sm font-bold">{data.recipient.name}</p>
-              {data.recipient.lines.map((l) => <p key={l} className="text-[11px] leading-snug text-[#51607a]">{l}</p>)}
+              {data.recipient.lines.map((l) => <p key={l} className="text-[11px] leading-snug text-[#5a5b7a]">{l}</p>)}
             </>
-          ) : <p className="mt-0.5 text-sm italic text-[#51607a]">Sélectionnez un client</p>}
+          ) : <p className="mt-0.5 text-sm italic text-[#5a5b7a]">Sélectionnez un client</p>}
         </div>
       </section>
 
       <div className="mt-6 flex justify-end gap-8 text-right">
         {data.dates.map((d) => (
           <div key={d.label}>
-            <p className="text-[11px] text-[#c2410c]">{d.label}</p>
+            <p className="text-[11px] text-[#5c08da]">{d.label}</p>
             <p className="text-sm font-bold">{d.value}</p>
           </div>
         ))}
@@ -72,7 +72,7 @@ export function DocumentPreview({ data }: { data: PreviewData }) {
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-[34rem] border-collapse text-xs">
           <thead>
-            <tr className="bg-[#ea580c] text-white">
+            <tr className="bg-[#5c08da] text-white">
               <th className="px-2 py-2 text-left font-bold">Désignations</th>
               <th className="px-2 py-2 text-right font-bold">Qté</th>
               <th className="px-2 py-2 text-right font-bold">Prix u. HT</th>
@@ -82,10 +82,10 @@ export function DocumentPreview({ data }: { data: PreviewData }) {
           </thead>
           <tbody>
             {data.lines.map((l, i) => (
-              <tr key={i} className="border-b border-[#dfe6f1] align-top">
+              <tr key={i} className="border-b border-[#e2e0f4] align-top">
                 <td className="px-2 py-2">
-                  {l.description || <span className="italic text-[#51607a]">Désignation…</span>}
-                  {l.discountPct > 0 && <span className="block text-[#51607a]">Remise {num(l.discountPct)} %</span>}
+                  {l.description || <span className="italic text-[#5a5b7a]">Désignation…</span>}
+                  {l.discountPct > 0 && <span className="block text-[#5a5b7a]">Remise {num(l.discountPct)} %</span>}
                 </td>
                 <td className="whitespace-nowrap px-2 py-2 text-right tabular-nums">{num(l.quantity)} {l.unit}</td>
                 <td className="whitespace-nowrap px-2 py-2 text-right tabular-nums">{m(l.unitPrice)}</td>
@@ -100,7 +100,7 @@ export function DocumentPreview({ data }: { data: PreviewData }) {
       <div className="mt-6 grid items-start gap-5 sm:grid-cols-[1fr_15rem]">
         <table className="w-full max-w-[17rem] border-collapse text-xs">
           <thead>
-            <tr className="bg-[#ea580c] text-white">
+            <tr className="bg-[#5c08da] text-white">
               <th className="px-2 py-2 text-left font-bold">Base</th>
               <th className="px-2 py-2 text-right font-bold">Taux</th>
               <th className="px-2 py-2 text-right font-bold">Montant TVA</th>
@@ -108,7 +108,7 @@ export function DocumentPreview({ data }: { data: PreviewData }) {
           </thead>
           <tbody>
             {data.breakdown.map((b) => (
-              <tr key={b.rate} className="border-b border-[#dfe6f1]">
+              <tr key={b.rate} className="border-b border-[#e2e0f4]">
                 <td className="whitespace-nowrap px-2 py-2 tabular-nums">{m(b.base)}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{num(b.rate)}%</td>
                 <td className="whitespace-nowrap px-2 py-2 text-right tabular-nums">{m(b.tax)}</td>
@@ -118,11 +118,11 @@ export function DocumentPreview({ data }: { data: PreviewData }) {
         </table>
         <table className="w-full border-collapse text-xs">
           <thead>
-            <tr className="bg-[#ea580c] text-white"><th colSpan={2} className="px-2 py-2 text-left font-bold">Récapitulatif</th></tr>
+            <tr className="bg-[#5c08da] text-white"><th colSpan={2} className="px-2 py-2 text-left font-bold">Récapitulatif</th></tr>
           </thead>
           <tbody>
             {data.totals.map((t) => (
-              <tr key={t.label} className="border-b border-[#dfe6f1]">
+              <tr key={t.label} className="border-b border-[#e2e0f4]">
                 <td className={`px-2 py-2 ${t.bold ? "font-bold" : ""}`}>{t.label}</td>
                 <td className={`whitespace-nowrap px-2 py-2 text-right tabular-nums ${t.bold ? "font-bold" : ""}`}>{m(t.value)}</td>
               </tr>
@@ -133,25 +133,25 @@ export function DocumentPreview({ data }: { data: PreviewData }) {
 
       {data.notes && (
         <section className="mt-6">
-          <p className="text-[11px] text-[#c2410c]">Notes</p>
+          <p className="text-[11px] text-[#5c08da]">Notes</p>
           <p className="whitespace-pre-line text-xs">{data.notes}</p>
         </section>
       )}
       {data.terms && (
         <section className="mt-4">
-          <p className="text-[11px] text-[#c2410c]">Paiement et mentions</p>
+          <p className="text-[11px] text-[#5c08da]">Paiement et mentions</p>
           <p className="whitespace-pre-line text-xs">{data.terms}</p>
         </section>
       )}
       {data.signatureLabel && (
         <div className="mt-6 flex justify-end">
-          <div className="h-20 w-full max-w-[16rem] rounded-sm border border-[#dfe6f1] p-2 text-[11px] text-[#51607a]">{data.signatureLabel}</div>
+          <div className="h-20 w-full max-w-[16rem] rounded-sm border border-[#e2e0f4] p-2 text-[11px] text-[#5a5b7a]">{data.signatureLabel}</div>
         </div>
       )}
 
-      <footer className="mt-8 border-t border-[#dfe6f1] pt-3">
+      <footer className="mt-8 border-t border-[#e2e0f4] pt-3">
         <p className="whitespace-pre-line text-[11px] font-medium leading-snug">{data.issuer.footer}</p>
-        <p className="mt-0.5 text-[10px] text-[#51607a]">{DOCUMENT_BRAND}</p>
+        <p className="mt-0.5 text-[10px] text-[#5a5b7a]">{DOCUMENT_BRAND}</p>
       </footer>
     </article>
   );

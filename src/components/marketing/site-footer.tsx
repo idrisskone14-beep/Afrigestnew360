@@ -24,7 +24,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t">
-        <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-muted-foreground sm:px-6 lg:px-8">© {new Date().getFullYear()} AfriGest 360. Tous droits réservés.</p>
+        <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-muted-foreground sm:px-6 lg:px-8">© {new Date().getFullYear()} KAKO Gestion. Tous droits réservés.</p>
       </div>
     </footer>
   );

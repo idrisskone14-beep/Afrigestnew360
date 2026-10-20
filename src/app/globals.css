@@ -4,104 +4,107 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ───────────────────────────────────────────────────────────────
-   AfriGest 360 — palette « Orange & Bleu »
-   Orange vif (action, accent) · bleu marine (structure) · bleu vif (données, liens secondaires) · fond blanc.
-   Contrastes AA : texte orange sur blanc = #c2410c (5,2:1) ; boutons orange = texte marine (5,8:1).
-   Titres en serif, aplats unis (aucun motif), un filet d'accent orange, ombres « décalées » plutôt que floues.
+   KAKO Gestion — palette « Violet & Bleu » (tirée du logo)
+   Violet (action, accent) · bleu vif (données, liens secondaires) · indigo très sombre (structure) · fond blanc.
+   Contrastes AA : texte violet sur blanc = #5c08da (8,4:1) ; boutons violets = texte blanc (6,6:1) ;
+   texte bleu sur blanc = #0b63e5 (5,4:1).
+   Aplats unis (aucun motif), un filet d'accent violet, ombres « décalées » plutôt que floues.
    ─────────────────────────────────────────────────────────────── */
 :root {
   --radius: 0.625rem;
 
   --background: #ffffff;
-  --foreground: #0b1f44;
+  --foreground: #0b0c24;
   --card: #ffffff;
-  --card-foreground: #0b1f44;
+  --card-foreground: #0b0c24;
   --popover: #ffffff;
-  --popover-foreground: #0b1f44;
+  --popover-foreground: #0b0c24;
 
-  --primary: #f97316;
-  --primary-foreground: #0b1f44;
-  --secondary: #eef2f9;
-  --secondary-foreground: #0b1f44;
-  --muted: #eef2f9;
-  --muted-foreground: #51607a;
-  --accent: #fff1e6;
-  --accent-foreground: #9a3412;
+  --primary: #7b1ff0;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f0fb;
+  --secondary-foreground: #0b0c24;
+  --muted: #f1f0fb;
+  --muted-foreground: #5a5b7a;
+  --accent: #efe8ff;
+  --accent-foreground: #3f0aa6;
 
-  --border: #dfe6f1;
-  --input: #cfd8e8;
-  --ring: #f97316;
+  --border: #e2e0f4;
+  --input: #d3d0ec;
+  --ring: #7b1ff0;
 
-  --brand: #c2410c;
-  --brand-2: #f97316;
+  --brand: #5c08da;
+  --brand-2: #7b1ff0;
+  --brand-2-foreground: #ffffff;
   --brand-foreground: #ffffff;
-  --brand-blue: #1d4ed8;
-  --navy: #0b2a5b;
-  --offset-strong: #0b2a5b;
+  --brand-blue: #0b63e5;
+  --navy: #0d0b45;
+  --offset-strong: #0d0b45;
   --success: #15803d;
   --warning: #a16207;
   --destructive: #b91c1c;
   --destructive-foreground: #ffffff;
 
-  --sidebar: #0a2147;
-  --sidebar-foreground: #dbe5fb;
+  --sidebar: #0b0a35;
+  --sidebar-foreground: #e0e2ff;
   --sidebar-border: rgb(255 255 255 / 0.12);
   --sidebar-accent: rgb(255 255 255 / 0.09);
 
-  --chart-1: #1d4ed8;
-  --chart-2: #ea580c;
-  --chart-3: #0ea5e9;
-  --chart-4: #f59e0b;
+  --chart-1: #0b63e5;
+  --chart-2: #7b1ff0;
+  --chart-3: #00b4ff;
+  --chart-4: #1a0274;
   --chart-5: #64748b;
-  /* Séries de graphiques : bleu / orange (distincts, y compris pour les daltoniens et en niveaux de gris) */
-  --viz-1: #1d4ed8;
-  --viz-2: #ea580c;
+  /* Séries de graphiques : bleu clair / violet foncé (très différents en luminosité : lisibles aussi en niveaux de gris) */
+  --viz-1: #0a84ff;
+  --viz-2: #5c08da;
 }
 
 .dark {
-  --background: #0a1020;
-  --foreground: #e8eefc;
-  --card: #101a33;
-  --card-foreground: #e8eefc;
-  --popover: #101a33;
-  --popover-foreground: #e8eefc;
+  --background: #09091f;
+  --foreground: #ecebff;
+  --card: #12122f;
+  --card-foreground: #ecebff;
+  --popover: #12122f;
+  --popover-foreground: #ecebff;
 
-  --primary: #fb923c;
-  --primary-foreground: #0a1020;
-  --secondary: #16213f;
-  --secondary-foreground: #e8eefc;
-  --muted: #16213f;
-  --muted-foreground: #9db0d6;
-  --accent: #1d2a4d;
-  --accent-foreground: #fdba74;
+  --primary: #9d6bff;
+  --primary-foreground: #09091f;
+  --secondary: #17173d;
+  --secondary-foreground: #ecebff;
+  --muted: #17173d;
+  --muted-foreground: #a9abd3;
+  --accent: #221d52;
+  --accent-foreground: #d4c2ff;
 
-  --border: #22305a;
-  --input: #2b3b6b;
-  --ring: #fb923c;
+  --border: #25254f;
+  --input: #2f2f60;
+  --ring: #9d6bff;
 
-  --brand: #fb923c;
-  --brand-2: #fdba74;
-  --brand-foreground: #0a1020;
-  --brand-blue: #60a5fa;
-  --navy: #0b2a5b;
-  --offset-strong: #60a5fa;
+  --brand: #b794ff;
+  --brand-2: #9d6bff;
+  --brand-2-foreground: #09091f;
+  --brand-foreground: #09091f;
+  --brand-blue: #5eb0ff;
+  --navy: #0d0b45;
+  --offset-strong: #5eb0ff;
   --success: #4ade80;
   --warning: #fbbf24;
   --destructive: #f87171;
   --destructive-foreground: #ffffff;
 
-  --sidebar: #070d1c;
-  --sidebar-foreground: #dbe5fb;
+  --sidebar: #06061a;
+  --sidebar-foreground: #e0e2ff;
   --sidebar-border: rgb(255 255 255 / 0.09);
   --sidebar-accent: rgb(255 255 255 / 0.08);
 
-  --chart-1: #60a5fa;
-  --chart-2: #fb923c;
-  --chart-3: #38bdf8;
-  --chart-4: #fbbf24;
+  --chart-1: #5eb0ff;
+  --chart-2: #b794ff;
+  --chart-3: #38d0ff;
+  --chart-4: #7c6cff;
   --chart-5: #94a3b8;
-  --viz-1: #60a5fa;
-  --viz-2: #fb923c;
+  --viz-1: #5eb0ff;
+  --viz-2: #b794ff;
 }
 
 @theme inline {
@@ -135,6 +138,7 @@
   --color-ring: var(--ring);
   --color-brand: var(--brand);
   --color-brand-2: var(--brand-2);
+  --color-brand-2-foreground: var(--brand-2-foreground);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-blue: var(--brand-blue);
   --color-navy: var(--navy);
@@ -168,7 +172,7 @@
 @keyframes scale-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
 @keyframes slide-in-left { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-@keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 0 0 rgb(249 115 22 / 0.55); } 50% { box-shadow: 0 0 0 6px rgb(249 115 22 / 0); } }
+@keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 0 0 rgb(123 31 240 / 0.55); } 50% { box-shadow: 0 0 0 6px rgb(123 31 240 / 0); } }
 @keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
 @keyframes weave { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes grow-y { from { transform: scaleY(0); } to { transform: none; } }
@@ -204,14 +208,14 @@
 }
 
 /* ── Identité visuelle : sobre ─────────────────────────────────────────────────────────────── */
-/* Filet d'accent fin (orange), apparition de gauche à droite : seul « ornement » de l'interface */
+/* Filet d'accent fin (violet), apparition de gauche à droite : seul « ornement » de l'interface */
 .accent-line {
   height: 3px;
   background-color: var(--brand-2);
   animation: weave 0.9s cubic-bezier(0.65, 0, 0.35, 1) backwards;
 }
 
-/* Rubrique de section : petites capitales espacées, couleur orange foncé (AA sur blanc) */
+/* Rubrique de section : petites capitales espacées, couleur violet foncé (AA sur blanc) */
 .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brand); }
 
 .glass { background: color-mix(in srgb, var(--background) 82%, transparent); backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2); }

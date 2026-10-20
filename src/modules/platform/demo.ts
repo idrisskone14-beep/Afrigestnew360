@@ -64,8 +64,8 @@ export async function recordDemoRequest(input: DemoRequestData) {
       : Promise.resolve(),
     sendMail({
       to: email,
-      subject: "Votre demande a bien été reçue — AfriGest 360",
-      text: `Bonjour ${created.fullName},\n\nMerci pour votre intérêt pour AfriGest 360. Notre équipe vous recontacte très prochainement pour organiser votre démonstration.\n\nL'équipe AfriGest 360`,
+      subject: "Votre demande a bien été reçue — KAKO Gestion",
+      text: `Bonjour ${created.fullName},\n\nMerci pour votre intérêt pour KAKO Gestion. Notre équipe vous recontacte très prochainement pour organiser votre démonstration.\n\nL'équipe KAKO Gestion`,
     }),
   ]);
   return { id: created.id, duplicate: false };

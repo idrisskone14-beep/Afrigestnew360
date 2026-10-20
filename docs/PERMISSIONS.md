@@ -20,7 +20,7 @@
 | `reports` | Rapports & Analytics | Standard | Livré | Reporting transversal, exports PDF/Excel. |
 | `fleet` | Transport & Flotte | Extension | Livré | Véhicules, chauffeurs, missions, entretiens, contraventions. |
 | `construction` | Gestion de chantiers | Extension | Livré | Chantiers, équipes, matériaux, rapports terrain. |
-| `intelligence` | AfriGest Intelligence | Extension | Prévu | Assistant d'analyse limité aux données autorisées. |
+| `intelligence` | KAKO Intelligence | Extension | Prévu | Assistant d'analyse limité aux données autorisées. |
 
 Une permission n'est effective que si son module est actif pour l'entreprise (offre + surcharges) **et** que le rôle de l'utilisateur la détient. Un module désactivé est invisible et répond 403 par URL directe.
 
@@ -246,11 +246,11 @@ Une permission n'est effective que si son module est actif pour l'entreprise (of
 | `construction.site.manage` | Gérer — Chantiers |
 | `construction.report.manage` | Gérer — Rapports terrain |
 
-### AfriGest Intelligence (`intelligence`) — 1
+### KAKO Intelligence (`intelligence`) — 1
 
 | Clé | Libellé |
 |---|---|
-| `intelligence.assistant.use` | Utiliser — Assistant AfriGest Intelligence |
+| `intelligence.assistant.use` | Utiliser — Assistant KAKO Intelligence |
 
 ## Rôles modèles
 

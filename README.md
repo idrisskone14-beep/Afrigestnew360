@@ -1,10 +1,10 @@
-# AfriGest 360
+# KAKO Gestion
 
 > **Toute votre entreprise. Une seule plateforme.**
 
 Plateforme SaaS ERP multi-entreprises pour le marché africain : finance, comptabilité, ventes, CRM, achats, stocks, RH, paie, projets, GED, reporting, extensions Transport & Chantiers, administration SaaS.
 
-**État : Phases 1 à 6 et 8 livrées — 442 tests** (fondations, site public, cœur ERP, RH/paie/projets/GED, pilotage, extensions Flotte et Chantiers, durcissement/performances/documentation). Reste à venir : **Phase 7 — AfriGest Intelligence**. Voir [le plan](docs/ARCHITECTURE.md#10-plan-dimplémentation). Aucune fonctionnalité n'est simulée : un module dont les écrans ne sont pas livrés l'indique explicitement (et son contrôle d'accès est déjà actif et testé).
+**État : Phases 1 à 6 et 8 livrées — 442 tests** (fondations, site public, cœur ERP, RH/paie/projets/GED, pilotage, extensions Flotte et Chantiers, durcissement/performances/documentation). Reste à venir : **Phase 7 — KAKO Intelligence**. Voir [le plan](docs/ARCHITECTURE.md#10-plan-dimplémentation). Aucune fonctionnalité n'est simulée : un module dont les écrans ne sont pas livrés l'indique explicitement (et son contrôle d'accès est déjà actif et testé).
 
 ## Ce qui fonctionne aujourd'hui
 
@@ -51,7 +51,7 @@ Plateforme SaaS ERP multi-entreprises pour le marché africain : finance, compta
 | **Accessibilité** (P8) | audit axe-core WCAG 2.1 AA sur les pages publiques et 4 écrans de l'application ; mouvements réduits respectés |
 | **Documentation** (P8) | guides de déploiement, d'exploitation, de sécurité, de contribution, matrice des 148 permissions **générée et vérifiée par test** |
 
-À venir : AfriGest Intelligence (P7).
+À venir : KAKO Intelligence (P7).
 
 ## Documentation
 

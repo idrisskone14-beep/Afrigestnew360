@@ -1,13 +1,13 @@
-/* Service worker d'AfriGest 360.
+/* Service worker de KAKO Gestion.
  * Rôles : (1) afficher une page claire quand le réseau manque, (2) recevoir les notifications push et ouvrir la bonne page au clic.
  * Il ne met AUCUNE page ni donnée d'entreprise en cache : les écrans de l'application contiennent des données confidentielles
  * et doivent toujours venir du serveur (une session fermée ne doit rien laisser sur l'appareil). */
 const OFFLINE_HTML = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hors connexion · AfriGest 360</title>
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;background:#fff;color:#0b1f44;padding:24px;text-align:center}
-main{max-width:360px}h1{font-size:22px;margin:0 0 8px}p{color:#51607a;line-height:1.5;margin:0 0 20px}
-button{background:#f97316;color:#0b1f44;border:0;border-radius:8px;padding:12px 20px;font-weight:700;font-size:16px}</style></head>
-<body><main><h1>Pas de connexion</h1><p>AfriGest 360 a besoin d'internet pour afficher vos données en toute sécurité. Vérifiez votre réseau, puis réessayez.</p>
+<title>Hors connexion · KAKO Gestion</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;background:#fff;color:#0b0c24;padding:24px;text-align:center}
+main{max-width:360px}h1{font-size:22px;margin:0 0 8px}p{color:#5a5b7a;line-height:1.5;margin:0 0 20px}
+button{background:#7b1ff0;color:#fff;border:0;border-radius:8px;padding:12px 20px;font-weight:700;font-size:16px}</style></head>
+<body><main><h1>Pas de connexion</h1><p>KAKO Gestion a besoin d'internet pour afficher vos données en toute sécurité. Vérifiez votre réseau, puis réessayez.</p>
 <button onclick="location.reload()">Réessayer</button></main></body></html>`;
 
 self.addEventListener("install", () => self.skipWaiting());
@@ -20,8 +20,8 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch { data = { title: "AfriGest 360", body: event.data ? event.data.text() : "" }; }
-  const title = data.title || "AfriGest 360";
+  try { data = event.data ? event.data.json() : {}; } catch { data = { title: "KAKO Gestion", body: event.data ? event.data.text() : "" }; }
+  const title = data.title || "KAKO Gestion";
   event.waitUntil(self.registration.showNotification(title, {
     body: data.body || "",
     icon: "/pwa/icon-192.png",

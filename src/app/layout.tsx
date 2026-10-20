@@ -10,9 +10,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "AfriGest 360 — Toute votre entreprise. Une seule plateforme.", template: "%s · AfriGest 360" },
+  title: { default: "KAKO Gestion — Toute votre entreprise. Une seule plateforme.", template: "%s · KAKO Gestion" },
   description:
-    "Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis AfriGest 360.",
+    "Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis KAKO Gestion.",
 };
 
 export const viewport: Viewport = {

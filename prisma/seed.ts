@@ -132,7 +132,7 @@ async function main() {
   const ownerEmail = process.env.PLATFORM_OWNER_EMAIL;
   const ownerPassword = process.env.PLATFORM_OWNER_PASSWORD;
   if (ownerEmail && ownerPassword) {
-    await upsertUser(ownerEmail.toLowerCase(), "Propriétaire AfriGest", ownerPassword, { isPlatformAdmin: true });
+    await upsertUser(ownerEmail.toLowerCase(), "Propriétaire KAKO Gestion", ownerPassword, { isPlatformAdmin: true });
     await platformDb.user.update({ where: { email: ownerEmail.toLowerCase() }, data: { isPlatformAdmin: true } });
   } else {
     console.warn("PLATFORM_OWNER_EMAIL / PLATFORM_OWNER_PASSWORD non définis : aucun propriétaire de plateforme créé.");

@@ -18,7 +18,7 @@ export default async function SuspendedPage() {
       <PauseCircle className="size-12 text-warning" />
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">Entreprise suspendue</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        L'accès à <strong>{state.companyName}</strong> est temporairement suspendu. Contactez le support AfriGest 360 ou votre administrateur pour le rétablir.
+        L'accès à <strong>{state.companyName}</strong> est temporairement suspendu. Contactez le support KAKO Gestion ou votre administrateur pour le rétablir.
       </p>
       <form action={logoutAction} className="mt-6"><Button variant="outline" type="submit">Se déconnecter</Button></form>
     </main>

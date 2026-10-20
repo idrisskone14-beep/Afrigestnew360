@@ -35,7 +35,7 @@ export function LeaveCalendar({ data, highThreshold }: { data: LeaveOverview; hi
                     {c && (
                       <span
                         title={`${r.name} — ${c.type}${c.status === "PENDING" ? " (en attente)" : ""}`}
-                        className={cn("mx-auto grid size-6 place-items-center rounded-sm text-[10px] font-semibold", c.status === "APPROVED" ? (c.paid ? "bg-brand-blue text-white" : "bg-brand-2 text-[#0b1f44]") : "border border-brand-blue bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_srgb,var(--brand-blue)_35%,transparent)_3px,color-mix(in_srgb,var(--brand-blue)_35%,transparent)_6px)] text-brand-blue")}
+                        className={cn("mx-auto grid size-6 place-items-center rounded-sm text-[10px] font-semibold", c.status === "APPROVED" ? (c.paid ? "bg-brand-blue text-white" : "bg-brand-2 text-brand-2-foreground") : "border border-brand-blue bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_srgb,var(--brand-blue)_35%,transparent)_3px,color-mix(in_srgb,var(--brand-blue)_35%,transparent)_6px)] text-brand-blue")}
                       >
                         <span className="sr-only">{c.status === "APPROVED" ? "Congé" : "Congé en attente"} {c.type}</span>
                       </span>

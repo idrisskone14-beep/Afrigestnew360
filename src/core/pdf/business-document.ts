@@ -49,10 +49,10 @@ export interface BusinessDocument {
   signatureLabel?: string;
 }
 
-const INK = "#0B1F44";
-const MUTED = "#51607A";
-const ORANGE = "#EA580C";
-const LINE = "#DFE6F1";
+const INK = "#0b0c24";
+const MUTED = "#5a5b7a";
+const ACCENT = "#5c08da";
+const LINE = "#e2e0f4";
 
 /** « FACTURE PROFORMA » → « Facture proforma » : le titre s'affiche en minuscules, comme sur les devis de référence. */
 export const sentenceCase = (s: string) => {
@@ -81,7 +81,7 @@ export function pdfFooterHeight(pdf: PdfDoc, text: string, width: number): numbe
 }
 
 /**
- * Imprime le pied de page sur CHAQUE page : filet, mentions légales de l'émetteur, puis « Document généré par AfriGest 360 »
+ * Imprime le pied de page sur CHAQUE page : filet, mentions légales de l'émetteur, puis « Document généré par KAKO Gestion »
  * (et « Page n / N » dès qu'il y a plusieurs pages). Le document doit avoir été créé avec `bufferPages: true`.
  */
 export function drawPdfFooters(pdf: PdfDoc, o: { text: string; left: number; width: number; brand?: string }) {
@@ -136,13 +136,13 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
     // ── Émetteur (gauche) et destinataire (droite)
     const colW = width / 2 - 14;
     const rx = left + width / 2 + 14;
-    pdf.fillColor(ORANGE).font("Helvetica").fontSize(9).text("Émetteur", left, y);
+    pdf.fillColor(ACCENT).font("Helvetica").fontSize(9).text("Émetteur", left, y);
     pdf.fillColor(INK).font("Helvetica-Bold").fontSize(12).text(doc.issuer.name.toUpperCase(), left, pdf.y + 3, { width: colW });
     pdf.font("Helvetica").fontSize(9).fillColor(MUTED);
     for (const l of doc.issuer.lines) pdf.text(l, left, pdf.y + 1, { width: colW });
     const leftEnd = pdf.y;
 
-    pdf.fillColor(ORANGE).font("Helvetica").fontSize(9).text(doc.recipient.heading ?? "Client", rx, y);
+    pdf.fillColor(ACCENT).font("Helvetica").fontSize(9).text(doc.recipient.heading ?? "Client", rx, y);
     pdf.fillColor(INK).font("Helvetica-Bold").fontSize(12).text(doc.recipient.name, rx, pdf.y + 3, { width: colW });
     pdf.font("Helvetica").fontSize(9).fillColor(MUTED);
     for (const l of doc.recipient.lines) pdf.text(l, rx, pdf.y + 1, { width: colW });
@@ -154,13 +154,13 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
       const mw = Math.min(130, width / meta.length);
       meta.forEach((m, i) => {
         const x = right - mw * (meta.length - i);
-        pdf.fillColor(ORANGE).font("Helvetica").fontSize(8.5).text(m.label, x, y, { width: mw - 8, align: "right" });
+        pdf.fillColor(ACCENT).font("Helvetica").fontSize(8.5).text(m.label, x, y, { width: mw - 8, align: "right" });
         pdf.fillColor(INK).font("Helvetica-Bold").fontSize(11).text(m.value, x, y + 13, { width: mw - 8, align: "right" });
       });
       y += 44;
     }
 
-    // ── Tableau des lignes (en-tête orange)
+    // ── Tableau des lignes (en-tête violet)
     const cols = doc.hidePrices
       ? [{ k: "description", x: left, w: width - 130, a: "left" as const, h: "Désignations" }, { k: "qty", x: right - 130, w: 130, a: "right" as const, h: "Quantité" }]
       : [
@@ -171,7 +171,7 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
           { k: "total", x: left + 415, w: width - 415, a: "right" as const, h: "Total HT" },
         ];
     const header = () => {
-      pdf.rect(left, y, width, 24).fill(ORANGE);
+      pdf.rect(left, y, width, 24).fill(ACCENT);
       pdf.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5);
       for (const c of cols) pdf.text(c.h, c.x + 6, y + 8, { width: c.w - 12, align: c.a });
       y += 28;
@@ -207,7 +207,7 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
       // détail par taux
       const vw = [95, 55, 100];
       let vx = left;
-      pdf.rect(left, top, vw[0]! + vw[1]! + vw[2]!, 24).fill(ORANGE);
+      pdf.rect(left, top, vw[0]! + vw[1]! + vw[2]!, 24).fill(ACCENT);
       pdf.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5);
       ["Base", "Taux", "Montant TVA"].forEach((h, i) => { pdf.text(h, vx + 6, top + 8, { width: vw[i]! - 12, align: i === 0 ? "left" : "right" }); vx += vw[i]!; });
       let vy = top + 28;
@@ -220,7 +220,7 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
       }
 
       // récapitulatif
-      pdf.rect(recapX, top, recapW, 24).fill(ORANGE);
+      pdf.rect(recapX, top, recapW, 24).fill(ACCENT);
       pdf.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5).text("Récapitulatif", recapX + 8, top + 8, { width: recapW - 16 });
       let ry = top + 28;
       for (const t of rows) {
@@ -252,7 +252,7 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
       if (!txt) continue;
       y += 14;
       if (y + 40 > bottomLimit()) { pdf.addPage(); y = 40; }
-      pdf.fillColor(ORANGE).font("Helvetica").fontSize(9).text(h, left, y);
+      pdf.fillColor(ACCENT).font("Helvetica").fontSize(9).text(h, left, y);
       pdf.fillColor(INK).font("Helvetica").fontSize(9).text(txt, left, pdf.y + 2, { width });
       y = pdf.y;
     }

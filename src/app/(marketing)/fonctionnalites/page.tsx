@@ -10,7 +10,7 @@ import { MODULE_BY_KEY } from "@/core/modules/registry";
 
 export const metadata: Metadata = {
   title: "Fonctionnalités",
-  description: "Finance, comptabilité SYSCOHADA, ventes et facturation, CRM, achats, stocks, RH, paie, projets, GED, reporting, transport et chantiers : toutes les fonctionnalités d'AfriGest 360.",
+  description: "Finance, comptabilité SYSCOHADA, ventes et facturation, CRM, achats, stocks, RH, paie, projets, GED, reporting, transport et chantiers : toutes les fonctionnalités de KAKO Gestion.",
   alternates: { canonical: "/fonctionnalites" },
 };
 

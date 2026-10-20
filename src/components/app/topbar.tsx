@@ -39,7 +39,7 @@ export function Topbar({ nav, companies, activeCompanyId, user, country, year, y
         </SheetContent>
       </Sheet>
 
-      <Link href="/app/dashboard" className="shrink-0 lg:w-[16.5rem]" aria-label="AfriGest 360, tableau de bord"><Logo className="max-sm:[&>span]:hidden" /></Link>
+      <Link href="/app/dashboard" className="shrink-0 lg:w-[16.5rem]" aria-label="KAKO Gestion, tableau de bord"><Logo className="max-sm:[&>span]:hidden" /></Link>
 
       {country && (
         <span className="hidden h-10 items-center gap-2 rounded-lg border bg-card px-3 text-sm lg:inline-flex" title="Pays de l'entreprise">

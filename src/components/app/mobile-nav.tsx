@@ -75,7 +75,7 @@ export function MobileNav({ modules, quickActions }: { modules: NavModule[]; qui
           </li>
           <li className="flex flex-1">
             <Link href="/app/notifications" aria-current={on("/app/notifications") ? "page" : undefined} className={cn(tab, on("/app/notifications") ? "text-brand" : "text-muted-foreground")}>
-              <span className="relative"><Bell className="size-5" aria-hidden="true" />{unread > 0 && <span className="absolute -right-2 -top-1.5 grid min-w-4 place-items-center rounded-full bg-brand-2 px-1 text-[10px] font-bold leading-4 text-[#0b1f44]">{unread > 9 ? "9+" : unread}</span>}</span>
+              <span className="relative"><Bell className="size-5" aria-hidden="true" />{unread > 0 && <span className="absolute -right-2 -top-1.5 grid min-w-4 place-items-center rounded-full bg-brand-2 px-1 text-[10px] font-bold leading-4 text-brand-2-foreground">{unread > 9 ? "9+" : unread}</span>}</span>
               Alertes
             </Link>
           </li>

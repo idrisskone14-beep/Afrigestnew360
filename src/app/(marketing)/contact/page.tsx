@@ -5,7 +5,7 @@ import { Section } from "@/components/marketing/section";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Contactez l'équipe AfriGest 360 : question commerciale, devis sur mesure ou support.",
+  description: "Contactez l'équipe KAKO Gestion : question commerciale, devis sur mesure ou support.",
   alternates: { canonical: "/contact" },
 };
 
@@ -20,7 +20,7 @@ export default function ContactPage() {
           <ul className="mt-8 space-y-5 text-sm">
             <li className="flex gap-3"><Mail className="mt-0.5 size-5 text-brand" /><span><span className="block font-medium">Réponse par e-mail</span><span className="text-muted-foreground">Vous recevez une confirmation immédiate de votre demande.</span></span></li>
             <li className="flex gap-3"><Clock className="mt-0.5 size-5 text-brand" /><span><span className="block font-medium">Sous 24 h ouvrées</span><span className="text-muted-foreground">Du lundi au vendredi.</span></span></li>
-            <li className="flex gap-3"><MessageSquare className="mt-0.5 size-5 text-brand" /><span><span className="block font-medium">Déjà client ?</span><span className="text-muted-foreground">Indiquez le nom de votre entreprise AfriGest 360 pour un traitement prioritaire.</span></span></li>
+            <li className="flex gap-3"><MessageSquare className="mt-0.5 size-5 text-brand" /><span><span className="block font-medium">Déjà client ?</span><span className="text-muted-foreground">Indiquez le nom de votre entreprise KAKO Gestion pour un traitement prioritaire.</span></span></li>
           </ul>
         </div>
         <DemoForm source="contact" submitLabel="Envoyer le message" messageLabel="Votre message *" />

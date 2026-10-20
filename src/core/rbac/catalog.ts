@@ -151,7 +151,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
     site: ["Chantiers", ["read", "manage"]],
     report: ["Rapports terrain", ["manage"]],
   }),
-  ...build("intelligence", "intelligence", { assistant: ["Assistant AfriGest Intelligence", ["use"]] }),
+  ...build("intelligence", "intelligence", { assistant: ["Assistant KAKO Intelligence", ["use"]] }),
 ];
 
 export const PERMISSION_BY_KEY: ReadonlyMap<string, PermissionDef> = new Map(PERMISSIONS.map((p) => [p.key, p]));

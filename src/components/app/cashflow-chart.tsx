@@ -11,7 +11,7 @@ const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "aoû
 const label = (m: string) => `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slice(2, 4)}`;
 const compact = (v: number) => (Math.abs(v) >= 1e6 ? `${(v / 1e6).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} M` : Math.abs(v) >= 1e3 ? `${Math.round(v / 1e3)} k` : String(v));
 
-/** Encaissements vs décaissements par mois : barres groupées (bleu / orange), légende, infobulle et vue tableau. */
+/** Encaissements vs décaissements par mois : barres groupées (bleu clair / violet), légende, infobulle et vue tableau. */
 export function CashflowChart({ data, currency, title = "Encaissements et décaissements" }: { data: CashflowDatum[]; currency: string; title?: string }) {
   const [table, setTable] = useState(false);
   const rows = data.map((d) => ({ ...d, name: label(d.month) }));

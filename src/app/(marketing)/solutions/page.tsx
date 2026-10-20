@@ -9,7 +9,7 @@ import { MODULE_BY_KEY } from "@/core/modules/registry";
 
 export const metadata: Metadata = {
   title: "Solutions",
-  description: "AfriGest 360 pour les dirigeants, la finance, le commercial, les achats et la logistique, les RH et la paie, les projets et chantiers.",
+  description: "KAKO Gestion pour les dirigeants, la finance, le commercial, les achats et la logistique, les RH et la paie, les projets et chantiers.",
   alternates: { canonical: "/solutions" },
 };
 

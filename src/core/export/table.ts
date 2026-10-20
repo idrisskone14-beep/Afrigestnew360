@@ -59,7 +59,7 @@ const XLSX_FORMAT: Partial<Record<ColType, string>> = { money: "#,##0.00", numbe
 
 export async function toXlsx(t: ExportTable): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "AfriGest 360";
+  wb.creator = "KAKO Gestion";
   wb.created = t.generatedAt;
   const ws = wb.addWorksheet(t.title.slice(0, 31).replace(/[\\/?*[\]:]/g, " "), { views: [{ state: "frozen", ySplit: 3 + (t.filters?.length ?? 0) }] });
   ws.addRow([t.title]).font = { bold: true, size: 14 };
@@ -85,12 +85,12 @@ export async function toXlsx(t: ExportTable): Promise<Buffer> {
 
 // ── PDF ───────────────────────────────────────────────────────
 
-const INK = "#0F172A", MUTED = "#64748B", HEAD = "#1E3A8A", LINE = "#E2E8F0", ZEBRA = "#F8FAFC";
+const INK = "#0F172A", MUTED = "#64748B", HEAD = "#5C08DA", LINE = "#E2E8F0", ZEBRA = "#F8FAFC";
 
 /** PDF A4 paysage : en-tête (entreprise, filtres), tableau à en-tête répété, ligne de total, pagination. */
 export function toPdf(t: ExportTable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const pdf = new PDFDocument({ size: "A4", layout: "landscape", margin: 36, bufferPages: true, info: { Title: t.title, Author: "AfriGest 360" } });
+    const pdf = new PDFDocument({ size: "A4", layout: "landscape", margin: 36, bufferPages: true, info: { Title: t.title, Author: "KAKO Gestion" } });
     const chunks: Buffer[] = [];
     pdf.on("data", (c: Buffer) => chunks.push(c));
     pdf.on("end", () => resolve(Buffer.concat(chunks)));
@@ -133,7 +133,7 @@ export function toPdf(t: ExportTable): Promise<Buffer> {
     const range = pdf.bufferedPageRange();
     for (let i = 0; i < range.count; i++) {
       pdf.switchToPage(range.start + i);
-      pdf.fillColor(MUTED).font("Helvetica").fontSize(8).text(`Page ${i + 1} / ${range.count} — AfriGest 360`, left, pdf.page.height - 30, { width, align: "right", lineBreak: false });
+      pdf.fillColor(MUTED).font("Helvetica").fontSize(8).text(`Page ${i + 1} / ${range.count} — KAKO Gestion`, left, pdf.page.height - 30, { width, align: "right", lineBreak: false });
     }
     pdf.end();
   });

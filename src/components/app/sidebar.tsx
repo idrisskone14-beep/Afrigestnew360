@@ -149,7 +149,7 @@ export function SidebarContent({ modules, canSeeSettings, validations, onNavigat
         {validations && (
           <PlainLink
             href="/app/validations" icon={<ClipboardCheck className="size-4" />} active={is("/app/validations")} onNavigate={onNavigate}
-            trailing={counts.pending > 0 ? <Badge className="h-5 min-w-5 justify-center bg-brand-2 px-1.5 text-[11px] text-[#0b1f44]">{counts.pending > 99 ? "99+" : counts.pending}</Badge> : null}
+            trailing={counts.pending > 0 ? <Badge className="h-5 min-w-5 justify-center bg-brand-2 px-1.5 text-[11px] text-brand-2-foreground">{counts.pending > 99 ? "99+" : counts.pending}</Badge> : null}
           >
             Validations
           </PlainLink>

@@ -35,7 +35,7 @@ export function DemoForm({ source = "demo", plan, submitLabel = "Demander ma dé
       <div role="status" className="rounded-2xl border bg-card p-8 text-center">
         <CheckCircle2 className="mx-auto size-12 text-brand-blue" />
         <h3 className="mt-4 text-xl font-semibold">Merci, votre demande est enregistrée</h3>
-        <p className="mt-2 text-sm text-muted-foreground">Un conseiller AfriGest 360 vous recontacte très prochainement. Une confirmation vous a été envoyée par e-mail.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Un conseiller KAKO Gestion vous recontacte très prochainement. Une confirmation vous a été envoyée par e-mail.</p>
       </div>
     );
   }
@@ -76,7 +76,7 @@ export function DemoForm({ source = "demo", plan, submitLabel = "Demander ma dé
       <div className="grid gap-1.5 sm:col-span-2">
         <label className="flex items-start gap-2.5 text-sm">
           <Controller control={control} name="consent" render={({ field }) => <Checkbox checked={field.value === true} onCheckedChange={(v) => field.onChange(v === true)} className="mt-0.5" />} />
-          <span className="text-muted-foreground">J'accepte d'être recontacté(e) par AfriGest 360 au sujet de ma demande.</span>
+          <span className="text-muted-foreground">J'accepte d'être recontacté(e) par KAKO Gestion au sujet de ma demande.</span>
         </label>
         {errors.consent && <p role="alert" className="text-xs text-destructive">{errors.consent.message}</p>}
       </div>

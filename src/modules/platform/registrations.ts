@@ -60,8 +60,8 @@ export async function approveRegistration(userId: string) {
   if (count === 0) throw conflict("Cette inscription a déjà été traitée.");
   await tryMail(
     user.email,
-    "Votre compte AfriGest 360 est validé",
-    `Bonjour ${user.name},\n\nVotre inscription a été validée. Vous pouvez dès maintenant vous connecter et créer votre entreprise :\n${appUrl("/connexion")}\n\nL'équipe AfriGest 360`,
+    "Votre compte KAKO Gestion est validé",
+    `Bonjour ${user.name},\n\nVotre inscription a été validée. Vous pouvez dès maintenant vous connecter et créer votre entreprise :\n${appUrl("/connexion")}\n\nL'équipe KAKO Gestion`,
   );
   return user;
 }
@@ -77,8 +77,8 @@ export async function rejectRegistration(userId: string) {
   if (count === 0) throw conflict("Cette inscription a déjà été traitée.");
   await tryMail(
     user.email,
-    "Votre inscription à AfriGest 360",
-    `Bonjour ${user.name},\n\nVotre demande d'inscription n'a pas été retenue. Pour toute question, répondez à ce message ou contactez-nous.\n\nL'équipe AfriGest 360`,
+    "Votre inscription à KAKO Gestion",
+    `Bonjour ${user.name},\n\nVotre demande d'inscription n'a pas été retenue. Pour toute question, répondez à ce message ou contactez-nous.\n\nL'équipe KAKO Gestion`,
   );
   return user;
 }

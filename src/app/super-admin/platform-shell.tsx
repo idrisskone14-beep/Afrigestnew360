@@ -38,7 +38,7 @@ function Nav({ newDemos, pendingRegistrations, onNavigate }: { newDemos: number;
               <n.icon className="size-4" />
               {n.label}
               {n.href.endsWith("demandes") && newDemos > 0 && <Badge className="ml-auto h-5 bg-brand-blue px-1.5 text-[11px] text-white hover:bg-brand-blue dark:text-[#0a1020]">{newDemos}</Badge>}
-              {n.href.endsWith("inscriptions") && pendingRegistrations > 0 && <Badge className="ml-auto h-5 bg-brand-2 px-1.5 text-[11px] text-[#0b1f44] hover:bg-brand-2">{pendingRegistrations}</Badge>}
+              {n.href.endsWith("inscriptions") && pendingRegistrations > 0 && <Badge className="ml-auto h-5 bg-brand-2 px-1.5 text-[11px] text-brand-2-foreground hover:bg-brand-2">{pendingRegistrations}</Badge>}
             </Link>
           );
         })}

@@ -10,7 +10,7 @@ import { getPayslip, periodLabel } from "./service";
 export const PAYROLL_PDF_PERMISSION = { payslip: "hr.payslip.read" } as const;
 export type PayrollPdfKind = keyof typeof PAYROLL_PDF_PERMISSION;
 
-const INK = "#0F172A", MUTED = "#64748B", BRAND = "#2563EB", LINE = "#E2E8F0";
+const INK = "#0F172A", MUTED = "#64748B", BRAND = "#5C08DA", LINE = "#E2E8F0";
 const PAYOUT: Record<string, string> = { BANK_TRANSFER: "Virement", CASH: "Espèces", MOBILE_MONEY: "Mobile money" };
 const pdfDate = (d: Date | null | undefined) => (d ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "UTC" }).format(d) : "—");
 const pct = (n: number) => `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 4 }).format(n)} %`.replace(/[  ]/g, " ");
