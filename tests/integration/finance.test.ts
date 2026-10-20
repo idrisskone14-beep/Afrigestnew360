@@ -277,6 +277,31 @@ describe("budgets, flux et échéancier", () => {
     expect(fc.current).toBe(480000);
     expect(fc.points[0]).toMatchObject({ days: 30, in: 118000, out: 59000, balance: 480000 + 118000 - 59000 });
   });
+
+  it("échéancier : une ligne par échéance restante, classée à sa propre date, avec les paiements imputés", async () => {
+    const s = await setup();
+    const customer = await crm.createCustomer(s.ctx, customerSchema.parse({ type: "COMPANY", name: "Client échelonné", paymentTermsDays: 30 }));
+    const draft = await invoices.createInvoice(s.ctx, invoiceSchema.parse({ customerId: customer.id, issueDate: today(), lines: [{ description: "Prestation", unit: "forfait", quantity: 10, unitPrice: 10000, discountPct: 0, taxId: s.tax.id }] }));
+    const inv = await invoices.issueInvoice(s.ctx, { id: draft.id, installments: 3, allowOverLimit: false });
+    const total = Number(inv.total);
+
+    let due = await rp.dueSchedule(s.ctx);
+    const rows = due.receivables.flatMap((g) => g.rows);
+    expect(rows).toHaveLength(3);
+    expect(rows.reduce((a, r) => a + r.balance, 0)).toBe(total);
+    expect(due.receivables.find((g) => g.key === "d30")!.rows).toHaveLength(1); // échéance 1 : J+30
+    expect(due.receivables.find((g) => g.key === "d60")!.rows).toHaveLength(1); // échéance 2 : J+60
+    expect(due.receivables.find((g) => g.key === "d90")!.rows).toHaveLength(1); // échéance 3 : J+90
+
+    // un paiement solde la première échéance et entame la deuxième
+    const first = rows.find((r) => r.label.endsWith("1/3"))!.balance;
+    await payments.recordPayment(s.ctx, { invoiceId: inv.id, amount: first + 1000, method: "CASH", date: today() } as never);
+    due = await rp.dueSchedule(s.ctx);
+    const left = due.receivables.flatMap((g) => g.rows);
+    expect(left).toHaveLength(2);
+    expect(left.reduce((a, r) => a + r.balance, 0)).toBe(total - first - 1000);
+    expect(due.receivables.find((g) => g.key === "d30")!.rows).toHaveLength(0);
+  });
 });
 
 describe("ISOLATION des finances", () => {

@@ -56,10 +56,20 @@ export async function dueSchedule(ctx: Ctx) {
   const receivables: DueItem[] = [];
   const payables: DueItem[] = [];
   if (ctx.hasModule("sales") && ctx.can("finance.invoice.read")) {
-    const inv = await ctx.db.invoice.findMany({ where: { status: { in: ["ISSUED", "PARTIALLY_PAID"] } }, include: { customer: { select: { name: true } } }, orderBy: { dueDate: "asc" }, take: 500 });
+    const inv = await ctx.db.invoice.findMany({ where: { status: { in: ["ISSUED", "PARTIALLY_PAID"] } }, include: { customer: { select: { name: true } }, installments: { orderBy: { position: "asc" } } }, orderBy: { dueDate: "asc" }, take: 500 });
     for (const i of inv) {
-      const bal = d(i.total).minus(i.amountPaid).minus(i.creditedAmount);
-      if (bal.gt(0)) receivables.push({ id: i.id, label: i.number ?? "Facture", party: i.customer.name, dueDate: i.dueDate, balance: bal.toNumber(), href: `/app/sales/factures/${i.id}` });
+      const href = `/app/sales/factures/${i.id}`;
+      const label = i.number ?? "Facture";
+      // une ligne par échéance restant à payer (les paiements et avoirs sont déjà imputés dessus)
+      for (const it of i.installments) {
+        const bal = d(it.amount).minus(it.paidAmount);
+        if (bal.gt(0)) receivables.push({ id: it.id, label: i.installments.length > 1 ? `${label} · éch. ${it.position + 1}/${i.installments.length}` : label, party: i.customer.name, dueDate: it.dueDate, balance: bal.toNumber(), href });
+      }
+      // factures sans échéancier (émises avant sa mise en place) : le solde entier à la date de la facture
+      if (i.installments.length === 0) {
+        const bal = d(i.total).minus(i.amountPaid).minus(i.creditedAmount);
+        if (bal.gt(0)) receivables.push({ id: i.id, label, party: i.customer.name, dueDate: i.dueDate, balance: bal.toNumber(), href });
+      }
     }
   }
   if (ctx.hasModule("purchases") && ctx.can("purchases.bill.read")) {
