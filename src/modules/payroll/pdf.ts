@@ -1,6 +1,7 @@
 import "server-only";
 import PDFDocument from "pdfkit";
-import { pdfMoney } from "@/core/pdf/business-document";
+import { drawPdfFooters, pdfMoney } from "@/core/pdf/business-document";
+import { DOCUMENT_BRAND } from "@/core/pdf/legal-footer";
 import { num } from "@/core/money";
 import type { TenantContext } from "@/core/tenant/context";
 import { issuer } from "@/modules/sales/pdf";
@@ -25,7 +26,7 @@ export async function buildPayrollPdf(ctx: TenantContext, kind: PayrollPdfKind, 
   const base = await issuer(ctx);
   const cur = s.run.currency;
   const data = await new Promise<Buffer>((resolve, reject) => {
-    const pdf = new PDFDocument({ size: "A4", margin: 40, info: { Title: `Bulletin de paie ${s.number ?? "(brouillon)"}`, Author: base.issuer.name } });
+    const pdf = new PDFDocument({ size: "A4", margin: 40, bufferPages: true, info: { Title: `Bulletin de paie ${s.number ?? "(brouillon)"}`, Author: base.issuer.name } });
     const chunks: Buffer[] = [];
     pdf.on("data", (c: Buffer) => chunks.push(c));
     pdf.on("end", () => resolve(Buffer.concat(chunks)));
@@ -76,7 +77,7 @@ export async function buildPayrollPdf(ctx: TenantContext, kind: PayrollPdfKind, 
     header();
     const payLines = s.lines.filter((l) => l.type !== "EMPLOYER");
     for (const l of payLines) {
-      if (y > pdf.page.height - 160) { pdf.addPage(); y = 40; header(); }
+      if (y > pdf.page.height - 170) { pdf.addPage(); y = 40; header(); }
       pdf.fillColor(INK).font("Helvetica").fontSize(9);
       pdf.text(l.label, cols.label + 6, y, { width: 205 });
       const rowEnd = pdf.y;
@@ -115,7 +116,7 @@ export async function buildPayrollPdf(ctx: TenantContext, kind: PayrollPdfKind, 
       pdf.fillColor(INK).font("Helvetica-Bold").fontSize(9).text("Coût total employeur", left + 6, y, { width: 300 });
       pdf.text(pdfMoney(num(s.employerCost), cur), right - 130, y, { width: 130, align: "right" });
     }
-    pdf.fillColor(MUTED).font("Helvetica").fontSize(7.5).text("Document généré par AfriGest 360. À conserver sans limitation de durée.", left, pdf.page.height - 50, { width: width, align: "center" });
+    drawPdfFooters(pdf, { text: base.issuer.footer, left, width, brand: `${DOCUMENT_BRAND}. À conserver sans limitation de durée.` });
     pdf.end();
   });
   return { data, filename: `bulletin-${s.number ?? s.id.slice(0, 8)}.pdf` };

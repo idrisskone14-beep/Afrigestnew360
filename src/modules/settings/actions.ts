@@ -10,6 +10,7 @@ import { changePasswordSchema, disableTotpSchema, totpCodeSchema } from "@/core/
 import { removeSubscription, saveSubscription, sendPushToUser } from "@/core/push/service";
 import { enforceRateLimit } from "@/core/security/rate-limit";
 import { createInvitation } from "@/core/tenant/invitations";
+import { d } from "@/core/money";
 import { companySettingsSchema } from "@/core/tenant/schemas";
 import { z } from "zod";
 import { changeMemberRole, removeMember, revokeInvitation, setMemberStatus } from "./members";
@@ -42,6 +43,8 @@ export const updateCompanyAction = defineTenantAction({
         country: input.country,
         rccm: clean(input.rccm),
         taxId: clean(input.taxId),
+        shareCapital: input.shareCapital === undefined || input.shareCapital === "" ? null : d(input.shareCapital).toString(),
+        documentFooter: clean(input.documentFooter),
         sector: clean(input.sector),
         size: clean(input.size),
         currency: input.currency,

@@ -32,7 +32,7 @@ describe("document commercial (PDF)", () => {
 
   const base: BusinessDocument = {
     title: "Devis", number: "DEV-2026-00001", currency: "XOF",
-    issuer: { name: "Ets Test", lines: ["Abidjan"], legal: ["Ets Test SARL"] },
+    issuer: { name: "Ets Test", lines: ["Abidjan"], legal: ["Ets Test SARL"], footer: "ETS TEST - Société à Responsabilité Limitée (SARL) au capital de 20 000 000 FCFA - NCC: 1507399G - Adresse: Yopougon, Cité Bel Air Route N'Dotré" },
     recipient: { name: "Client Test", lines: ["Cocody"] },
     dates: [{ label: "Date d'émission", value: new Date("2026-10-11T12:00:00") }, { label: "Valable jusqu'au", value: null }],
     lines: [line({ net: 1000, tax: 180 })],
@@ -40,10 +40,16 @@ describe("document commercial (PDF)", () => {
     notes: "Note", terms: "Paiement à 30 jours", signatureLabel: "Bon pour accord",
   };
 
-  it("génère un PDF valide pour un devis complet", async () => {
+  const pageCount = (pdf: Buffer) => (pdf.toString("latin1").match(/\/Type \/Page\b/g) ?? []).length;
+
+  it("génère un PDF valide pour un devis complet, pied de page compris, sans page supplémentaire", async () => {
     const pdf = await renderBusinessDocument(base);
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
     expect(pdf.length).toBeGreaterThan(1500);
+    expect(pageCount(pdf)).toBe(1);
+    // un pied de page très long (texte personnalisé) ne doit pas déborder sur une page de plus
+    const wordy = await renderBusinessDocument({ ...base, issuer: { ...base.issuer, footer: "Mention légale très longue. ".repeat(18) } });
+    expect(pageCount(wordy)).toBe(1);
   });
 
   it("génère un PDF valide pour un bon de livraison (sans prix) et pour un long document sur plusieurs pages", async () => {

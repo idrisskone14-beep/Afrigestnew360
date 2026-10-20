@@ -157,6 +157,8 @@ model Company {
   legalForm             String?
   rccm                  String?
   taxId                 String?
+  shareCapital          Decimal?      @db.Decimal(18, 2)
+  documentFooter        String? // remplace la ligne de mentions légales du pied de page des documents
   sector                String?
   size                  String?
   logoUrl               String?

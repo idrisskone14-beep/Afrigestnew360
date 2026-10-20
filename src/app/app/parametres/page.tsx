@@ -19,7 +19,7 @@ export default async function CompanySettingsPage() {
       initial={{
         legalName: c.legalName, tradeName: c.tradeName ?? "", legalForm: c.legalForm ?? "", email: c.email ?? "",
         phone: c.phone ?? "", address: c.address ?? "", city: c.city ?? "", country: c.country, rccm: c.rccm ?? "",
-        taxId: c.taxId ?? "", sector: c.sector ?? "", size: c.size ?? "", currency: c.currency, timezone: c.timezone,
+        taxId: c.taxId ?? "", shareCapital: c.shareCapital === null ? "" : Number(c.shareCapital), documentFooter: c.documentFooter ?? "", sector: c.sector ?? "", size: c.size ?? "", currency: c.currency, timezone: c.timezone,
         fiscalYearStartMonth: c.fiscalYearStartMonth,
       }}
     />

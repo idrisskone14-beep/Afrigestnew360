@@ -2,9 +2,10 @@ import "server-only";
 import { notFound } from "@/core/errors";
 import { num } from "@/core/money";
 import { renderBusinessDocument, type BusinessDocument, type PdfLine } from "@/core/pdf/business-document";
+import { legalFooterLine } from "@/core/pdf/legal-footer";
 import { readCompanyLogo } from "@/core/storage";
 import type { TenantContext } from "@/core/tenant/context";
-import { countryName } from "@/lib/reference-data";
+import { countryName, taxIdLabel } from "@/lib/reference-data";
 import { effectiveQuoteStatus, getQuote } from "./quotes";
 import { getDelivery, getOrder } from "./orders";
 import { getCreditNote, getInvoice, invoiceBalance, isOverdue } from "./invoices";
@@ -22,8 +23,8 @@ export async function issuer(ctx: Ctx): Promise<Pick<BusinessDocument, "issuer" 
   const c = await ctx.db.company.findFirstOrThrow({ where: { id: ctx.company.id } });
   const logo = await readCompanyLogo(c.id).catch(() => null);
   const lines = [c.address, [c.city, c.country ? countryName(c.country) : null].filter(Boolean).join(", "), [c.phone, c.email].filter(Boolean).join(" · ")].filter((x): x is string => Boolean(x));
-  const legal = [c.legalName, c.legalForm, c.rccm ? `RCCM ${c.rccm}` : "", c.taxId ? `ID fiscal ${c.taxId}` : ""].filter(Boolean) as string[];
-  return { issuer: { name: c.tradeName ?? c.legalName, lines, legal }, logo: logo && logo.mime !== "image/webp" ? logo.data : null };
+  const legal = [c.legalName, c.legalForm, c.rccm ? `RCCM ${c.rccm}` : "", c.taxId ? `${taxIdLabel(c.country)} ${c.taxId}` : ""].filter(Boolean) as string[];
+  return { issuer: { name: c.tradeName ?? c.legalName, lines, legal, footer: legalFooterLine(c) }, logo: logo && logo.mime !== "image/webp" ? logo.data : null };
 }
 
 export const partyOf = (c: { name: string; address: string | null; city: string | null; country: string | null; email: string | null; phone: string | null; taxId: string | null }) => ({
@@ -74,7 +75,7 @@ export async function buildPdf(ctx: Ctx, kind: PdfKind, id: string): Promise<{ d
         ...base, title: "BON DE LIVRAISON", number: dl.number, currency: ctx.company.currency, recipient: { ...partyOf(dl.customer), heading: "Livré à" }, reference: `Commande ${dl.order.number}`, hidePrices: true,
         status: dl.status === "DELIVERED" ? { label: "Livré", color: "#16A34A" } : { label: "Brouillon", color: "#64748B" }, dates: [{ label: "Date de livraison", value: dl.deliveryDate }],
         lines: dl.lines.map((l) => ({ description: l.description, quantity: num(l.quantity), unit: l.unit, unitPrice: 0, discountPct: 0, taxRate: 0, total: 0 })), notes: dl.notes,
-        footer: "Reçu en bon état, le ............ — Nom et signature du client :",
+        signatureLabel: "Reçu en bon état, le ............ — Nom et signature du client :",
       };
       filename = dl.number;
       break;

@@ -22,6 +22,8 @@ export const companySettingsSchema = z.object({
   country: z.string().refine((c) => COUNTRIES.some((x) => x.code === c), "Pays invalide"),
   rccm: optionalText(60),
   taxId: optionalText(60),
+  shareCapital: z.union([z.literal(""), z.coerce.number().min(0, "Montant positif").max(1e13)]).optional(),
+  documentFooter: optionalText(500),
   sector: optionalText(100),
   size: optionalText(20),
   currency: z.string().refine((c) => CURRENCIES.some((x) => x.code === c), "Devise invalide"),

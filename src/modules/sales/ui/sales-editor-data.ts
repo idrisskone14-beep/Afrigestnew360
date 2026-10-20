@@ -33,7 +33,7 @@ export async function loadSalesEditorData(ctx: TenantContext) {
   return {
     ...base,
     customers: customers.map((c) => ({ id: c.id, name: c.name, lines: partyOf(c).lines, priceListName: c.priceListId ? names.get(c.priceListId) ?? null : null, prices: c.priceListId ? byList.get(c.priceListId) ?? {} : {} })),
-    issuer: { name: iss.issuer.name, lines: iss.issuer.lines, legal: iss.issuer.legal, logoUrl: iss.logo ? `/api/files/logo/${ctx.company.id}` : null },
+    issuer: { name: iss.issuer.name, lines: iss.issuer.lines, footer: iss.issuer.footer, logoUrl: iss.logo ? `/api/files/logo/${ctx.company.id}` : null },
   };
 }
 
@@ -63,7 +63,7 @@ async function savedPreview(ctx: TenantContext, s: SavedDoc): Promise<PreviewDat
     number: s.number,
     ...(s.numberPlaceholder ? { numberPlaceholder: s.numberPlaceholder } : {}),
     currency: s.currency,
-    issuer: { name: iss.issuer.name, lines: iss.issuer.lines, legal: iss.issuer.legal, logoUrl: iss.logo ? `/api/files/logo/${ctx.company.id}` : null },
+    issuer: { name: iss.issuer.name, lines: iss.issuer.lines, footer: iss.issuer.footer, logoUrl: iss.logo ? `/api/files/logo/${ctx.company.id}` : null },
     recipient: partyOf(s.customer),
     dates: s.dates.map(([label, v]) => ({ label, value: v ? fmtDate(v) : "—" })),
     lines,

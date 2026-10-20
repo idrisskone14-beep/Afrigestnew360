@@ -2,17 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import type { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Field, FormAlert, SubmitButton, applyServerErrors } from "@/components/app/form-kit";
 import { companySettingsSchema } from "@/core/tenant/schemas";
 import { updateCompanyAction } from "@/modules/settings/actions";
-import { COMPANY_SIZES, COUNTRIES, CURRENCIES, SECTORS } from "@/lib/reference-data";
+import { COMPANY_SIZES, COUNTRIES, CURRENCIES, SECTORS, taxIdLabel } from "@/lib/reference-data";
 
 type Values = z.input<typeof companySettingsSchema>;
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -25,6 +26,8 @@ export function CompanyForm({ initial, readOnly }: { initial: Values; readOnly: 
     resolver: zodResolver(companySettingsSchema),
     defaultValues: initial,
   });
+
+  const country = useWatch({ control, name: "country" });
 
   const select = (name: keyof Values, items: readonly { value: string; label: string }[], placeholder?: string) => (
     <Controller control={control} name={name} render={({ field }) => (
@@ -73,10 +76,12 @@ export function CompanyForm({ initial, readOnly }: { initial: Values; readOnly: 
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Informations légales et fiscales</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Informations légales et fiscales</CardTitle><CardDescription>Elles composent le pied de page de vos documents (devis, factures, bons, reçus, bulletins).</CardDescription></CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <Field label="RCCM" htmlFor="rccm" error={errors.rccm?.message}><Input id="rccm" disabled={readOnly} {...register("rccm")} /></Field>
-          <Field label="Identifiant fiscal" htmlFor="taxId" error={errors.taxId?.message}><Input id="taxId" disabled={readOnly} {...register("taxId")} /></Field>
+          <Field label={`Identifiant fiscal${taxIdLabel(country) === "ID fiscal" ? "" : ` (${taxIdLabel(country)})`}`} htmlFor="taxId" error={errors.taxId?.message}><Input id="taxId" disabled={readOnly} {...register("taxId")} /></Field>
+          <Field label="Capital social" htmlFor="shareCapital" hint="Laisser vide pour ne pas l'afficher" error={errors.shareCapital?.message}><Input id="shareCapital" type="number" min={0} disabled={readOnly} {...register("shareCapital")} /></Field>
+          <Field label="Pied de page personnalisé" htmlFor="documentFooter" className="sm:col-span-2" hint="Laisser vide pour le générer : raison sociale, forme juridique, capital, RCCM, identifiant fiscal et adresse. Rempli, ce texte le remplace." error={errors.documentFooter?.message}><Textarea id="documentFooter" rows={2} disabled={readOnly} {...register("documentFooter")} /></Field>
         </CardContent>
       </Card>
 

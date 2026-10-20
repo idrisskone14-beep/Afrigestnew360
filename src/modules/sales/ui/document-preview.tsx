@@ -1,3 +1,4 @@
+import { DOCUMENT_BRAND } from "@/core/pdf/legal-footer";
 import { formatMoney } from "@/lib/reference-data";
 
 /**
@@ -12,7 +13,7 @@ export interface PreviewData {
   /** Texte affiché à la place du numéro tant qu'il n'est pas attribué. */
   numberPlaceholder?: string;
   currency: string;
-  issuer: { name: string; lines: string[]; legal: string[]; logoUrl: string | null };
+  issuer: { name: string; lines: string[]; footer: string; logoUrl: string | null };
   recipient: { name: string; lines: string[] } | null;
   dates: { label: string; value: string }[];
   lines: PreviewLine[];
@@ -148,8 +149,9 @@ export function DocumentPreview({ data }: { data: PreviewData }) {
         </div>
       )}
 
-      <footer className="mt-8 border-t border-[#dfe6f1] pt-3 text-center text-[10px] text-[#51607a]">
-        {data.issuer.legal.filter(Boolean).join("  ·  ")}
+      <footer className="mt-8 border-t border-[#dfe6f1] pt-3">
+        <p className="whitespace-pre-line text-[11px] font-medium leading-snug">{data.issuer.footer}</p>
+        <p className="mt-0.5 text-[10px] text-[#51607a]">{DOCUMENT_BRAND}</p>
       </footer>
     </article>
   );

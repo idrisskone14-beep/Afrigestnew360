@@ -60,6 +60,10 @@ export const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "500+"] as c
 
 export const countryName = (code: string) => COUNTRIES.find((c) => c.code === code)?.name ?? code;
 
+/** Sigle de l'identifiant fiscal selon le pays (NCC en Côte d'Ivoire, NINEA au Sénégal…) ; « ID fiscal » à défaut. */
+const TAX_ID_LABELS: Record<string, string> = { CI: "NCC", SN: "NINEA", BF: "IFU", BJ: "IFU", CM: "NIU", ML: "NIF", TG: "NIF", NE: "NIF" };
+export const taxIdLabel = (country: string) => TAX_ID_LABELS[country] ?? "ID fiscal";
+
 /** Formate un montant dans la devise de l'entreprise (FCFA sans décimales). */
 export function formatMoney(amount: number | string, currency = "XOF", locale = "fr-FR"): string {
   const n = typeof amount === "string" ? Number(amount) : amount;

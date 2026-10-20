@@ -1,6 +1,9 @@
 import "server-only";
 import PDFDocument from "pdfkit";
 import { formatMoney } from "@/lib/reference-data";
+import { DOCUMENT_BRAND } from "./legal-footer";
+
+type PdfDoc = InstanceType<typeof PDFDocument>;
 
 /** Les polices PDF standard (WinAnsi) n'ont pas l'espace fine insécable utilisée par Intl en français. */
 const WIDE_SPACES = /[  ]/g; // espace fine insécable (milliers) et espace insécable (avant « F CFA »)
@@ -30,7 +33,8 @@ export interface BusinessDocument {
   status?: { label: string; color: string };
   dates: { label: string; value: Date | null }[];
   currency: string;
-  issuer: PdfParty & { legal: string[] };
+  /** `legal` : mentions d'identité (en-tête du bulletin de paie) ; `footer` : ligne de mentions légales imprimée en pied de chaque page. */
+  issuer: PdfParty & { legal: string[]; footer: string };
   logo?: Buffer | null;
   recipient: PdfParty & { heading?: string };
   reference?: string;
@@ -40,7 +44,6 @@ export interface BusinessDocument {
   hidePrices?: boolean;
   notes?: string | null;
   terms?: string | null;
-  footer?: string;
   extraBlocks?: { heading: string; rows: string[][] }[];
   /** Cadre de signature (« Bon pour accord » sur un devis). */
   signatureLabel?: string;
@@ -69,10 +72,41 @@ export function taxBreakdown(lines: PdfLine[]): { rate: number; base: number; ta
   return [...byRate].map(([rate, v]) => ({ rate, ...v })).sort((a, b) => a.rate - b.rate);
 }
 
+const FOOTER_BOTTOM = 28; // distance entre le pied de page et le bas de la feuille
+
+/** Hauteur du pied de page (mentions légales + ligne de marque) : le contenu s'arrête au-dessus. */
+export function pdfFooterHeight(pdf: PdfDoc, text: string, width: number): number {
+  pdf.font("Helvetica").fontSize(7.5);
+  return pdf.heightOfString(text.replace(WIDE_SPACES, " "), { width }) + 3 + 9;
+}
+
+/**
+ * Imprime le pied de page sur CHAQUE page : filet, mentions légales de l'émetteur, puis « Document généré par AfriGest 360 »
+ * (et « Page n / N » dès qu'il y a plusieurs pages). Le document doit avoir été créé avec `bufferPages: true`.
+ */
+export function drawPdfFooters(pdf: PdfDoc, o: { text: string; left: number; width: number; brand?: string }) {
+  const text = o.text.replace(WIDE_SPACES, " ");
+  const range = pdf.bufferedPageRange();
+  for (let i = 0; i < range.count; i++) {
+    pdf.switchToPage(range.start + i);
+    const h = pdfFooterHeight(pdf, text, o.width);
+    const top = pdf.page.height - FOOTER_BOTTOM - h;
+    // marge basse à 0 le temps de l'écriture : sinon pdfkit ajoute une page dès que le texte dépasse la marge
+    const margin = pdf.page.margins.bottom;
+    pdf.page.margins.bottom = 0;
+    pdf.moveTo(o.left, top - 6).lineTo(o.left + o.width, top - 6).strokeColor(LINE).lineWidth(0.5).stroke();
+    pdf.fillColor(INK).font("Helvetica").fontSize(7.5).text(text, o.left, top, { width: o.width });
+    const by = top + h - 9;
+    pdf.fillColor(MUTED).font("Helvetica").fontSize(7).text(o.brand ?? DOCUMENT_BRAND, o.left, by, { width: o.width, lineBreak: false });
+    if (range.count > 1) pdf.text(`Page ${i + 1} / ${range.count}`, o.left, by, { width: o.width, align: "right", lineBreak: false });
+    pdf.page.margins.bottom = margin;
+  }
+}
+
 /** Rend un document commercial A4 (devis, facture, avoir, bon de livraison, reçu) et renvoie le PDF. */
 export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const pdf = new PDFDocument({ size: "A4", margin: 40, info: { Title: `${doc.title} ${doc.number}`, Author: doc.issuer.name } });
+    const pdf = new PDFDocument({ size: "A4", margin: 40, bufferPages: true, info: { Title: `${doc.title} ${doc.number}`, Author: doc.issuer.name } });
     const chunks: Buffer[] = [];
     pdf.on("data", (c: Buffer) => chunks.push(c));
     pdf.on("end", () => resolve(Buffer.concat(chunks)));
@@ -81,7 +115,9 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
     const left = 40;
     const right = pdf.page.width - 40;
     const width = right - left;
-    const bottomLimit = () => pdf.page.height - 70;
+    // le contenu s'arrête au-dessus du pied de page (dont la hauteur dépend de la longueur des mentions légales)
+    const footerLimit = pdf.page.height - FOOTER_BOTTOM - pdfFooterHeight(pdf, doc.issuer.footer, width) - 14;
+    const bottomLimit = () => footerLimit;
 
     // ── En-tête : logo à gauche, titre et numéro à droite
     let y = 40;
@@ -230,11 +266,8 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
       pdf.fillColor(MUTED).font("Helvetica").fontSize(8.5).text(doc.signatureLabel, right - bw + 8, y + 8, { width: bw - 16 });
     }
 
-    // ── Pied de page : mentions légales
-    const fy = pdf.page.height - 60;
-    pdf.moveTo(left, fy - 6).lineTo(right, fy - 6).strokeColor(LINE).lineWidth(0.5).stroke();
-    pdf.fillColor(MUTED).font("Helvetica").fontSize(7.5).text(doc.issuer.legal.filter(Boolean).join("  ·  "), left, fy, { width, align: "center" });
-    if (doc.footer) pdf.text(doc.footer, left, pdf.y + 2, { width, align: "center" });
+    // ── Pied de page : mentions légales sur chaque page
+    drawPdfFooters(pdf, { text: doc.issuer.footer, left, width });
     pdf.end();
   });
 }
