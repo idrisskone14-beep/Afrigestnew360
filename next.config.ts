@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   turbopack: { root: process.cwd() },
-  serverExternalPackages: ["@prisma/client", "pg", "bcryptjs", "pdfkit", "exceljs", "web-push"],
+  serverExternalPackages: ["@prisma/client", "pg", "bcryptjs", "pdfkit", "exceljs", "web-push", "@aws-sdk/client-s3"],
   experimental: {
     authInterrupts: true, // forbidden() / unauthorized()
     serverActions: { bodySizeLimit: "10mb" },

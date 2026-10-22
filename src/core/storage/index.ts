@@ -2,11 +2,12 @@ import "server-only";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AppError } from "@/core/errors";
+import { createS3Storage, s3ConfigFromEnv } from "./s3";
 
 /**
- * Abstraction de stockage de fichiers. Implémentation disque pour le développement et les
- * déploiements simples ; une implémentation S3-compatible se branche en implémentant la même interface.
- * Les clés sont toujours préfixées par l'identifiant d'entreprise (`<companyId>/…`).
+ * Abstraction de stockage de fichiers. Implémentation disque pour le développement et les serveurs à disque durable ;
+ * stockage S3-compatible (Amazon S3, Cloudflare R2, Scaleway, Backblaze B2, MinIO…) dès que `S3_BUCKET` est renseigné
+ * (obligatoire sur Vercel, dont le disque est éphémère). Les clés sont toujours préfixées par l'identifiant d'entreprise (`<companyId>/…`).
  */
 export interface StorageProvider {
   put(key: string, data: Buffer): Promise<void>;
@@ -44,7 +45,16 @@ export const diskStorage: StorageProvider = {
   },
 };
 
-export const storage: StorageProvider = diskStorage;
+/** Valide la clé avant tout accès au fournisseur (le disque la revalide ; S3 s'appuie sur cette seule garde). */
+const checked = (p: StorageProvider): StorageProvider => {
+  const ok = (key: string) => { if (!SAFE_KEY.test(key)) throw new AppError("VALIDATION", "Clé de fichier invalide."); return key; };
+  return { put: async (k, d) => p.put(ok(k), d), get: async (k) => p.get(ok(k)), delete: async (k) => p.delete(ok(k)) };
+};
+
+const s3Config = s3ConfigFromEnv();
+/** Fournisseur actif : S3-compatible si `S3_BUCKET` est défini, sinon le disque (`UPLOAD_DIR`). */
+export const storageKind: "s3" | "disk" = s3Config ? "s3" : "disk";
+export const storage: StorageProvider = s3Config ? checked(createS3Storage(s3Config)) : diskStorage;
 
 // ── Logos ─────────────────────────────────────────────────────
 

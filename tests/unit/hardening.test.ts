@@ -73,7 +73,7 @@ describe("checkEnv", () => {
   };
 
   it("configuration complète : aucun problème", () => {
-    expect(checkEnv({ ...good, NODE_ENV: "production" })).toEqual([]);
+    expect(checkEnv({ ...good, NODE_ENV: "production", S3_BUCKET: "kako", S3_ACCESS_KEY_ID: "id", S3_SECRET_ACCESS_KEY: "secret" })).toEqual([]);
   });
 
   it("signale les variables manquantes par leur nom, sans jamais citer de valeur", () => {

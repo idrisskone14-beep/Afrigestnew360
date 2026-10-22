@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkEnv } from "@/core/env";
+import { storageKind } from "@/core/storage";
 import { databaseLatency } from "@/modules/platform/demo";
 
 /**
@@ -16,6 +17,7 @@ export async function GET() {
     {
       ok,
       database,
+      storage: storageKind,
       // 1 requête simple (≈ 1 aller-retour), puis 1 requête applicative complète (≈ 4 allers-retours) : l'écart donne la latence réseau
       ...(latency ? { latencyMs: { simpleQuery: latency.simpleMs, appQuery: latency.appQueryMs, region: process.env.VERCEL_REGION ?? null } } : {}),
       problems: issues.map((i) => (i.level === "warning" ? `(avertissement) ${i.message}` : i.message)),

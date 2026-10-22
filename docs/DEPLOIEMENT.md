@@ -25,6 +25,8 @@ Deux comptes de base de données, deux URL :
 2. Noter l'**URL externe** du propriétaire. Ajouter `?sslmode=require`.
 3. Depuis votre poste, avec `DIRECT_URL` pointant sur cette base :
 
+> **Générer les secrets** : `npm run secrets` affiche `AUTH_SECRET`, `ENCRYPTION_KEY`, `CRON_SECRET`, `APP_DB_PASSWORD` et un mot de passe propriétaire, à copier dans Vercel (rien n'est écrit sur disque). Les clés push : `npm run push:keys`.
+
 ```bash
 npx prisma migrate deploy        # crée le schéma (migrations versionnées dans prisma/migrations)
 APP_DB_PASSWORD=<mot-de-passe-fort> npm run db:app-role   # active le rôle afrigest_app
@@ -53,7 +55,8 @@ SEED_DEMO=false npm run db:seed  # catalogue (modules, offres, permissions) + co
 | `CRON_SECRET` | oui | `openssl rand -hex 24` (16 caractères minimum) — Vercel l'envoie automatiquement au cron |
 | `DATABASE_POOL_MAX` | non | connexions par instance serverless (défaut 5) ; ne dépassez pas `limite de la base ÷ nombre d'instances simultanées` |
 | `SIGNUP_MODE` | non | `email` (défaut) ou `approval` : mode d'inscription de repli (le réglage de la console prime) |
-| `UPLOAD_DIR` | non | voir §8 (stockage de fichiers) |
+| `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | **oui sur Vercel** | stockage des fichiers (logos, GED) : voir §8. `S3_REGION` (défaut `auto`), `S3_ENDPOINT` (vide pour Amazon S3), `S3_FORCE_PATH_STYLE`, `S3_KEY_PREFIX` en option |
+| `UPLOAD_DIR` | non | dossier des fichiers si `S3_BUCKET` est vide (serveur à disque durable uniquement) |
 
 Ne mettez **jamais** ces valeurs dans le dépôt. `.env`, `.env.*.local` et `uploads/` sont ignorés par git.
 
@@ -102,9 +105,23 @@ Réglage de repli (si aucun réglage n'est enregistré) : variable `SIGNUP_MODE`
 
 Les e-mails de notification passent par une file (`emailPending`) vidée par le cron : sans cron, ils ne partent pas.
 
-## 8. Fichiers téléversés — limite connue
+## 8. Fichiers téléversés (S3-compatible)
 
-Logos, documents de la GED et justificatifs sont écrits via l'interface `StorageProvider`, dont **seule l'implémentation disque** (`UPLOAD_DIR`) existe. Sur Vercel le disque est **éphémère** : ces fichiers disparaîtraient. **Avant d'ouvrir à de vrais clients**, brancher un stockage objet compatible S3 (Cloudflare R2, S3…) derrière la même interface (`src/core/storage`). Tant que ce n'est pas fait, n'utilisez pas la GED en production.
+Logos, documents de la GED et justificatifs passent par l'interface `StorageProvider` (`src/core/storage`). Deux implémentations :
+
+| Configuration | Fournisseur | Usage |
+|---|---|---|
+| `S3_BUCKET` renseigné | **S3-compatible** (Amazon S3, Cloudflare R2, Scaleway, Backblaze B2, MinIO…) | production, **obligatoire sur Vercel** (le disque y est éphémère : `/api/health` signale l'absence comme bloquante) |
+| `S3_BUCKET` vide | disque (`UPLOAD_DIR`, défaut `./uploads`) | développement, ou serveur avec volume durable et sauvegardé |
+
+Mise en place (exemple Cloudflare R2, valable à l'identique pour les autres) :
+
+1. Créer un bucket **privé** (aucun accès public, aucun domaine public : l'application contrôle l'accès à chaque lecture).
+2. Créer une clé d'accès limitée à ce bucket (lecture + écriture + suppression) ; noter l'identifiant et le secret.
+3. Renseigner dans Vercel : `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT` (R2 : `https://<compte>.r2.cloudflarestorage.com` ; vide pour Amazon S3), `S3_REGION` (`auto` pour R2, ex. `eu-west-3` pour Amazon S3). `S3_FORCE_PATH_STYLE=true` pour MinIO.
+4. Redéployer, puis vérifier `/api/health` : `"storage":"s3"` et aucun problème bloquant. Téléverser un logo (Paramètres → Entreprise) et le retrouver après un redéploiement.
+
+Les fichiers sont rangés sous `<identifiant-entreprise>/…`. Activer la **sauvegarde / le versionnement** du bucket chez le fournisseur : l'application ne sauvegarde pas les fichiers. Pour partager un bucket entre environnements, utiliser `S3_KEY_PREFIX` (`prod`, `preprod`).
 
 ## 9. Retour arrière
 

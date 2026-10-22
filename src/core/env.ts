@@ -22,6 +22,15 @@ export function checkEnv(env: Record<string, string | undefined> = process.env):
     if (env.APP_URL?.startsWith("http://") && !/localhost|127\.0\.0\.1/.test(env.APP_URL)) warning("APP_URL en http:// : utilisez https:// en production");
     if (env.DATABASE_URL && !/sslmode=|ssl=true/.test(env.DATABASE_URL) && !/localhost|127\.0\.0\.1/.test(env.DATABASE_URL)) warning("DATABASE_URL sans sslmode : la connexion à la base n'est peut-être pas chiffrée");
   }
+  // fichiers (logos, documents) : S3-compatible, ou disque — éphémère sur Vercel, où tout fichier serait perdu
+  if (env.S3_BUCKET) {
+    for (const name of ["S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) if (!env[name]) blocking(`${name} manquante (stockage S3 : S3_BUCKET est défini)`);
+    if (env.S3_ENDPOINT && !/^https?:\/\//.test(env.S3_ENDPOINT)) blocking("S3_ENDPOINT doit commencer par https://");
+  } else if (env.VERCEL) {
+    blocking("S3_BUCKET manquante : le disque de Vercel est éphémère, les logos et documents seraient perdus (voir docs/DEPLOIEMENT.md §8)");
+  } else if (env.NODE_ENV === "production") {
+    warning("Fichiers stockés sur le disque (UPLOAD_DIR) : prévoyez un volume durable et sauvegardé, ou renseignez S3_BUCKET");
+  }
   if (env.REQUIRE_EMAIL_VERIFICATION === "true" && !env.RESEND_API_KEY) warning("RESEND_API_KEY absente : les e-mails de vérification ne partiront pas");
   if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) warning("VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY absentes : notifications push désactivées (npm run push:keys)");
   if (!env.CRON_SECRET || env.CRON_SECRET.length < 16) warning("CRON_SECRET absente ou trop courte : tâche planifiée désactivée");
