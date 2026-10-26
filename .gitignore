@@ -19,3 +19,6 @@ src/generated
 # misc
 .DS_Store
 npm-debug.log*
+
+# Vercel CLI (lien local vers le projet)
+.vercel
