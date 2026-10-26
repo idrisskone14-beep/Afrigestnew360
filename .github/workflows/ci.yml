@@ -1,0 +1,58 @@
+name: CI
+
+# À chaque envoi sur main et à chaque demande de fusion : qualité du code (types, lint, construction) et
+# tests (unitaires + intégration sur un vrai PostgreSQL éphémère, voir tests/global-setup.ts).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Un nouvel envoi annule l'exécution précédente de la même branche.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Types, lint et construction
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Types
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Construction de production
+        run: npm run build
+        env:
+          # valeurs factices : la construction ne se connecte à aucune base (pages dynamiques)
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5999/ci
+          DIRECT_URL: postgresql://ci:ci@127.0.0.1:5999/ci
+          AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
+          ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+          APP_URL: https://ci.example.com
+
+  tests:
+    name: Tests (unitaires et intégration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Le test démarre lui-même un PostgreSQL éphémère (embedded-postgres), applique les migrations,
+      # active le rôle applicatif (RLS) et charge le catalogue : aucun service à déclarer ici.
+      - name: Tests
+        run: npm test

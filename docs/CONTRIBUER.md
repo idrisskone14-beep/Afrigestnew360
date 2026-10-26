@@ -69,3 +69,14 @@ Tout changement touchant un chemin critique ajoute un test : **isolation** (l'en
 - Un fichier `.env.production.local` est **chargé automatiquement** par `next build` / `next start` : n'y mettez pas de secrets de production (`docs/SECURITE.md` §8).
 - `parseDate` renvoie midi **local** : pour comparer à « aujourd'hui », utiliser `todayUtc()` + `DAY`.
 - La base de développement embarquée s'arrête avec sa session ; la relancer avec `npm run db:start`.
+
+## Intégration continue (GitHub Actions)
+
+`.github/workflows/ci.yml` s'exécute à chaque envoi sur `main` et à chaque demande de fusion :
+
+| Tâche | Contenu |
+|---|---|
+| **Types, lint et construction** | `npm run typecheck`, `npm run lint`, `npm run build` (valeurs factices, aucune base) |
+| **Tests** | `npm test` : tests unitaires et d'intégration sur un PostgreSQL éphémère démarré par `tests/global-setup.ts` (migrations, rôle applicatif, RLS) |
+
+Une exécution rouge ne doit pas être fusionnée. Les mêmes commandes se lancent en local ; sous Windows, si PostgreSQL embarqué ne démarre pas (DLL Visual C++ manquante), les tests d'intégration se vérifient dans l'onglet *Actions* de GitHub.
