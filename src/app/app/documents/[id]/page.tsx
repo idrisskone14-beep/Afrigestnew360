@@ -17,6 +17,9 @@ import { describeLinks, getDocument, listFolders, shareTargets } from "@/modules
 import { EditDocumentDialog, ShareDialog, VersionDialog } from "@/modules/documents/ui/document-dialogs";
 import { fmtSize } from "@/modules/documents/ui/entity-documents";
 
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export const metadata: Metadata = { title: "Document" };
 const INLINE = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"]);
 

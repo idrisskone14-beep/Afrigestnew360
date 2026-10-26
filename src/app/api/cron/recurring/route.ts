@@ -21,5 +21,8 @@ async function run(req: NextRequest) {
   }
 }
 
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export const GET = run;
 export const POST = run;

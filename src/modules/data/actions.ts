@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { defineTenantAction } from "@/core/actions/define";
 import { businessRule } from "@/core/errors";
+import { IMPORT_MAX_MB } from "@/lib/upload-limits";
 import { IMPORT_MAX_BYTES } from "./parse";
 import { analyzeImport, discardImport, previewImport, runImport } from "./import-service";
 
@@ -17,7 +18,7 @@ export const uploadImportAction = defineTenantAction({
     const file = input.get("file");
     const entity = input.get("entity");
     if (!(file instanceof File) || file.size === 0) throw businessRule("Choisissez un fichier.");
-    if (file.size > IMPORT_MAX_BYTES) throw businessRule(`Le fichier dépasse ${IMPORT_MAX_BYTES / 1024 / 1024} Mo.`);
+    if (file.size > IMPORT_MAX_BYTES) throw businessRule(`Le fichier dépasse ${IMPORT_MAX_MB} Mo.`);
     const res = await analyzeImport(ctx, typeof entity === "string" ? entity : "", { name: file.name, size: file.size }, Buffer.from(await file.arrayBuffer()));
     bust();
     return res;

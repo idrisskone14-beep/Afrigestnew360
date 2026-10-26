@@ -1,8 +1,9 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { detectImage } from "@/core/storage";
+import { DOC_MAX_MB, mb } from "@/lib/upload-limits";
 
-export const DOC_MAX_BYTES = 8 * 1024 * 1024;
+export const DOC_MAX_BYTES = mb(DOC_MAX_MB);
 
 export interface DetectedFile { mime: string; ext: string; inline: boolean }
 

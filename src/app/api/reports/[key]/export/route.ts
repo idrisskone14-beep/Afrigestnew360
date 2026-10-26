@@ -9,6 +9,9 @@ import { buildReport, canRunReport } from "@/modules/reports/service";
  * Export d'un rapport (Excel, CSV, PDF). Authentification, module « Rapports », droit de lecture du rapport ET droit d'export
  * sont revérifiés à chaque appel ; les données sont celles du service de rapport (isolées par entreprise, filtrées par droits).
  */
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ key: string }> }) {
   const { key } = await params;
   const def = Object.hasOwn(Object.fromEntries(REPORT_BY_KEY), key) ? REPORT_BY_KEY.get(key) : undefined;

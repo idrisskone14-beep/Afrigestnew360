@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SENTRY_DSN: process.env.SENTRY_DSN ?? "",
     NEXT_PUBLIC_SENTRY_ENV: process.env.SENTRY_ENVIRONMENT || process.env.VERCEL_ENV || "",
     NEXT_PUBLIC_SENTRY_RELEASE: process.env.VERCEL_GIT_COMMIT_SHA ?? "",
+    // sur Vercel, les envois de fichiers sont plafonnés à 4,5 Mo par la plateforme (voir src/lib/upload-limits.ts)
+    NEXT_PUBLIC_ON_VERCEL: process.env.VERCEL ? "1" : "",
   },
   serverExternalPackages: ["@prisma/client", "pg", "bcryptjs", "pdfkit", "exceljs", "web-push", "@aws-sdk/client-s3"],
   experimental: {

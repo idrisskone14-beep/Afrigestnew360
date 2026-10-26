@@ -6,6 +6,7 @@ import { businessRule, forbidden, notFound } from "@/core/errors";
 import { storage } from "@/core/storage";
 import type { TenantContext } from "@/core/tenant/context";
 import type { z } from "zod";
+import { DOC_MAX_MB } from "@/lib/upload-limits";
 import { DOC_MAX_BYTES, detectDocument, safeFileName, sha256 } from "./files";
 import { parseTags, type EntityType } from "./schemas";
 import type { documentMetaSchema, folderSchema, linkSchema, shareSchema, updateDocumentSchema } from "./schemas";
@@ -215,7 +216,7 @@ export async function listEntityDocuments(ctx: Ctx, type: EntityType, entityId: 
 /** Valide le fichier (taille, type réel, nom) et retourne ce qu'il faut stocker. */
 export function inspectUpload(file: { name: string; size: number }, data: Buffer) {
   if (data.length === 0) throw businessRule("Le fichier est vide.");
-  if (data.length > DOC_MAX_BYTES) throw businessRule(`Le fichier dépasse ${DOC_MAX_BYTES / 1024 / 1024} Mo.`);
+  if (data.length > DOC_MAX_BYTES) throw businessRule(`Le fichier dépasse ${DOC_MAX_MB} Mo.`);
   const type = detectDocument(data, file.name);
   if (!type) throw businessRule("Format non accepté. Formats autorisés : PDF, images (PNG, JPEG, WebP, GIF), Word, Excel, PowerPoint, TXT, CSV.");
   return { ...type, fileName: safeFileName(file.name, type.ext), size: data.length, sha256: sha256(data) };

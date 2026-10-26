@@ -10,6 +10,9 @@ import { readVersion } from "@/modules/documents/service";
  * (propriétaire, partage, visibilité, droits sur les entités liées) revérifiés à chaque appel. Le type servi est RE-DÉTECTÉ
  * sur les octets ; seuls PDF et images peuvent être affichés dans le navigateur (`?inline=1`), le reste est toujours téléchargé.
  */
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const sp = req.nextUrl.searchParams;

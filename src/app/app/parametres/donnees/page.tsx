@@ -13,6 +13,9 @@ import { EXPORTERS } from "@/modules/data/exports";
 import { listImports } from "@/modules/data/import-service";
 import { ImportWizard } from "@/modules/data/ui/import-wizard";
 
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export const metadata: Metadata = { title: "Paramètres — Import / export" };
 
 const EXPORT_LIST = [

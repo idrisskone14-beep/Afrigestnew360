@@ -1,9 +1,10 @@
 import "server-only";
 import ExcelJS from "exceljs";
 import { AppError } from "@/core/errors";
+import { IMPORT_MAX_MB, mb } from "@/lib/upload-limits";
 
 /** Limites d'un fichier d'import (protègent la mémoire et la durée de traitement). */
-export const IMPORT_MAX_BYTES = 5 * 1024 * 1024;
+export const IMPORT_MAX_BYTES = mb(IMPORT_MAX_MB);
 export const IMPORT_MAX_ROWS = 2000;
 export const IMPORT_MAX_COLS = 60;
 const MAX_UNCOMPRESSED = 60 * 1024 * 1024;

@@ -4,6 +4,9 @@ import { enforceRateLimit } from "@/core/security/rate-limit";
 import { sharedDocumentPdf } from "@/modules/sales/public-share";
 
 /** PDF du document partagé (lien public). Limité en fréquence : la génération d'un PDF coûte. */
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   try {

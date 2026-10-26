@@ -6,6 +6,9 @@ import { requirePagePermission } from "@/core/tenant/guards";
 import { listCategories } from "@/modules/finance/treasury";
 import { CaptureForm } from "./capture-form";
 
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export const metadata: Metadata = { title: "Photographier un justificatif" };
 
 /** Saisie rapide d'une dépense depuis le téléphone, avec la photo du justificatif. */

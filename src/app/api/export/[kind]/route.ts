@@ -8,6 +8,9 @@ import { EXPORTERS } from "@/modules/data/exports";
  * Export de données de l'entreprise active (journal d'audit, listes…). Authentification, module et permissions sont
  * vérifiés ici à chaque appel ; le contenu est produit par les services (donc filtré par isolation et droits).
  */
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ kind: string }> }) {
   const { kind } = await params;
   const exporter = Object.hasOwn(EXPORTERS, kind) ? EXPORTERS[kind] : undefined;

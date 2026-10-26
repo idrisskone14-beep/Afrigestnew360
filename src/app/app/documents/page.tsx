@@ -18,6 +18,9 @@ import { listDocuments, listFolders } from "@/modules/documents/service";
 import { FolderDialog, UploadDialog } from "@/modules/documents/ui/document-dialogs";
 import { fmtSize } from "@/modules/documents/ui/entity-documents";
 
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export const metadata: Metadata = { title: "Documents" };
 
 export default async function DocumentsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {

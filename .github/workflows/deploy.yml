@@ -1,0 +1,57 @@
+name: Déploiement
+
+# Déploie en production sur Vercel UNIQUEMENT après un pipeline CI entièrement vert sur main (types, lint, construction, tests).
+# Inactif tant que la variable de dépôt AUTO_DEPLOY n'est pas « true » et que les trois secrets ci-dessous ne sont pas créés :
+#   Secrets : VERCEL_TOKEN (vercel.com/account/tokens), VERCEL_ORG_ID, VERCEL_PROJECT_ID (fichier .vercel/project.json après `vercel link`)
+#   Variables : AUTO_DEPLOY=true, HEALTH_URL=https://<domaine>/api/health
+# Mode d'emploi et retour arrière : docs/DEPLOIEMENT.md §12.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Un seul déploiement à la fois, sans jamais en interrompre un en cours.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Production (Vercel)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY == 'true'
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Vérifier la configuration
+        run: |
+          for v in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!v}" ]; then echo "::error::Secret $v manquant (voir l'en-tête de ce fichier)"; exit 1; fi
+          done
+      # exactement le commit qui a passé la CI
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: "Déployer (construction sur Vercel : migrations, catalogue, next build)"
+        run: npx --yes vercel@65 deploy --prod --yes --token "$VERCEL_TOKEN"
+      - name: Contrôle de santé après déploiement
+        if: vars.HEALTH_URL != ''
+        run: |
+          # la base doit répondre ; les avertissements de configuration n'empêchent pas la mise en ligne
+          for i in 1 2 3 4 5 6; do
+            body=$(curl -s -m 30 "${{ vars.HEALTH_URL }}" || true)
+            echo "$body"
+            if echo "$body" | grep -q '"database":"ok"'; then echo "Base de données : ok"; exit 0; fi
+            sleep 20
+          done
+          echo "::error::Le contrôle de santé n'a pas confirmé la base de données"; exit 1

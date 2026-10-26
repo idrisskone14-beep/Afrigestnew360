@@ -67,14 +67,17 @@ Garde-fous automatiques : `rls-coverage` (toute table à `companyId` a la RLS ac
 
 ## 9. Dépendances
 
-`npm audit --omit=dev` signale 6 avis, tous **sans effet sur l'application en exécution** :
+`npm audit --omit=dev` signale **4 avis** (0 critique) au 26/10/2026, tous **sans effet sur l'application en exécution** :
 
 | Paquet | Avis | Pourquoi sans effet |
 |---|---|---|
-| `mysql2`, `deepmerge-ts` (via la CLI `prisma`) | élevé | outil de développement/migration, jamais chargé par l'application ; MySQL n'est pas utilisé |
+| `vite` / `launch-editor` (via `vitest` et le SDK Sentry) | élevé | serveur de développement, jamais chargé en production |
+| `fast-uri` (via `ajv`, résolveur de formulaires) | modéré | non utilisé : la validation passe par Zod, pas par Ajv |
 | `uuid` < 11.1.1 (via `exceljs`) | modéré | l'avis exige de fournir un tampon à `uuid` v3/v5/v6 ; `exceljs` ne le fait pas |
 
-À réexaminer à chaque montée de version de `prisma` et `exceljs`.
+**Correctifs appliqués le 26/10/2026** : Next.js 16.3.8 → 16.4.3 (deux failles critiques d'exécution de code à distance — optimisation d'images SVG et fonctions `use cache` — et un déni de service sur les actions serveur, présents de 16.0.0 à 16.4.0), Zod 4.6.5 → 4.6.7 (épuisement mémoire), Prisma 7.10.0 → 7.10.1.
+
+À réexaminer à chaque montée de version, et au minimum chaque mois (`npm audit --omit=dev`).
 
 ## 10. Ce qui n'est PAS couvert
 

@@ -12,11 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FormAlert } from "@/components/app/form-kit";
 import type { ActionResult } from "@/core/errors";
+import { DOC_MAX_MB } from "@/lib/upload-limits";
 import { createFolderAction, renameFolderAction, shareDocumentAction, unshareDocumentAction, updateDocumentAction, uploadDocumentAction, uploadVersionAction } from "../actions";
 import type { EntityType } from "../schemas";
 
 const NONE = "__none";
-const MAX_MB = 8;
+const MAX_MB = DOC_MAX_MB;
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.webp,.gif,.docx,.xlsx,.pptx,.txt,.csv";
 const errText = (e: { message: string; fieldErrors?: Record<string, string[]> }) => (e.fieldErrors ? Object.values(e.fieldErrors).flat()[0] ?? e.message : e.message);
 export interface FolderOption { id: string; name: string; parentId: string | null }

@@ -47,6 +47,9 @@ export function createS3Storage(cfg: S3Config, client?: S3Like): StorageProvider
     region: cfg.region,
     ...(cfg.endpoint ? { endpoint: cfg.endpoint } : {}),
     forcePathStyle: cfg.forcePathStyle ?? false,
+    // sommes de contrôle « seulement si exigées » : plusieurs fournisseurs S3-compatibles (anciens MinIO, Backblaze, Scaleway…) refusent celles que le SDK ajoute par défaut
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
     credentials: { accessKeyId: cfg.accessKeyId, secretAccessKey: cfg.secretAccessKey },
   });
   const objectKey = (key: string) => (cfg.prefix ? `${cfg.prefix.replace(/^\/+|\/+$/g, "")}/${key}` : key);

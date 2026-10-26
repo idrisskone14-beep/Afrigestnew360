@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormAlert } from "@/components/app/form-kit";
+import { IMPORT_MAX_MB } from "@/lib/upload-limits";
 import { discardImportAction, previewImportAction, runImportAction, uploadImportAction } from "../actions";
 
 export interface ImportEntityOption { key: string; label: string; note?: string }
@@ -22,7 +23,7 @@ interface Result { created: number; ignored: number; errors: number; failed: num
 
 const NONE = "__none";
 const MEMO = "__memo";
-const MAX_MB = 5;
+const MAX_MB = IMPORT_MAX_MB;
 const errText = (e: { message: string; fieldErrors?: Record<string, string[]> }) => (e.fieldErrors ? Object.values(e.fieldErrors).flat()[0] ?? e.message : e.message);
 
 export function ImportWizard({ entities, initialEntity }: { entities: ImportEntityOption[]; initialEntity?: string }) {

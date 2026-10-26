@@ -11,6 +11,9 @@ const PURCHASE_KINDS = Object.keys(PURCHASE_PDF_PERMISSION) as PurchasePdfKind[]
 const PAYROLL_KINDS = Object.keys(PAYROLL_PDF_PERMISSION) as PayrollPdfKind[];
 
 /** Génère le PDF d'un document de l'entreprise active (authentification + module + permission ; accès au document revérifié par le service). */
+/** Durée maximale d'exécution (secondes) sur Vercel : imports, exports, PDF et envois de fichiers dépassent la durée par défaut. */
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ type: string; id: string }> }) {
   const { type, id } = await params;
   const sales = SALES_KINDS.find((k) => k === type);

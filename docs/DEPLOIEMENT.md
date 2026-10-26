@@ -53,7 +53,7 @@ SEED_DEMO=false npm run db:seed  # catalogue (modules, offres, permissions) + co
 | `RESEND_API_KEY`, `MAIL_FROM` | si e-mails | clé Resend ; `MAIL_FROM="KAKO Gestion <no-reply@votre-domaine>"` sur un domaine **vérifié** |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | si notifications push | générer UNE paire avec `npm run push:keys` ; `VAPID_SUBJECT=mailto:contact@votre-domaine`. Changer de clés oblige chaque utilisateur à réactiver les notifications sur ses appareils |
 | `CRON_SECRET` | oui | `openssl rand -hex 24` (16 caractères minimum) — Vercel l'envoie automatiquement au cron |
-| `DATABASE_POOL_MAX` | non | connexions par instance serverless (défaut 5) ; ne dépassez pas `limite de la base ÷ nombre d'instances simultanées` |
+| `DATABASE_POOL_MAX` | non | connexions par instance serverless (défaut 10 ; 3 à 5 sur une petite base) ; ne dépassez pas `limite de la base ÷ nombre d'instances simultanées` |
 | `SIGNUP_MODE` | non | `email` (défaut) ou `approval` : mode d'inscription de repli (le réglage de la console prime) |
 | `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | **oui sur Vercel** | stockage des fichiers (logos, GED) : voir §8. `S3_REGION` (défaut `auto`), `S3_ENDPOINT` (vide pour Amazon S3), `S3_FORCE_PATH_STYLE`, `S3_KEY_PREFIX` en option |
 | `LEGAL_COMPANY`, `LEGAL_FORM`, `LEGAL_ADDRESS`, `LEGAL_REGISTRATION`, `LEGAL_PUBLISHER`, `LEGAL_EMAIL`, `LEGAL_HOST`, `LEGAL_COUNTRY`, `LEGAL_AUTHORITY` (+ `LEGAL_PHONE` facultatif) | **avant l'ouverture** | informations de l'éditeur affichées dans les pages légales (voir §11) ; absentes, elles s'affichent « [à compléter] » et `/api/health` avertit |
@@ -141,3 +141,22 @@ Le site publie trois pages : **/conditions-utilisation**, **/confidentialite** e
 > **Ce sont des modèles.** Faites-les valider par un juriste avant l'ouverture : droit applicable et juridiction, autorité de protection des données de votre pays, durées de conservation (90 jours après résiliation, 3 ans pour les demandes de contact), plafond de responsabilité, conditions commerciales. Après toute modification du contenu, mettre à jour `LEGAL_UPDATED` dans `src/lib/legal.ts`.
 
 Vérifier après déploiement : aucune mention « [à compléter] » visible sur les trois pages, et `/api/health` sans avertissement « Pages légales incomplètes ».
+
+## 12. Déploiement automatique après les tests (facultatif)
+
+`.github/workflows/deploy.yml` déploie en production sur Vercel **uniquement après un pipeline CI entièrement vert** sur `main`, puis vérifie `/api/health` (la base doit répondre). Il est **inactif par défaut**. Pour l'activer :
+
+1. Vercel → *Account → Tokens* : créer un jeton. Le copier dans GitHub → *Settings → Secrets and variables → Actions → Secrets* sous le nom `VERCEL_TOKEN`.
+2. Après `vercel link` en local, `.vercel/project.json` contient `orgId` et `projectId` : les enregistrer comme secrets `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID`.
+3. Dans l'onglet *Variables* : `AUTO_DEPLOY` = `true` et `HEALTH_URL` = `https://<votre-domaine>/api/health`.
+
+Un déploiement manuel reste possible (`vercel deploy --prod`). **Retour arrière** : Vercel → *Deployments* → version précédente → *Promote to Production* (les migrations de base ne sont pas annulées : voir §9). Pour suspendre le déploiement automatique : `AUTO_DEPLOY` = `false`.
+
+## 13. Limites propres à Vercel
+
+| Limite | Valeur | Conséquence dans l'application |
+|---|---|---|
+| Corps d'une requête de fonction | 4,5 Mo | envois de fichiers (documents, imports) plafonnés à **4 Mo** sur Vercel (`src/lib/upload-limits.ts`), 8 Mo / 5 Mo ailleurs |
+| Durée d'une fonction | `maxDuration = 60` s sur les imports, exports, PDF, documents, captures et tâches planifiées | un traitement plus long est interrompu : découper les imports (2 000 lignes max) |
+| Tâches planifiées | une fois par jour (plan gratuit) | `vercel.json` : alertes 06 h UTC, récurrentes 05 h UTC |
+| Usage commercial | le plan gratuit (Hobby) est réservé à un usage non commercial | passer au plan Pro avant de facturer des clients |
