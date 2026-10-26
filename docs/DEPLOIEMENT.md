@@ -57,6 +57,7 @@ SEED_DEMO=false npm run db:seed  # catalogue (modules, offres, permissions) + co
 | `SIGNUP_MODE` | non | `email` (défaut) ou `approval` : mode d'inscription de repli (le réglage de la console prime) |
 | `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | **oui sur Vercel** | stockage des fichiers (logos, GED) : voir §8. `S3_REGION` (défaut `auto`), `S3_ENDPOINT` (vide pour Amazon S3), `S3_FORCE_PATH_STYLE`, `S3_KEY_PREFIX` en option |
 | `LEGAL_COMPANY`, `LEGAL_FORM`, `LEGAL_ADDRESS`, `LEGAL_REGISTRATION`, `LEGAL_PUBLISHER`, `LEGAL_EMAIL`, `LEGAL_HOST`, `LEGAL_COUNTRY`, `LEGAL_AUTHORITY` (+ `LEGAL_PHONE` facultatif) | **avant l'ouverture** | informations de l'éditeur affichées dans les pages légales (voir §11) ; absentes, elles s'affichent « [à compléter] » et `/api/health` avertit |
+| `SENTRY_DSN` | recommandé | DSN du projet Sentry : remonte les erreurs des utilisateurs (voir `docs/EXPLOITATION.md` §1). Figé à la construction : redéployer après modification. `SENTRY_ENVIRONMENT` facultatif |
 | `UPLOAD_DIR` | non | dossier des fichiers si `S3_BUCKET` est vide (serveur à disque durable uniquement) |
 
 Ne mettez **jamais** ces valeurs dans le dépôt. `.env`, `.env.*.local` et `uploads/` sont ignorés par git.

@@ -33,6 +33,12 @@ export function checkEnv(env: Record<string, string | undefined> = process.env):
   } else if (env.NODE_ENV === "production") {
     warning("Fichiers stockés sur le disque (UPLOAD_DIR) : prévoyez un volume durable et sauvegardé, ou renseignez S3_BUCKET");
   }
+  // suivi d'erreurs : sans DSN, aucune erreur n'est remontée (seuls les journaux Vercel les gardent)
+  if (env.SENTRY_DSN) {
+    if (!/^https:\/\/[^@\s]+@[^/\s]+\/\d+$/.test(env.SENTRY_DSN)) warning("SENTRY_DSN invalide (format https://<clé>@<hôte>/<projet> attendu) : erreurs non remontées");
+  } else if (env.NODE_ENV === "production") {
+    warning("SENTRY_DSN absente : les erreurs des utilisateurs ne sont pas remontées (voir docs/EXPLOITATION.md)");
+  }
   // pages légales (mentions légales, conditions, confidentialité) : informations de l'éditeur à renseigner
   const legal = missingLegal(env);
   if (legal.length > 0) warning(`Pages légales incomplètes : ${legal.join(", ")} absente(s) (affichées « [à compléter] » sur le site)`);

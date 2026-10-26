@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { sentryOrigin } from "@/core/monitoring/sentry-filter";
 import { buildCsp, generateNonce } from "@/core/security/csp";
 
 /**
@@ -13,7 +14,7 @@ const PROTECTED = /^\/(app|super-admin)(\/|$)/;
 
 export function proxy(req: NextRequest) {
   const nonce = generateNonce();
-  const csp = buildCsp(nonce, { dev: process.env.NODE_ENV !== "production" });
+  const csp = buildCsp(nonce, { dev: process.env.NODE_ENV !== "production", ingestOrigin: sentryOrigin(process.env.SENTRY_DSN) });
 
   if (PROTECTED.test(req.nextUrl.pathname) && !SESSION_COOKIES.some((name) => req.cookies.has(name))) {
     const url = req.nextUrl.clone();

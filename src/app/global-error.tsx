@@ -1,7 +1,13 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
+
 /** Dernier filet : erreur dans le layout racine lui-même. Aucun détail technique n'est affiché, seulement la référence. */
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
   return (
     <html lang="fr">
       <body style={{ fontFamily: "system-ui, sans-serif", display: "grid", minHeight: "100vh", placeItems: "center", margin: 0, background: "#fff", color: "#0b0c24" }}>

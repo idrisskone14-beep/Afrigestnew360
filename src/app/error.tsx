@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
+    Sentry.captureException(error);
   }, [error]);
   return (
     <div className="mx-auto flex min-h-[60dvh] max-w-md flex-col items-center justify-center px-6 text-center">

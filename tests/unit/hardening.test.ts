@@ -72,6 +72,7 @@ describe("checkEnv", () => {
     VAPID_PRIVATE_KEY: "k".repeat(30),
     LEGAL_COMPANY: "KAKO SARL", LEGAL_FORM: "SARL", LEGAL_ADDRESS: "Abidjan", LEGAL_REGISTRATION: "CI-ABJ-2026-B-1", LEGAL_PUBLISHER: "A. Koné",
     LEGAL_EMAIL: "legal@exemple.ci", LEGAL_HOST: "Vercel", LEGAL_COUNTRY: "Côte d'Ivoire", LEGAL_AUTHORITY: "l'ARTCI",
+    SENTRY_DSN: "https://cle@o1.ingest.sentry.io/1",
   };
 
   it("configuration complète : aucun problème", () => {

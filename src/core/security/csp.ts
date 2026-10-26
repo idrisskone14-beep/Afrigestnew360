@@ -6,14 +6,14 @@
  * `'unsafe-inline'` (attributs `style` de Tailwind, de Recharts et de framer-motion).
  * Développement : `unsafe-eval` en plus (rechargement à chaud de React) ; pas d'`upgrade-insecure-requests` (http local).
  */
-export function buildCsp(nonce: string, { dev = false }: { dev?: boolean } = {}): string {
+export function buildCsp(nonce: string, { dev = false, ingestOrigin = null }: { dev?: boolean; /** Point de réception du suivi d'erreurs (Sentry), autorisé en connexion sortante. */ ingestOrigin?: string | null } = {}): string {
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
     "script-src": ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'", ...(dev ? ["'unsafe-eval'"] : [])],
     "style-src": ["'self'", "'unsafe-inline'"],
     "img-src": ["'self'", "data:", "blob:"],
     "font-src": ["'self'", "data:"],
-    "connect-src": ["'self'", ...(dev ? ["ws:", "wss:"] : [])],
+    "connect-src": ["'self'", ...(ingestOrigin ? [ingestOrigin] : []), ...(dev ? ["ws:", "wss:"] : [])],
     "frame-src": ["'self'"],
     "worker-src": ["'self'", "blob:"],
     "object-src": ["'none'"],

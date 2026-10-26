@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   turbopack: { root: process.cwd() },
+  // suivi d'erreurs dans le navigateur : le DSN (public par conception) et la version sont figés à la construction
+  env: {
+    NEXT_PUBLIC_SENTRY_DSN: process.env.SENTRY_DSN ?? "",
+    NEXT_PUBLIC_SENTRY_ENV: process.env.SENTRY_ENVIRONMENT || process.env.VERCEL_ENV || "",
+    NEXT_PUBLIC_SENTRY_RELEASE: process.env.VERCEL_GIT_COMMIT_SHA ?? "",
+  },
   serverExternalPackages: ["@prisma/client", "pg", "bcryptjs", "pdfkit", "exceljs", "web-push", "@aws-sdk/client-s3"],
   experimental: {
     authInterrupts: true, // forbidden() / unauthorized()
