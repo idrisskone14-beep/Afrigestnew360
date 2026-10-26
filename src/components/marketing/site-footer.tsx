@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { LEGAL_PAGES } from "@/lib/legal";
 
 const COLUMNS = [
   { title: "Produit", links: [{ href: "/fonctionnalites", label: "Fonctionnalités" }, { href: "/solutions", label: "Solutions par métier" }, { href: "/tarifs", label: "Tarifs" }, { href: "/demo", label: "Demander une démo" }] },
   { title: "Entreprise", links: [{ href: "/contact", label: "Contact" }, { href: "/inscription", label: "Créer un compte" }, { href: "/connexion", label: "Connexion" }] },
+  { title: "Informations légales", links: [...LEGAL_PAGES] },
 ];
 
 export function SiteFooter() {
   return (
     <footer className="border-t bg-card">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-8">
         <div className="max-w-sm">
           <Logo />
           <p className="mt-4 text-sm text-muted-foreground">Toute votre entreprise. Une seule plateforme. Finances, ventes, stocks, RH, projets et opérations réunis, pensés pour les entreprises africaines.</p>

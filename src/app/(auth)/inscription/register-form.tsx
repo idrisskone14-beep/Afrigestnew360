@@ -81,7 +81,7 @@ export function RegisterForm({ mode }: { mode: "email" | "approval" }) {
               <Checkbox checked={field.value === true} onCheckedChange={(v) => field.onChange(v === true)} className="mt-0.5" />
             )}
           />
-          <span className="text-muted-foreground">J'accepte les conditions d'utilisation et la politique de confidentialité.</span>
+          <span className="text-muted-foreground">J'accepte les <Link href="/conditions-utilisation" target="_blank" className="text-brand hover:underline">conditions d'utilisation</Link> et la <Link href="/confidentialite" target="_blank" className="text-brand hover:underline">politique de confidentialité</Link>.</span>
         </label>
         {errors.acceptTerms && <p role="alert" className="text-xs text-destructive">{errors.acceptTerms.message}</p>}
       </div>

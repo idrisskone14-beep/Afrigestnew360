@@ -2,6 +2,8 @@
  * Vérification de la configuration d'exécution. Ne lit ni n'expose AUCUNE valeur : seulement les NOMS des variables
  * manquantes ou invalides. Utilisée par `/api/health` et au démarrage du serveur (`instrumentation.ts`).
  */
+import { missingLegal } from "@/lib/legal";
+
 export interface EnvProblem {
   /** `blocking` : l'application ne peut pas fonctionner correctement ; `warning` : fonction dégradée. */
   level: "blocking" | "warning";
@@ -31,6 +33,9 @@ export function checkEnv(env: Record<string, string | undefined> = process.env):
   } else if (env.NODE_ENV === "production") {
     warning("Fichiers stockés sur le disque (UPLOAD_DIR) : prévoyez un volume durable et sauvegardé, ou renseignez S3_BUCKET");
   }
+  // pages légales (mentions légales, conditions, confidentialité) : informations de l'éditeur à renseigner
+  const legal = missingLegal(env);
+  if (legal.length > 0) warning(`Pages légales incomplètes : ${legal.join(", ")} absente(s) (affichées « [à compléter] » sur le site)`);
   if (env.REQUIRE_EMAIL_VERIFICATION === "true" && !env.RESEND_API_KEY) warning("RESEND_API_KEY absente : les e-mails de vérification ne partiront pas");
   if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) warning("VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY absentes : notifications push désactivées (npm run push:keys)");
   if (!env.CRON_SECRET || env.CRON_SECRET.length < 16) warning("CRON_SECRET absente ou trop courte : tâche planifiée désactivée");

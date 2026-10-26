@@ -56,6 +56,7 @@ SEED_DEMO=false npm run db:seed  # catalogue (modules, offres, permissions) + co
 | `DATABASE_POOL_MAX` | non | connexions par instance serverless (défaut 5) ; ne dépassez pas `limite de la base ÷ nombre d'instances simultanées` |
 | `SIGNUP_MODE` | non | `email` (défaut) ou `approval` : mode d'inscription de repli (le réglage de la console prime) |
 | `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | **oui sur Vercel** | stockage des fichiers (logos, GED) : voir §8. `S3_REGION` (défaut `auto`), `S3_ENDPOINT` (vide pour Amazon S3), `S3_FORCE_PATH_STYLE`, `S3_KEY_PREFIX` en option |
+| `LEGAL_COMPANY`, `LEGAL_FORM`, `LEGAL_ADDRESS`, `LEGAL_REGISTRATION`, `LEGAL_PUBLISHER`, `LEGAL_EMAIL`, `LEGAL_HOST`, `LEGAL_COUNTRY`, `LEGAL_AUTHORITY` (+ `LEGAL_PHONE` facultatif) | **avant l'ouverture** | informations de l'éditeur affichées dans les pages légales (voir §11) ; absentes, elles s'affichent « [à compléter] » et `/api/health` avertit |
 | `UPLOAD_DIR` | non | dossier des fichiers si `S3_BUCKET` est vide (serveur à disque durable uniquement) |
 
 Ne mettez **jamais** ces valeurs dans le dépôt. `.env`, `.env.*.local` et `uploads/` sont ignorés par git.
@@ -131,3 +132,11 @@ Les fichiers sont rangés sous `<identifiant-entreprise>/…`. Activer la **sauv
 ## 10. Domaine personnalisé
 
 *Vercel → Settings → Domains* ; mettre `APP_URL` à jour ; redéployer ; mettre à jour `MAIL_FROM` si le domaine d'envoi change.
+
+## 11. Pages légales
+
+Le site publie trois pages : **/conditions-utilisation**, **/confidentialite** et **/mentions-legales** (liées dans le pied de page, le plan du site et la case d'acceptation de l'inscription). Elles se remplissent avec les variables `LEGAL_*` (§3) : aucune information de l'éditeur n'est écrite dans le code.
+
+> **Ce sont des modèles.** Faites-les valider par un juriste avant l'ouverture : droit applicable et juridiction, autorité de protection des données de votre pays, durées de conservation (90 jours après résiliation, 3 ans pour les demandes de contact), plafond de responsabilité, conditions commerciales. Après toute modification du contenu, mettre à jour `LEGAL_UPDATED` dans `src/lib/legal.ts`.
+
+Vérifier après déploiement : aucune mention « [à compléter] » visible sur les trois pages, et `/api/health` sans avertissement « Pages légales incomplètes ».
