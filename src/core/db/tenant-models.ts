@@ -12,6 +12,7 @@ export const TENANT_KEY: Readonly<Record<string, "companyId" | "id">> = {
   Role: "companyId",
   RolePermission: "companyId",
   Subscription: "companyId",
+  SubscriptionPayment: "companyId",
   CompanyModule: "companyId",
   UsageLimit: "companyId",
   Branch: "companyId",

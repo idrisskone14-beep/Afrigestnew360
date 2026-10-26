@@ -53,7 +53,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   ...build("dashboard", "core", { dashboard: ["Tableau de bord", ["read"]] }),
   ...build("settings", "core", {
     company: ["Paramètres de l'entreprise", ["read", "update"]],
-    billing: ["Abonnement et utilisation", ["read"]],
+    billing: ["Abonnement et utilisation", ["read", "update"]],
     tax: ["Taxes", ["manage"]],
     numbering: ["Numérotation des documents", ["manage"]],
   }),

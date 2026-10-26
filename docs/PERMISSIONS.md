@@ -24,9 +24,9 @@
 
 Une permission n'est effective que si son module est actif pour l'entreprise (offre + surcharges) **et** que le rôle de l'utilisateur la détient. Un module désactivé est invisible et répond 403 par URL directe.
 
-## Permissions (151)
+## Permissions (152)
 
-### Cœur (`core`) — 21
+### Cœur (`core`) — 22
 
 | Clé | Libellé |
 |---|---|
@@ -34,6 +34,7 @@ Une permission n'est effective que si son module est actif pour l'entreprise (of
 | `settings.company.read` | Consulter — Paramètres de l'entreprise |
 | `settings.company.update` | Modifier — Paramètres de l'entreprise |
 | `settings.billing.read` | Consulter — Abonnement et utilisation |
+| `settings.billing.update` | Modifier — Abonnement et utilisation |
 | `settings.tax.manage` | Gérer — Taxes |
 | `settings.numbering.manage` | Gérer — Numérotation des documents |
 | `users.member.read` | Consulter — Membres |
@@ -258,15 +259,15 @@ Copiés dans chaque nouvelle entreprise, puis **librement modifiables** (les rô
 
 | Rôle | Description | Permissions | Motifs |
 |---|---|---|---|
-| Administrateur (administrateur) | Accès complet à l'entreprise. | 151 / 151 | `*` |
-| Directeur Général | Vision globale et validations. | 49 / 151 | `*.read`, `workflow.request.*`, `reports.*`, `data.export.run`, `intelligence.*` |
-| Directeur Financier | Finance, comptabilité, budgets, approbations. | 43 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `finance.*`, `accounting.*`, `reports.*`, `workflow.request.approve`, `sales.discount.approve`, … |
-| Comptable | Saisie et suivi comptable. | 23 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `finance.invoice.read`, `finance.payment.*`, `finance.expense.*`, `finance.category.manage`, `finance.account.read`, … |
-| RH | Employés, présences, congés, paie. | 25 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `hr.*`, `workflow.request.approve`, `reports.report.read`, `documents.document.*`, `org.structure.read` |
-| Responsable Commercial | Pilotage des ventes et du CRM. | 45 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `crm.*`, `sales.*`, `finance.invoice.*`, `finance.credit_note.*`, `inventory.product.read`, … |
-| Commercial | Prospection et devis. | 25 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `crm.customer.read`, `crm.customer.create`, `crm.customer.update`, `crm.lead.*`, `crm.opportunity.*`, … |
-| Responsable Stock | Produits, entrepôts, mouvements. | 20 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `inventory.*`, `purchases.supplier.read`, `purchases.receipt.*`, `sales.delivery.*`, `reports.report.read` |
-| Chef de Projet | Projets, tâches, temps et budgets. | 19 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `project.*`, `documents.document.*`, `construction.*`, `reports.report.read`, `hr.employee.read` |
-| Responsable Flotte | Véhicules, chauffeurs, entretiens, contraventions. | 18 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `fleet.*`, `documents.document.*`, `finance.expense.read`, `reports.report.read` |
-| Employé | Accès de base : congés et tâches. | 7 / 151 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `hr.leave.request`, `hr.leave.read`, `project.task.manage`, `hr.payslip.read` |
-| Consultation uniquement | Lecture seule. | 44 / 151 | `*.read` |
+| Administrateur (administrateur) | Accès complet à l'entreprise. | 152 / 152 | `*` |
+| Directeur Général | Vision globale et validations. | 49 / 152 | `*.read`, `workflow.request.*`, `reports.*`, `data.export.run`, `intelligence.*` |
+| Directeur Financier | Finance, comptabilité, budgets, approbations. | 43 / 152 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `finance.*`, `accounting.*`, `reports.*`, `workflow.request.approve`, `sales.discount.approve`, … |
+| Comptable | Saisie et suivi comptable. | 23 / 152 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `finance.invoice.read`, `finance.payment.*`, `finance.expense.*`, `finance.category.manage`, `finance.account.read`, … |
+| RH | Employés, présences, congés, paie. | 25 / 152 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `hr.*`, `workflow.request.approve`, `reports.report.read`, `documents.document.*`, `org.structure.read` |
+| Responsable Commercial | Pilotage des ventes et du CRM. | 45 / 152 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `crm.*`, `sales.*`, `finance.invoice.*`, `finance.credit_note.*`, `inventory.product.read`, … |
+| Commercial | Prospection et devis. | 25 / 152 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `crm.customer.read`, `crm.customer.create`, `crm.customer.update`, `crm.lead.*`, `crm.opportunity.*`, … |
+| Responsable Stock | Produits, entrepôts, mouvements. | 20 / 152 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `inventory.*`, `purchases.supplier.read`, `purchases.receipt.*`, `sales.delivery.*`, `reports.report.read` |
+| Chef de Projet | Projets, tâches, temps et budgets. | 19 / 152 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `project.*`, `documents.document.*`, `construction.*`, `reports.report.read`, `hr.employee.read` |
+| Responsable Flotte | Véhicules, chauffeurs, entretiens, contraventions. | 18 / 152 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `fleet.*`, `documents.document.*`, `finance.expense.read`, `reports.report.read` |
+| Employé | Accès de base : congés et tâches. | 7 / 152 | `dashboard.dashboard.read`, `workflow.request.read`, `workflow.request.create`, `hr.leave.request`, `hr.leave.read`, `project.task.manage`, `hr.payslip.read` |
+| Consultation uniquement | Lecture seule. | 44 / 152 | `*.read` |

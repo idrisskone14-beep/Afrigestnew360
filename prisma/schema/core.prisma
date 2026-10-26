@@ -178,6 +178,7 @@ model Company {
   roles                 Role[]
   rolePermissions       RolePermission[]
   subscription          Subscription?
+  subscriptionPayments  SubscriptionPayment[]
   modules               CompanyModule[]
   usageLimits           UsageLimit[]
   branches              Branch[]
@@ -417,6 +418,7 @@ model Plan {
   modules       PlanModule[]
   limits        PlanLimit[]
   subscriptions Subscription[]
+  payments      SubscriptionPayment[]
 }
 
 model PlanModule {
@@ -461,6 +463,41 @@ model Subscription {
 
   @@index([planId])
   @@index([status])
+}
+
+enum SubscriptionPaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+// Règlement d'un abonnement KAKO par une entreprise, via une passerelle de paiement (PayDunya). `providerToken` identifie la
+// facture côté passerelle ; le statut n'est passé à COMPLETED qu'après confirmation serveur à serveur (jamais sur la seule
+// foi d'une redirection du navigateur).
+model SubscriptionPayment {
+  id            String                    @id @default(uuid()) @db.Uuid
+  companyId     String                    @db.Uuid
+  planId        String                    @db.Uuid
+  billingCycle  BillingCycle
+  amount        Decimal                   @db.Decimal(18, 2)
+  currency      String                    @default("XOF")
+  status        SubscriptionPaymentStatus @default(PENDING)
+  provider      String                    @default("paydunya")
+  providerToken String?                   @unique
+  paymentUrl    String?
+  receiptUrl    String?
+  failReason    String?
+  createdById   String?                   @db.Uuid
+  createdAt     DateTime                  @default(now())
+  paidAt        DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan    Plan    @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, createdAt])
+  @@index([status])
+  @@index([planId])
 }
 
 // État EFFECTIF des modules d'une entreprise (hérité du plan, surchargeable par le Super Admin)

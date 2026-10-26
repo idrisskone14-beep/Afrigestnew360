@@ -52,6 +52,7 @@ SEED_DEMO=false npm run db:seed  # catalogue (modules, offres, permissions) + co
 | `REQUIRE_EMAIL_VERIFICATION` | recommandé | `true` : la connexion exige une adresse e-mail confirmée — **sauf en mode « validation par le Super Admin »** (choisi dans la console, ou imposé faute d'envoi d'e-mails), où aucune confirmation n'est demandée. `false` : jamais exigée |
 | `RESEND_API_KEY`, `MAIL_FROM` | si e-mails | clé Resend ; `MAIL_FROM="KAKO Gestion <no-reply@votre-domaine>"` sur un domaine **vérifié** |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | si notifications push | générer UNE paire avec `npm run push:keys` ; `VAPID_SUBJECT=mailto:contact@votre-domaine`. Changer de clés oblige chaque utilisateur à réactiver les notifications sur ses appareils |
+| `PAYDUNYA_MASTER_KEY`, `PAYDUNYA_PRIVATE_KEY`, `PAYDUNYA_TOKEN`, `PAYDUNYA_MODE` | si paiement en ligne des abonnements | clés de l'application PayDunya (§14). `PAYDUNYA_MODE=live` avec les clés de production ; sans cette valeur, bac à sable (aucun débit réel) |
 | `CRON_SECRET` | oui | `openssl rand -hex 24` (16 caractères minimum) — Vercel l'envoie automatiquement au cron |
 | `DATABASE_POOL_MAX` | non | connexions par instance serverless (défaut 10 ; 3 à 5 sur une petite base) ; ne dépassez pas `limite de la base ÷ nombre d'instances simultanées` |
 | `SIGNUP_MODE` | non | `email` (défaut) ou `approval` : mode d'inscription de repli (le réglage de la console prime) |
@@ -160,3 +161,16 @@ Un déploiement manuel reste possible (`vercel deploy --prod`). **Retour arrièr
 | Durée d'une fonction | `maxDuration = 60` s sur les imports, exports, PDF, documents, captures et tâches planifiées | un traitement plus long est interrompu : découper les imports (2 000 lignes max) |
 | Tâches planifiées | une fois par jour (plan gratuit) | `vercel.json` : alertes 06 h UTC, récurrentes 05 h UTC |
 | Usage commercial | le plan gratuit (Hobby) est réservé à un usage non commercial | passer au plan Pro avant de facturer des clients |
+
+## 14. Paiement en ligne des abonnements (PayDunya)
+
+Les entreprises clientes règlent leur abonnement KAKO Gestion depuis **Paramètres → Abonnement → Payer en ligne** (Mobile Money, carte). L'argent arrive sur VOTRE compte PayDunya : une seule application PayDunya pour toute la plateforme.
+
+1. Sur paydunya.com : créer le compte marchand, faire valider le KYC, puis **Intégrez notre API → créer une application**. Relever les trois clés (maître, privée, jeton), d'abord en **mode test**.
+2. Dans Vercel (*Production*) : `PAYDUNYA_MASTER_KEY`, `PAYDUNYA_PRIVATE_KEY`, `PAYDUNYA_TOKEN`, sans `PAYDUNYA_MODE` (bac à sable). Redéployer (`vercel deploy --prod --yes`).
+3. **Recette en bac à sable** : payer une offre depuis un compte de test, vérifier que le paiement passe à « Payé » et que la période de l'abonnement est prolongée. Si le paiement reste « En attente », le bouton « Vérifier » relit son état auprès de PayDunya.
+4. Passer en production : remplacer les trois clés par celles de l'application **live**, ajouter `PAYDUNYA_MODE=live`, redéployer, puis faire un vrai paiement du plus petit montant possible.
+
+**Fonctionnement et sécurité.** Le montant est toujours lu dans l'offre en base (jamais envoyé par le navigateur). La notification `/api/paydunya/ipn` ne sert qu'à déclencher une vérification : l'état du paiement est relu auprès de PayDunya avec les clés secrètes, le montant et l'identifiant sont contrôlés, et l'abonnement n'est activé qu'une seule fois (une notification reçue deux fois est sans effet). Renouvellement de la même offre en cours : la période s'ajoute à la fin de l'actuelle. Les paiements sont listés dans la page Abonnement de l'entreprise ; un paiement en échec ou incohérent y reste visible (statut « Échoué »).
+
+**Permission.** Payer exige `settings.billing.update` (administrateurs ; à accorder aux autres rôles dans Rôles et permissions). Seule la devise XOF est acceptée.
