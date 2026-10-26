@@ -18,15 +18,24 @@ type Tone = "danger" | "warning" | "success";
 export interface ListItem { label: string; sub?: string; value?: string; href?: string; tone?: Tone }
 /** Données d'un widget : toujours sérialisables (chaînes et nombres) pour traverser la frontière serveur → client. */
 export type WidgetData =
-  | { kind: "kpi"; value: string; hint?: string; tone?: Tone; href?: string }
+  /** `delta` : variation en % par rapport à la période précédente (puce ↑/↓ colorée) ; null si non calculable. */
+  | { kind: "kpi"; value: string; hint?: string; tone?: Tone; href?: string; delta?: number | null }
   | { kind: "bars"; seriesLabel: string; data: { month: string; value: number }[] }
   | { kind: "cashflow"; data: { month: string; inflow: number; outflow: number }[] }
+  /** Courbe mensuelle de l'année en cours comparée à la même période de l'année précédente. */
+  | { kind: "area"; seriesLabel: string; previousLabel: string; data: { month: string; value: number; previous: number }[] }
+  /** Répartition en parts d'un tout (anneau) : 4 premières catégories puis « Autres ». */
+  | { kind: "donut"; items: { label: string; value: number; href?: string }[]; empty: string }
+  /** Classement en barres horizontales ; `group` (0/1) colore deux familles de barres, légendées par `groups`. */
+  | { kind: "hbars"; items: { label: string; value: number; sub?: string; group?: 0 | 1; href?: string }[]; groups?: [string, string]; empty: string }
   | { kind: "list"; items: ListItem[]; empty: string };
 
 export interface WidgetDef {
   key: string;
   title: string;
   icon: string;
+  /** Précision sous le titre (période, base de calcul). */
+  subtitle?: string;
   size: "kpi" | "half" | "wide";
   /** Module requis (actif pour l'entreprise) et permission requise : un widget non autorisé n'est ni chargé ni affiché. */
   module?: string;
@@ -36,6 +45,7 @@ export interface WidgetDef {
 
 const LIVE = ["ISSUED", "PARTIALLY_PAID", "PAID"] as const;
 const utc = (y: number, m: number) => new Date(Date.UTC(y, m, 1));
+const ymKey = (dt: Date) => `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}`;
 const monthStart = (offset = 0) => { const n = new Date(); return utc(n.getUTCFullYear(), n.getUTCMonth() + offset); };
 
 async function invoicedNet(ctx: Ctx, from: Date, to: Date) {
@@ -56,7 +66,7 @@ async function endingContracts(ctx: Ctx, days: number, take: number) {
   return ctx.db.employmentContract.findMany({ where: { endDate: { gte: today, lte: limit }, employee: { status: "ACTIVE", deletedAt: null } }, orderBy: { endDate: "asc" }, take, select: { id: true, type: true, endDate: true, employee: { select: { id: true, firstName: true, lastName: true } } } });
 }
 
-export const WIDGETS: WidgetDef[] = [
+const WIDGET_LIST: WidgetDef[] = [
   {
     key: "alerts", title: "Alertes", icon: "AlertTriangle", size: "half",
     async load(ctx) {
@@ -99,7 +109,7 @@ export const WIDGETS: WidgetDef[] = [
     async load(ctx) {
       const [cur, prev] = await Promise.all([invoicedNet(ctx, monthStart(0), monthStart(1)), invoicedNet(ctx, monthStart(-1), monthStart(0))]);
       const delta = prev.gt(0) ? cur.minus(prev).div(prev).mul(100).round().toNumber() : null;
-      return { kind: "kpi", value: formatMoney(cur.toNumber(), ctx.company.currency), hint: delta === null ? "HT, factures émises" : `${delta >= 0 ? "+" : ""}${delta} % vs mois précédent (HT)`, tone: delta !== null && delta < 0 ? "warning" : undefined, href: "/app/sales/factures" };
+      return { kind: "kpi", value: formatMoney(cur.toNumber(), ctx.company.currency), hint: delta === null ? "HT, factures émises" : `${delta >= 0 ? "+" : ""}${delta} % vs mois précédent (HT)`, tone: delta !== null && delta < 0 ? "warning" : undefined, href: "/app/sales/factures", delta };
     },
   },
   {
@@ -152,33 +162,76 @@ export const WIDGETS: WidgetDef[] = [
     },
   },
   {
-    key: "sales_chart", title: "Facturation — 6 derniers mois", icon: "BarChart3", size: "half", module: "sales", permission: "finance.invoice.read",
+    key: "sales_chart", title: "Chiffre d'affaires", subtitle: "12 derniers mois, HT, comparé à l'année précédente", icon: "BarChart3", size: "wide", module: "sales", permission: "finance.invoice.read",
     async load(ctx) {
-      const from = monthStart(-5);
+      const from = monthStart(-23);
       const rows = await ctx.tx((tx) => tx.$queryRaw<{ m: string; total: unknown }[]>`
         SELECT to_char("issueDate", 'YYYY-MM') AS m, SUM("subtotal" - "discountTotal") AS total
         FROM "Invoice" WHERE "status" IN ('ISSUED', 'PARTIALLY_PAID', 'PAID') AND "issueDate" >= ${from} GROUP BY 1`);
-      const data = Array.from({ length: 6 }, (_, i) => {
-        const dt = utc(from.getUTCFullYear(), from.getUTCMonth() + i);
-        const key = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}`;
-        return { month: key, value: Number(rows.find((r) => r.m === key)?.total ?? 0) };
+      const at = (dt: Date) => Number(rows.find((r) => r.m === ymKey(dt))?.total ?? 0);
+      const now = monthStart(0);
+      const data = Array.from({ length: 12 }, (_, i) => {
+        const dt = utc(now.getUTCFullYear(), now.getUTCMonth() - 11 + i);
+        return { month: ymKey(dt), value: at(dt), previous: at(utc(dt.getUTCFullYear() - 1, dt.getUTCMonth())) };
       });
-      return { kind: "bars", seriesLabel: "Facturé (HT)", data };
+      return { kind: "area", seriesLabel: "Cette année", previousLabel: "Année précédente", data };
     },
   },
   {
-    key: "cashflow", title: "Flux de trésorerie", icon: "ArrowLeftRight", size: "half", module: "finance", permission: "finance.account.read",
+    key: "cashflow", title: "Flux de trésorerie", subtitle: "Encaissements et décaissements, 6 derniers mois", icon: "ArrowLeftRight", size: "wide", module: "finance", permission: "finance.account.read",
     async load(ctx) { return { kind: "cashflow", data: await monthlyCashflow(ctx, 6) }; },
   },
   {
-    key: "expenses", title: "Dépenses du mois par catégorie", icon: "Receipt", size: "half", module: "finance", permission: "finance.expense.read",
+    key: "expenses", title: "Dépenses par catégorie", subtitle: "Mois en cours", icon: "Receipt", size: "half", module: "finance", permission: "finance.expense.read",
     async load(ctx) {
       const groups = await ctx.db.financialTransaction.groupBy({ by: ["categoryId"], where: { type: "OUT", status: "VALID", categoryId: { not: null }, date: { gte: monthStart(0), lt: monthStart(1) } }, _sum: { amount: true } });
       const cats = await ctx.db.financeCategory.findMany({ where: { id: { in: groups.map((g) => g.categoryId!).filter(Boolean) } }, select: { id: true, name: true } });
       const names = new Map(cats.map((c) => [c.id, c.name]));
-      const items = groups.map((g) => ({ label: names.get(g.categoryId!) ?? "—", amount: d(g._sum.amount ?? 0) })).sort((a, b) => b.amount.comparedTo(a.amount)).slice(0, 6)
-        .map((g) => ({ label: g.label, value: formatMoney(g.amount.toNumber(), ctx.company.currency), href: "/app/finance/depenses" }));
-      return { kind: "list", items, empty: "Aucune dépense ce mois-ci." };
+      const sorted = groups.map((g) => ({ label: names.get(g.categoryId!) ?? "—", amount: d(g._sum.amount ?? 0).toNumber() })).filter((g) => g.amount > 0).sort((x, y) => y.amount - x.amount);
+      const top = sorted.slice(0, 4).map((g) => ({ label: g.label, value: g.amount, href: "/app/finance/depenses" }));
+      const rest = sorted.slice(4).reduce((acc, g) => acc + g.amount, 0);
+      return { kind: "donut", items: rest > 0 ? [...top, { label: "Autres", value: rest, href: "/app/finance/depenses" }] : top, empty: "Aucune dépense ce mois-ci." };
+    },
+  },
+  {
+    key: "receivables_aging", title: "Créances par ancienneté", subtitle: "Factures clients ouvertes, reste à payer", icon: "HandCoins", size: "half", module: "sales", permission: "finance.invoice.read",
+    async load(ctx) {
+      const open = await openInvoices(ctx);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const sums = [0, 0, 0, 0, 0];
+      for (const i of open) {
+        const late = i.dueDate && i.dueDate < today ? Math.floor((today.getTime() - i.dueDate.getTime()) / 86_400_000) : 0;
+        sums[late <= 0 ? 0 : late <= 30 ? 1 : late <= 60 ? 2 : late <= 90 ? 3 : 4]! += i.balance.toNumber();
+      }
+      const labels = ["À échoir", "Échu 1 à 30 j", "Échu 31 à 60 j", "Échu 61 à 90 j", "Échu > 90 j"];
+      return { kind: "hbars", groups: ["À échoir", "Échu"], empty: "Aucune facture ouverte.", items: open.length === 0 ? [] : labels.map((label, k) => ({ label, value: sums[k]!, group: k === 0 ? 0 : 1, href: k === 0 ? "/app/sales/factures" : "/app/sales/relances" })) };
+    },
+  },
+  {
+    key: "top_customers", title: "Meilleurs clients", subtitle: "12 derniers mois, HT", icon: "Users", size: "half", module: "sales", permission: "finance.invoice.read",
+    async load(ctx) {
+      const from = monthStart(-11);
+      const rows = await ctx.tx((tx) => tx.$queryRaw<{ id: string; name: string; total: unknown; grand: unknown }[]>`
+        WITH t AS (
+          SELECT "customerId", SUM("subtotal" - "discountTotal") AS total FROM "Invoice"
+          WHERE "status" IN ('ISSUED', 'PARTIALLY_PAID', 'PAID') AND "issueDate" >= ${from} GROUP BY "customerId")
+        SELECT c."id" AS id, c."name" AS name, t.total AS total, SUM(t.total) OVER () AS grand
+        FROM t JOIN "Customer" c ON c."id" = t."customerId" ORDER BY t.total DESC LIMIT 5`);
+      return { kind: "hbars", empty: "Aucune facture sur la période.", items: rows.map((r) => ({ label: r.name, value: Number(r.total), sub: Number(r.grand) > 0 ? `${Math.round((Number(r.total) / Number(r.grand)) * 100)} % du total` : undefined, href: `/app/crm/clients/${r.id}` })) };
+    },
+  },
+  {
+    key: "pipeline_stages", title: "Pipeline commercial", subtitle: "Valeur des opportunités ouvertes par étape", icon: "Target", size: "half", module: "crm", permission: "crm.opportunity.read",
+    async load(ctx) {
+      const [groups, stages] = await Promise.all([
+        ctx.db.opportunity.groupBy({ by: ["stageId"], where: { status: "OPEN", deletedAt: null }, _count: true, _sum: { amount: true } }),
+        ctx.db.pipelineStage.findMany({ orderBy: { position: "asc" }, select: { id: true, name: true } }),
+      ]);
+      const items = stages.flatMap((st) => {
+        const g = groups.find((x) => x.stageId === st.id);
+        return g ? [{ label: st.name, value: num(g._sum.amount), sub: `${g._count} opportunité${g._count > 1 ? "s" : ""}`, href: "/app/crm/pipeline" }] : [];
+      });
+      return { kind: "hbars", items, empty: "Aucune opportunité ouverte." };
     },
   },
   {
@@ -246,6 +299,12 @@ export const WIDGETS: WidgetDef[] = [
     },
   },
 ];
+
+/** Ordre par défaut : les graphiques avant les listes (ce qu'on voit sans défiler). L'ordre propre à chaque utilisateur prime. */
+const DEFAULT_ORDER = ["sales_chart", "expenses", "cashflow", "receivables_aging", "top_customers", "pipeline_stages", "alerts", "low_stock", "contracts_ending", "fleet", "activity", "crm_activity"];
+const rank = (k: string) => { const i = DEFAULT_ORDER.indexOf(k); return i < 0 ? DEFAULT_ORDER.length : i; };
+const order = (w: WidgetDef) => (w.size === "kpi" ? 0 : 1 + rank(w.key));
+export const WIDGETS: WidgetDef[] = [...WIDGET_LIST].sort((x, y) => order(x) - order(y)); // tri stable : les indicateurs gardent leur ordre
 
 export const WIDGET_BY_KEY = new Map(WIDGETS.map((w) => [w.key, w]));
 

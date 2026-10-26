@@ -48,7 +48,7 @@ describe("widgets : modules et permissions", () => {
   it("l'administrateur voit tous les widgets ; un membre sans droits ne voit que l'indispensable", async () => {
     const s = await setup();
     const all = availableWidgets(s.ctx).map((w) => w.key);
-    expect(all).toEqual(expect.arrayContaining(["alerts", "revenue", "cash", "receivables", "payables", "result", "customers", "pipeline", "sales_chart", "cashflow", "expenses", "low_stock", "activity", "crm_activity"]));
+    expect(all).toEqual(expect.arrayContaining(["alerts", "revenue", "cash", "receivables", "payables", "result", "customers", "pipeline", "sales_chart", "cashflow", "expenses", "receivables_aging", "top_customers", "pipeline_stages", "low_stock", "activity", "crm_activity"]));
     const emp = await addMember(s.company.id, "employee");
     const ectx = await ctxFor(emp.user.id, s.company.id);
     const keys = availableWidgets(ectx).map((w) => w.key);
@@ -110,13 +110,14 @@ describe("valeurs des indicateurs", () => {
     expect(result.kind === "kpi" && flat(result.value)).toContain("130000");
   });
 
-  it("graphiques : 6 mois de facturation et de flux ; liste de stock critique et d'alertes", async () => {
+  it("graphiques : 12 mois de facturation (avec l'année précédente) et 6 mois de flux ; liste de stock critique et d'alertes", async () => {
     const s = await setup();
     await issued(s, { qty: 10 });
     await issued(s, { qty: 20, date: daysAgo(35) });
     const chart = await load(s, "sales_chart");
-    expect(chart.kind === "bars" && chart.data).toHaveLength(6);
-    expect(chart.kind === "bars" && chart.data.reduce((a, d) => a + d.value, 0)).toBe(300000);
+    expect(chart.kind === "area" && chart.data).toHaveLength(12);
+    expect(chart.kind === "area" && chart.data.reduce((a, d) => a + d.value, 0)).toBe(300000);
+    expect(chart.kind === "area" && chart.data.reduce((a, d) => a + d.previous, 0)).toBe(0);
     const flow = await load(s, "cashflow");
     expect(flow.kind === "cashflow" && flow.data).toHaveLength(6);
 
@@ -126,6 +127,37 @@ describe("valeurs des indicateurs", () => {
     expect(low.kind === "list" && low.items.map((i) => i.label)).toEqual(["Ciment critique"]);
     const alerts = await load(s, "alerts");
     expect(alerts.kind === "list" && alerts.items.some((i) => i.label.includes("sous le seuil"))).toBe(true);
+  });
+});
+
+describe("graphiques de répartition", () => {
+  it("créances par ancienneté et meilleurs clients à partir des factures ouvertes", async () => {
+    const s = await setup();
+    await issued(s, { qty: 10 }); // 118 000 TTC, à échoir
+    await issued(s, { qty: 5, date: daysAgo(40), due: daysAgo(10) }); // 59 000 TTC, échu depuis 10 jours
+
+    const aging = await load(s, "receivables_aging");
+    expect(aging.kind === "hbars" && aging.items.map((i) => i.label)).toEqual(["À échoir", "Échu 1 à 30 j", "Échu 31 à 60 j", "Échu 61 à 90 j", "Échu > 90 j"]);
+    expect(aging.kind === "hbars" && aging.items.map((i) => i.value)).toEqual([118000, 59000, 0, 0, 0]);
+    expect(aging.kind === "hbars" && aging.items.map((i) => i.group)).toEqual([0, 1, 1, 1, 1]);
+
+    const top = await load(s, "top_customers");
+    expect(top).toMatchObject({ kind: "hbars", items: [{ label: "Client Dash", value: 150000, sub: "100 % du total" }] });
+  });
+
+  it("sans donnée : états vides (aucune facture, dépense ni opportunité)", async () => {
+    const s = await setup();
+    for (const key of ["receivables_aging", "top_customers", "pipeline_stages"]) expect(await load(s, key)).toMatchObject({ kind: "hbars", items: [] });
+    expect(await load(s, "expenses")).toMatchObject({ kind: "donut", items: [] });
+  });
+
+  it("l'ordre par défaut place les indicateurs avant les graphiques, puis les listes", async () => {
+    const s = await setup();
+    const layout = await getLayout(s.ctx);
+    const sizes = layout.map((l) => WIDGET_BY_KEY.get(l.key)!.size);
+    expect(sizes.lastIndexOf("kpi")).toBeLessThan(sizes.findIndex((z) => z !== "kpi"));
+    const keys = layout.map((l) => l.key);
+    expect(keys.indexOf("sales_chart")).toBeLessThan(keys.indexOf("alerts"));
   });
 });
 

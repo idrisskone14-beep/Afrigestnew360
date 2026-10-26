@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Activity, AlertTriangle, ArrowLeftRight, BarChart3, BookOpenCheck, Boxes, CalendarClock, HandCoins, HardHat, KanbanSquare, Landmark, Receipt, Target, TrendingUp, Truck, Users, UsersRound, Wallet, type LucideIcon,
+  Activity, AlertTriangle, ArrowDownRight, ArrowLeftRight, ArrowUpRight, BarChart3, BookOpenCheck, Boxes, CalendarClock, HandCoins, HardHat, KanbanSquare, Landmark, Receipt, Target, TrendingUp, Truck, Users, UsersRound, Wallet, type LucideIcon,
 } from "lucide-react";
-import { BarsChart, CashflowChart } from "@/components/app/lazy-charts";
+import { AreaTrendChart, BarsChart, CashflowChart, DonutChart } from "@/components/app/lazy-charts";
 import { AnimatedValue } from "@/components/app/animated-value";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HBarsChart } from "@/components/app/hbars-chart";
+import { Card, CardContent } from "@/components/ui/card";
 import { requireTenantContext } from "@/core/tenant/guards";
 import { cn } from "@/lib/utils";
 import { getLayout } from "@/modules/dashboard/layout";
@@ -16,16 +17,6 @@ import { WIDGET_BY_KEY, type ListItem, type WidgetData, type WidgetDef } from "@
 export const metadata: Metadata = { title: "Tableau de bord" };
 
 const ICONS: Record<string, LucideIcon> = { Activity, AlertTriangle, ArrowLeftRight, BarChart3, BookOpenCheck, Boxes, CalendarClock, HandCoins, HardHat, KanbanSquare, Landmark, Receipt, Target, TrendingUp, Truck, Users, UsersRound, Wallet };
-// Palette des pastilles d'icônes : une couleur par indicateur, stable d'une visite à l'autre
-const CHIPS = [
-  { rule: "bg-navy", icon: "text-navy dark:text-brand-blue" },
-  { rule: "bg-brand-2", icon: "text-brand" },
-  { rule: "bg-brand-blue", icon: "text-brand-blue" },
-  { rule: "bg-brand", icon: "text-brand" },
-  { rule: "bg-[#0ea5e9]", icon: "text-[#0369a1] dark:text-[#7dd3fc]" },
-  { rule: "bg-[#64748b]", icon: "text-[#475569] dark:text-[#94a3b8]" },
-] as const;
-const chip = (i: number) => CHIPS[i % CHIPS.length]!;
 const TONE = { danger: "text-destructive", warning: "text-warning", success: "text-success" } as const;
 
 export default async function DashboardPage() {
@@ -40,29 +31,29 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <section className="relative mb-8 overflow-hidden rounded-xl border border-foreground/20 bg-navy text-[#eef3ff] shadow-offset-lg">
-        <div className="accent-line" aria-hidden />
-        <div className="relative flex flex-wrap items-end justify-between gap-4 p-6 sm:p-8">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-2">{new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
-            <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight sm:text-5xl">Bonjour, <span className="italic text-brand-2">{ctx.user.name.split(" ")[0]}</span></h1>
-            <p className="mt-3 max-w-xl text-sm text-[#eef3ff]/80">Vue d'ensemble de <span className="font-semibold text-white">{name}</span> — indicateurs selon vos modules et vos droits.</p>
-          </div>
-          <CustomizeDialog initial={layout.map((l) => ({ key: l.key, title: WIDGET_BY_KEY.get(l.key)!.title, visible: l.visible }))} />
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b pb-5">
+        <div className="min-w-0">
+          <p className="eyebrow">{new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}</p>
+          <h1 className="mt-1.5 font-display text-2xl font-semibold tracking-tight sm:text-3xl">Tableau de bord</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Bonjour {ctx.user.name.split(" ")[0]}, voici la situation de <span className="font-medium text-foreground">{name}</span>.</p>
         </div>
-      </section>
+        <CustomizeDialog initial={layout.map((l) => ({ key: l.key, title: WIDGET_BY_KEY.get(l.key)!.title, visible: l.visible }))} />
+      </header>
       {loaded.length === 0 && <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Aucun widget affiché. Utilisez « Personnaliser » pour en ajouter, ou demandez l'accès à un module à votre administrateur.</CardContent></Card>}
       {kpis.length > 0 && (
         <div className="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {kpis.map(({ w, data, error }, i) => <KpiCard key={w.key} w={w} data={data} error={error} index={i} />)}
+          {kpis.map(({ w, data, error }) => <KpiCard key={w.key} w={w} data={data} error={error} />)}
         </div>
       )}
       {panels.length > 0 && (
-        <div className="stagger mt-6 grid gap-6 xl:grid-cols-2">
-          {panels.map(({ w, data, error }, pi) => (
-            <Card key={w.key} className={cn(w.size === "wide" && "xl:col-span-2")}>
-              <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2.5 font-display text-lg font-semibold">{(() => { const I = ICONS[w.icon]; return I ? <span className={cn("grid size-8 place-items-center rounded-md border-2 border-current", chip(pi + 2).icon)}><I className="size-4" aria-hidden /></span> : null; })()}{w.title}</CardTitle></CardHeader>
-              <CardContent>{error || !data ? <p className="text-sm text-muted-foreground">Ce widget n'a pas pu être chargé.</p> : <Panel data={data} currency={ctx.company.currency} />}</CardContent>
+        <div className="stagger mt-6 grid grid-flow-dense gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {panels.map(({ w, data, error }) => (
+            <Card key={w.key} className={cn("gap-0 overflow-hidden py-0", w.size === "wide" && "md:col-span-2")}>
+              <div className="border-b px-5 py-3.5">
+                <h2 className="text-sm font-semibold leading-tight">{w.title}</h2>
+                {w.subtitle && <p className="mt-0.5 text-xs text-muted-foreground">{w.subtitle}</p>}
+              </div>
+              <CardContent className="p-5">{error || !data ? <p className="text-sm text-muted-foreground">Ce widget n'a pas pu être chargé.</p> : <Panel w={w} data={data} currency={ctx.company.currency} />}</CardContent>
             </Card>
           ))}
         </div>
@@ -71,21 +62,30 @@ export default async function DashboardPage() {
   );
 }
 
-function KpiCard({ w, data, error, index }: { w: WidgetDef; data: WidgetData | null; error: boolean; index: number }) {
+/** Indicateur clé : libellé, valeur lisible en entier (jamais tronquée), variation et précision. */
+function KpiCard({ w, data, error }: { w: WidgetDef; data: WidgetData | null; error: boolean }) {
   const I = ICONS[w.icon];
   const k = data?.kind === "kpi" ? data : null;
+  const delta = k?.delta;
   const body = (
-    <Card className="group/kpi relative h-full gap-0 overflow-hidden py-0">
-      <div className={cn("h-1.5 w-full origin-left animate-weave", chip(index).rule)} aria-hidden />
-      <CardContent className="space-y-2 p-5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{w.title}</span>
-          {I && <span className={cn("grid size-8 shrink-0 place-items-center rounded-md border-2 border-current transition-transform duration-300 group-hover/kpi:rotate-6", chip(index).icon)}><I className="size-4" aria-hidden /></span>}
+    <Card className="h-full gap-0 py-0 transition-shadow hover:shadow-offset">
+      <CardContent className="space-y-3 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <span className="text-xs font-medium text-muted-foreground">{w.title}</span>
+          {I && <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand/10 text-brand"><I className="size-4" aria-hidden /></span>}
         </div>
         {k ? (
           <>
-            <div className={cn("truncate font-display text-3xl font-semibold tracking-tight tabular", k.tone && TONE[k.tone])}><AnimatedValue value={k.value} /></div>
-            {k.hint && <p className="truncate text-xs text-muted-foreground">{k.hint}</p>}
+            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+              <span className={cn("whitespace-nowrap font-display text-[clamp(1.35rem,1.8vw,1.75rem)] font-semibold leading-none tracking-tight tabular", k.tone && TONE[k.tone])} title={k.value}><AnimatedValue value={k.value} /></span>
+              {delta !== undefined && delta !== null && (
+                <span className={cn("inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium", delta >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")}>
+                  {delta >= 0 ? <ArrowUpRight className="size-3.5" aria-hidden /> : <ArrowDownRight className="size-3.5" aria-hidden />}
+                  {delta >= 0 ? "+" : ""}{delta} %<span className="sr-only"> par rapport au mois précédent</span>
+                </span>
+              )}
+            </div>
+            {k.hint && <p className="line-clamp-2 text-xs text-muted-foreground">{k.hint}</p>}
           </>
         ) : <p className="text-sm text-muted-foreground">{error ? "Indisponible" : "—"}</p>}
       </CardContent>
@@ -94,15 +94,20 @@ function KpiCard({ w, data, error, index }: { w: WidgetDef; data: WidgetData | n
   return k?.href ? <Link href={k.href} className="block">{body}</Link> : body;
 }
 
-function Panel({ data, currency }: { data: WidgetData; currency: string }) {
+function Panel({ w, data, currency }: { w: WidgetDef; data: WidgetData; currency: string }) {
   if (data.kind === "bars") return <BarsChart data={data.data} currency={currency} seriesLabel={data.seriesLabel} />;
   if (data.kind === "cashflow") return <CashflowChart data={data.data} currency={currency} />;
+  if (data.kind === "area") return <AreaTrendChart data={data.data} currency={currency} seriesLabel={data.seriesLabel} previousLabel={data.previousLabel} />;
+  if (data.kind === "donut") return data.items.length === 0 ? <Empty text={data.empty} /> : <DonutChart items={data.items} currency={currency} label={w.title} />;
+  if (data.kind === "hbars") return data.items.length === 0 ? <Empty text={data.empty} /> : <HBarsChart items={data.items} groups={data.groups} currency={currency} label={w.title} />;
   if (data.kind === "list") return <ListPanel items={data.items} empty={data.empty} />;
   return null;
 }
 
+const Empty = ({ text }: { text: string }) => <p className="py-8 text-center text-sm text-muted-foreground">{text}</p>;
+
 function ListPanel({ items, empty }: { items: ListItem[]; empty: string }) {
-  if (items.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
+  if (items.length === 0) return <Empty text={empty} />;
   return (
     <ul className="-mx-2 divide-y">
       {items.map((it, i) => {
