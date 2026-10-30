@@ -19,7 +19,7 @@ export interface ListItem { label: string; sub?: string; value?: string; href?: 
 /** Données d'un widget : toujours sérialisables (chaînes et nombres) pour traverser la frontière serveur → client. */
 export type WidgetData =
   /** `delta` : variation en % par rapport à la période précédente (puce ↑/↓ colorée) ; null si non calculable. */
-  | { kind: "kpi"; value: string; hint?: string; tone?: Tone; href?: string; delta?: number | null }
+  | { kind: "kpi"; value: string; hint?: string; tone?: Tone; href?: string; delta?: number | null; deltaLabel?: string }
   | { kind: "bars"; seriesLabel: string; data: { month: string; value: number }[] }
   | { kind: "cashflow"; data: { month: string; inflow: number; outflow: number }[] }
   /** Courbe mensuelle de l'année en cours comparée à la même période de l'année précédente. */
@@ -75,6 +75,11 @@ const WIDGET_LIST: WidgetDef[] = [
         const od = (await openInvoices(ctx)).filter((i) => i.overdue);
         if (od.length) items.push({ label: `${od.length} facture${od.length > 1 ? "s" : ""} client en retard`, value: formatMoney(od.reduce((a, i) => a + i.balance.toNumber(), 0), ctx.company.currency), href: "/app/sales/relances", tone: "danger" });
       }
+      if (ctx.hasModule("sales") && ctx.can("finance.invoice.read")) {
+        const soon = new Date(); soon.setHours(0, 0, 0, 0); soon.setDate(soon.getDate() + 8);
+        const due = (await openInvoices(ctx)).filter((i) => !i.overdue && i.dueDate !== null && i.dueDate < soon);
+        if (due.length) items.push({ label: `${due.length} facture${due.length > 1 ? "s" : ""} client à échéance sous 7 jours`, value: formatMoney(due.reduce((a, i) => a + i.balance.toNumber(), 0), ctx.company.currency), href: "/app/sales/factures", tone: "warning" });
+      }
       if (ctx.hasModule("purchases") && ctx.can("purchases.bill.read")) {
         const p = await payablesSummary(ctx);
         if (p.overdue.gt(0)) items.push({ label: "Dettes fournisseurs échues", value: formatMoney(p.overdue.toNumber(), ctx.company.currency), href: "/app/purchases/factures?statut=OVERDUE", tone: "danger" });
@@ -101,7 +106,8 @@ const WIDGET_LIST: WidgetDef[] = [
         const drafts = await ctx.db.journalEntry.count({ where: { status: "DRAFT" } });
         if (drafts) items.push({ label: `${drafts} écriture${drafts > 1 ? "s" : ""} comptable${drafts > 1 ? "s" : ""} en brouillon`, href: "/app/accounting/ecritures?statut=DRAFT" });
       }
-      return { kind: "list", items, empty: "Aucune alerte : tout est à jour." };
+      const priority = (t?: ListItem["tone"]) => (t === "danger" ? 0 : t === "warning" ? 1 : 2);
+      return { kind: "list", items: items.sort((a, b) => priority(a.tone) - priority(b.tone)), empty: "Aucune alerte : tout est à jour." }; // tri stable : l'urgent d'abord
     },
   },
   {
@@ -109,7 +115,7 @@ const WIDGET_LIST: WidgetDef[] = [
     async load(ctx) {
       const [cur, prev] = await Promise.all([invoicedNet(ctx, monthStart(0), monthStart(1)), invoicedNet(ctx, monthStart(-1), monthStart(0))]);
       const delta = prev.gt(0) ? cur.minus(prev).div(prev).mul(100).round().toNumber() : null;
-      return { kind: "kpi", value: formatMoney(cur.toNumber(), ctx.company.currency), hint: delta === null ? "HT, factures émises" : `${delta >= 0 ? "+" : ""}${delta} % vs mois précédent (HT)`, tone: delta !== null && delta < 0 ? "warning" : undefined, href: "/app/sales/factures", delta };
+      return { kind: "kpi", value: formatMoney(cur.toNumber(), ctx.company.currency), hint: delta === null ? "HT, factures émises" : `${delta >= 0 ? "+" : ""}${delta} % vs mois précédent (HT)`, tone: delta !== null && delta < 0 ? "warning" : undefined, href: "/app/sales/factures", delta, deltaLabel: "par rapport au mois précédent" };
     },
   },
   {
@@ -117,7 +123,12 @@ const WIDGET_LIST: WidgetDef[] = [
     async load(ctx) {
       const total = await treasuryTotal(ctx);
       const accounts = await ctx.db.financeAccount.count({ where: { deletedAt: null, isActive: true } });
-      return { kind: "kpi", value: formatMoney(total.toNumber(), ctx.company.currency), hint: `${accounts} compte${accounts > 1 ? "s" : ""} (banque, caisse, mobile money)`, tone: total.lt(0) ? "danger" : undefined, href: "/app/finance/comptes" };
+      // variation depuis le début du mois : flux net du mois (hors transferts) rapporté au solde de fin du mois précédent
+      const [month] = await monthlyCashflow(ctx, 1);
+      const net = d((month?.inflow ?? 0) - (month?.outflow ?? 0));
+      const before = total.minus(net);
+      const delta = before.isZero() ? null : net.div(before.abs()).mul(100).round().toNumber();
+      return { kind: "kpi", value: formatMoney(total.toNumber(), ctx.company.currency), hint: `${accounts} compte${accounts > 1 ? "s" : ""} (banque, caisse, mobile money)`, tone: total.lt(0) ? "danger" : undefined, href: "/app/finance/comptes", delta, deltaLabel: "depuis le début du mois" };
     },
   },
   {

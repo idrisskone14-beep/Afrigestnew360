@@ -145,6 +145,24 @@ describe("graphiques de répartition", () => {
     expect(top).toMatchObject({ kind: "hbars", items: [{ label: "Client Dash", value: 150000, sub: "100 % du total" }] });
   });
 
+  it("alertes : échéances proches signalées, et l'urgent (retard) passe avant le reste", async () => {
+    const s = await setup();
+    await issued(s, { qty: 5, date: daysAgo(3), due: daysAgo(-3) }); // à échoir dans 3 jours
+    await issued(s, { qty: 5, date: daysAgo(40), due: daysAgo(10) }); // en retard
+    await issued(s, { qty: 5, date: daysAgo(1), due: daysAgo(-20) }); // lointaine : sans alerte d'échéance
+    const alerts = await load(s, "alerts");
+    const items = alerts.kind === "list" ? alerts.items : [];
+    const soon = items.find((i) => i.label.includes("à échéance sous 7 jours"));
+    expect(soon).toMatchObject({ label: "1 facture client à échéance sous 7 jours", tone: "warning" });
+    expect(items[0]).toMatchObject({ tone: "danger" });
+    expect(items.indexOf(soon!)).toBeGreaterThan(0);
+  });
+
+  it("trésorerie : sans mouvement sur le mois, aucune variation n'est annoncée", async () => {
+    const s = await setup();
+    expect(await load(s, "cash")).toMatchObject({ kind: "kpi", delta: null });
+  });
+
   it("sans donnée : états vides (aucune facture, dépense ni opportunité)", async () => {
     const s = await setup();
     for (const key of ["receivables_aging", "top_customers", "pipeline_stages"]) expect(await load(s, key)).toMatchObject({ kind: "hbars", items: [] });

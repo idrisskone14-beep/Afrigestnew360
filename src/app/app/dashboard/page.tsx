@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Activity, AlertTriangle, ArrowDownRight, ArrowLeftRight, ArrowUpRight, BarChart3, BookOpenCheck, Boxes, CalendarClock, HandCoins, HardHat, KanbanSquare, Landmark, Receipt, Target, TrendingUp, Truck, Users, UsersRound, Wallet, type LucideIcon,
+  Activity, AlertTriangle, ArrowDownRight, ArrowLeftRight, ArrowUpRight, BarChart3, BookOpenCheck, Boxes, Camera, CalendarClock, ClipboardList, FileText, HandCoins, HardHat, KanbanSquare, Landmark, Receipt, ShoppingBag, ShoppingCart, Target, TrendingUp, Truck, Users, UsersRound, Wallet, type LucideIcon,
 } from "lucide-react";
 import { AreaTrendChart, BarsChart, CashflowChart, DonutChart } from "@/components/app/lazy-charts";
 import { AnimatedValue } from "@/components/app/animated-value";
 import { HBarsChart } from "@/components/app/hbars-chart";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireTenantContext } from "@/core/tenant/guards";
+import { quickActionsFor, type QuickAction } from "@/core/tenant/quick-actions";
 import { cn } from "@/lib/utils";
+import { CustomerFormDialog } from "@/modules/crm/ui/customer-form";
 import { getLayout } from "@/modules/dashboard/layout";
 import { loadWidgets } from "@/modules/dashboard/load";
 import { CustomizeDialog } from "@/modules/dashboard/ui/customize-dialog";
@@ -17,6 +20,7 @@ import { WIDGET_BY_KEY, type ListItem, type WidgetData, type WidgetDef } from "@
 export const metadata: Metadata = { title: "Tableau de bord" };
 
 const ICONS: Record<string, LucideIcon> = { Activity, AlertTriangle, ArrowLeftRight, BarChart3, BookOpenCheck, Boxes, CalendarClock, HandCoins, HardHat, KanbanSquare, Landmark, Receipt, Target, TrendingUp, Truck, Users, UsersRound, Wallet };
+const ACTION_ICONS: Partial<Record<QuickAction["icon"], LucideIcon>> = { FileText, Receipt, ShoppingBag, ShoppingCart, ClipboardList, Camera };
 const TONE = { danger: "text-destructive", warning: "text-warning", success: "text-success" } as const;
 
 export default async function DashboardPage() {
@@ -28,6 +32,9 @@ export default async function DashboardPage() {
   const kpis = loaded.filter((x) => x.w.size === "kpi");
   const panels = loaded.filter((x) => x.w.size !== "kpi");
   const name = ctx.company.tradeName ?? ctx.company.legalName;
+  // mêmes gestes rapides que le bouton « + » du mobile (module actif ET permission) ; le scanner n'a de sens que sur téléphone
+  const actions = quickActionsFor(ctx).filter((a) => a.href);
+  const canCreateCustomer = ctx.hasModule("crm") && ctx.can("crm.customer.create");
 
   return (
     <>
@@ -39,6 +46,16 @@ export default async function DashboardPage() {
         </div>
         <CustomizeDialog initial={layout.map((l) => ({ key: l.key, title: WIDGET_BY_KEY.get(l.key)!.title, visible: l.visible }))} />
       </header>
+      {(actions.length > 0 || canCreateCustomer) && (
+        <nav aria-label="Actions rapides" className="mb-6 hidden flex-wrap items-center gap-2 lg:flex">
+          <span className="mr-1 text-xs font-medium text-muted-foreground">Actions rapides</span>
+          {actions.map((a) => {
+            const I = ACTION_ICONS[a.icon];
+            return <Button key={a.key} asChild variant="outline"><Link href={a.href!}>{I && <I className="size-4" aria-hidden />}{a.label}</Link></Button>;
+          })}
+          {canCreateCustomer && <CustomerFormDialog defaultCountry={ctx.company.country} />}
+        </nav>
+      )}
       {loaded.length === 0 && <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Aucun widget affiché. Utilisez « Personnaliser » pour en ajouter, ou demandez l'accès à un module à votre administrateur.</CardContent></Card>}
       {kpis.length > 0 && (
         <div className="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -79,9 +96,9 @@ function KpiCard({ w, data, error }: { w: WidgetDef; data: WidgetData | null; er
             <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
               <span className={cn("whitespace-nowrap font-display text-[clamp(1.35rem,1.8vw,1.75rem)] font-semibold leading-none tracking-tight tabular", k.tone && TONE[k.tone])} title={k.value}><AnimatedValue value={k.value} /></span>
               {delta !== undefined && delta !== null && (
-                <span className={cn("inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium", delta >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")}>
+                <span title={k.deltaLabel} className={cn("inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium", delta >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")}>
                   {delta >= 0 ? <ArrowUpRight className="size-3.5" aria-hidden /> : <ArrowDownRight className="size-3.5" aria-hidden />}
-                  {delta >= 0 ? "+" : ""}{delta} %<span className="sr-only"> par rapport au mois précédent</span>
+                  {delta >= 0 ? "+" : ""}{delta} %{k.deltaLabel && <span className="sr-only"> {k.deltaLabel}</span>}
                 </span>
               )}
             </div>
