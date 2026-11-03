@@ -24,6 +24,7 @@ import {
   changeMemberRoleAction, inviteMemberAction, removeMemberAction, revokeInvitationAction, setMemberStatusAction,
 } from "@/modules/settings/actions";
 import { initials } from "@/lib/utils";
+import { missingFields } from "@/lib/required-fields";
 
 interface Member { id: string; userId: string; name: string; email: string; roleId: string; roleName: string; roleIsAdmin: boolean; isOwner: boolean; status: "ACTIVE" | "SUSPENDED"; twoFactor: boolean; lastLogin: string }
 interface Role { id: string; name: string; isAdmin: boolean }
@@ -174,7 +175,7 @@ export function MembersPanel({ members, invitations, roles, currentUserId, isAdm
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setInviteOpen(false)}>Annuler</Button>
-            <Button disabled={pending || !email || !roleId} onClick={submitInvite}>Envoyer l'invitation</Button>
+            <Button disabled={pending} onClick={() => { const m = missingFields([[Boolean(email), "Adresse e-mail"], [Boolean(roleId), "Rôle"]]); if (m) return setInviteError(m); submitInvite(); }}>Envoyer l'invitation</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

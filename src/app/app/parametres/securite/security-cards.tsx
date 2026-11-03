@@ -18,6 +18,7 @@ import { changePasswordSchema } from "@/core/auth/schemas";
 import {
   beginTwoFactorAction, changePasswordAction, confirmTwoFactorAction, disableTwoFactorAction, revokeOtherSessionsAction, revokeSessionAction,
 } from "@/modules/settings/actions";
+import { missingFields } from "@/lib/required-fields";
 
 type PwValues = z.input<typeof changePasswordSchema>;
 
@@ -137,7 +138,7 @@ export function TwoFactorCard({ enabled }: { enabled: boolean }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDisableOpen(false)}>Annuler</Button>
-            <Button variant="destructive" disabled={pending || !pw || !disableCode} onClick={disable}>Désactiver</Button>
+            <Button variant="destructive" disabled={pending} onClick={() => { const m = missingFields([[Boolean(pw), "Mot de passe"], [Boolean(disableCode), "Code"]]); if (m) return setError(m); disable(); }}>Désactiver</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

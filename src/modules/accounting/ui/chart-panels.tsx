@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { runAction } from "@/components/app/form-kit";
 import { createLedgerAccountAction, setMappingAction, updateLedgerAccountAction } from "../actions";
+import { missingFields } from "@/lib/required-fields";
+import { toast } from "sonner";
 
 export interface AccountRow { id: string; code: string; name: string; class: number; isActive: boolean }
 const CLASS_LABEL: Record<number, string> = { 1: "Classe 1 — Ressources durables", 2: "Classe 2 — Actif immobilisé", 3: "Classe 3 — Stocks", 4: "Classe 4 — Tiers", 5: "Classe 5 — Trésorerie", 6: "Classe 6 — Charges", 7: "Classe 7 — Produits", 8: "Classe 8 — Hors activités ordinaires" };
@@ -40,7 +42,7 @@ export function ChartPanel({ accounts, canManage }: { accounts: AccountRow[]; ca
         <Card className="flex flex-wrap items-end gap-2 p-3">
           <div className="grid gap-1"><label htmlFor="la-code" className="text-xs text-muted-foreground">Nouveau compte — code</label><Input id="la-code" className="h-9 w-32" inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="ex. 6241" /></div>
           <div className="grid gap-1"><label htmlFor="la-name" className="text-xs text-muted-foreground">Libellé</label><Input id="la-name" className="h-9 w-72" value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <Button disabled={pending || !/^[1-8]\d{2,7}$/.test(code) || name.trim().length < 2} onClick={() => start(async () => { const r = await runAction(createLedgerAccountAction({ code, name }), { success: "Compte créé" }); if (r.ok) { setCode(""); setName(""); router.refresh(); } })}><Plus className="size-4" /> Ajouter</Button>
+          <Button disabled={pending} onClick={() => { const m = missingFields([[/^[1-8]\d{2,7}$/.test(code), "Code (3 à 8 chiffres, commençant par 1 à 8)"], [name.trim().length >= 2, "Libellé"]]); if (m) return toast.error(m); start(async () => { const r = await runAction(createLedgerAccountAction({ code, name }), { success: "Compte créé" }); if (r.ok) { setCode(""); setName(""); router.refresh(); } }); }}><Plus className="size-4" /> Ajouter</Button>
         </Card>
       )}
       {classes.map((c) => (

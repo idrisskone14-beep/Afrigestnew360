@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Field, FormAlert } from "@/components/app/form-kit";
 import { stockMovementAction } from "../actions";
 import { MOVEMENT_KINDS } from "../schemas";
+import { missingFields } from "@/lib/required-fields";
 
 type Kind = (typeof MOVEMENT_KINDS)[number]["value"];
 
@@ -60,7 +61,7 @@ export function MovementDialog({ products, warehouses, defaultProductId, default
             {(f.kind === "IN") && <Field label="Coût unitaire d'achat" htmlFor="mv-cost" hint="Optionnel : met à jour le coût moyen"><Input id="mv-cost" type="number" min={0} step="any" value={f.unitCost} onChange={(e) => setF({ ...f, unitCost: e.target.value })} /></Field>}
           </div>
           <Field label={isAdj ? "Motif (obligatoire)" : "Motif / référence"} htmlFor="mv-reason"><Input id="mv-reason" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} placeholder={isAdj ? "Casse, vol, erreur de saisie…" : "Bon de livraison, achat…"} /></Field>
-          <Button disabled={pending || !f.productId || !f.warehouseId || f.quantity === ""} onClick={submit}>Enregistrer</Button>
+          <Button disabled={pending} onClick={() => { const m = missingFields([[Boolean(f.productId), "Produit"], [Boolean(f.warehouseId), "Entrepôt"], [f.quantity !== "", "Quantité"]]); if (m) return setError(m); submit(); }}>Enregistrer</Button>
         </div>
       </DialogContent>
     </Dialog>

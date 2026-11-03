@@ -14,6 +14,7 @@ import { todayInput } from "@/lib/format";
 import { formatMoney } from "@/lib/reference-data";
 import { PAYMENT_METHODS } from "@/modules/sales/schemas";
 import { createExpenseAction, payExpenseAction, updateExpenseAction } from "../actions";
+import { missingFields } from "@/lib/required-fields";
 
 const NONE = "none";
 const errText = (e: { message: string; fieldErrors?: Record<string, string[]> }) => (e.fieldErrors ? Object.values(e.fieldErrors).flat()[0] ?? e.message : e.message);
@@ -55,7 +56,7 @@ export function ExpenseFormDialog({ categories, suppliers, branches = [], costCe
           {costCenters.length > 0 && <Field label="Centre de coûts"><Select value={f.costCenterId || "none"} onValueChange={(v) => setF({ ...f, costCenterId: v === "none" ? "" : v })}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Non affecté</SelectItem>{costCenters.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></Field>}
           {projects.length > 0 && <Field label="Projet"><Select value={f.projectId || NONE} onValueChange={(v) => setF({ ...f, projectId: v === NONE ? "" : v })}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value={NONE}>Aucun projet</SelectItem>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select></Field>}
           <Field label="Notes" htmlFor="ex-notes" className="sm:col-span-2"><Textarea id="ex-notes" rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></Field>
-          <Button className="sm:col-span-2" disabled={pending || !f.categoryId || f.description.trim().length < 2 || !(Number(f.amount) > 0)} onClick={submit}>{expense ? "Enregistrer" : "Créer la dépense"}</Button>
+          <Button className="sm:col-span-2" disabled={pending} onClick={() => { const m = missingFields([[f.description.trim().length >= 2, "Libellé"], [Boolean(f.categoryId), "Catégorie"], [Number(f.amount) > 0, "Montant TTC"]]); if (m) return setError(m); submit(); }}>{expense ? "Enregistrer" : "Créer la dépense"}</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -88,7 +89,7 @@ export function PayExpenseDialog({ expenseId, amount, currency, method, accounts
           <Field label="Date" htmlFor="pe-date"><Input id="pe-date" type="date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
           <Field label="Mode"><Select value={f.method} onValueChange={(v) => setF({ ...f, method: v })}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent></Select></Field>
           <Field label="Référence du règlement" htmlFor="pe-ref" className="sm:col-span-2"><Input id="pe-ref" value={f.reference} onChange={(e) => setF({ ...f, reference: e.target.value })} /></Field>
-          <Button className="sm:col-span-2" disabled={pending || !f.accountId} onClick={submit}>Confirmer le paiement</Button>
+          <Button className="sm:col-span-2" disabled={pending} onClick={() => { const m = missingFields([[Boolean(f.accountId), "Compte débité"]]); if (m) return setError(m); submit(); }}>Confirmer le paiement</Button>
         </div>
       </DialogContent>
     </Dialog>

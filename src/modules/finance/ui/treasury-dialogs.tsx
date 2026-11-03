@@ -13,6 +13,7 @@ import { Field, FormAlert } from "@/components/app/form-kit";
 import { todayInput } from "@/lib/format";
 import { createAccountAction, createTransactionAction, createTransferAction, updateAccountAction } from "../actions";
 import { ACCOUNT_TYPES } from "../schemas";
+import { missingFields } from "@/lib/required-fields";
 
 const errText = (e: { message: string; fieldErrors?: Record<string, string[]> }) => (e.fieldErrors ? Object.values(e.fieldErrors).flat()[0] ?? e.message : e.message);
 
@@ -51,7 +52,7 @@ export function AccountFormDialog({ account }: { account?: { id: string; name: s
           <Field label="N° de compte / de téléphone" htmlFor="ac-num"><Input id="ac-num" value={f.accountNumber} onChange={(e) => setF({ ...f, accountNumber: e.target.value })} /></Field>
           <label className="flex items-center gap-2 text-sm sm:col-span-2"><Switch checked={f.isDefault} onCheckedChange={(v) => setF({ ...f, isDefault: v })} /> Compte par défaut pour ce type (utilisé pour les encaissements et paiements sans compte précisé)</label>
           {account && <label className="flex items-center gap-2 text-sm sm:col-span-2"><Switch checked={f.isActive} onCheckedChange={(v) => setF({ ...f, isActive: v })} /> Compte actif</label>}
-          <Button className="sm:col-span-2" disabled={pending || f.name.trim().length < 2} onClick={submit}>{account ? "Enregistrer" : "Créer le compte"}</Button>
+          <Button className="sm:col-span-2" disabled={pending} onClick={() => { const m = missingFields([[f.name.trim().length >= 2, "Nom du compte"]]); if (m) return setError(m); submit(); }}>{account ? "Enregistrer" : "Créer le compte"}</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -93,7 +94,7 @@ export function TransactionDialog({ accounts, categories, defaultAccountId }: { 
             <Select value={f.categoryId || "none"} onValueChange={(v) => setF({ ...f, categoryId: v === "none" ? "" : v })}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sans catégorie</SelectItem>{cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
           </Field>
           <Field label="Référence" htmlFor="tx-ref"><Input id="tx-ref" value={f.reference} onChange={(e) => setF({ ...f, reference: e.target.value })} /></Field>
-          <Button className="sm:col-span-2" disabled={pending || !(Number(f.amount) > 0) || f.description.trim().length < 2} onClick={submit}>Enregistrer</Button>
+          <Button className="sm:col-span-2" disabled={pending} onClick={() => { const m = missingFields([[Number(f.amount) > 0, "Montant"], [f.description.trim().length >= 2, "Libellé"]]); if (m) return setError(m); submit(); }}>Enregistrer</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -127,7 +128,7 @@ export function TransferDialog({ accounts }: { accounts: AccountOpt[] }) {
           <Field label="Montant *" htmlFor="tf-amount"><Input id="tf-amount" type="number" min={0} step="any" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} /></Field>
           <Field label="Date" htmlFor="tf-date"><Input id="tf-date" type="date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
           <Field label="Libellé" htmlFor="tf-desc" className="sm:col-span-2"><Input id="tf-desc" value={f.description} placeholder="Optionnel" onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
-          <Button className="sm:col-span-2" disabled={pending || !(Number(f.amount) > 0) || !f.toAccountId} onClick={submit}>Transférer</Button>
+          <Button className="sm:col-span-2" disabled={pending} onClick={() => { const m = missingFields([[Boolean(f.toAccountId), "Vers le compte"], [Number(f.amount) > 0, "Montant"]]); if (m) return setError(m); submit(); }}>Transférer</Button>
         </div>
       </DialogContent>
     </Dialog>

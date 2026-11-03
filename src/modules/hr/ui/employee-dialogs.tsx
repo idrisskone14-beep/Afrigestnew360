@@ -13,6 +13,7 @@ import { Field, FormAlert } from "@/components/app/form-kit";
 import { todayInput } from "@/lib/format";
 import { addContractAction, createEmployeeAction, terminateEmployeeAction, updateEmployeeAction } from "../actions";
 import { CONTRACT_TYPES, PAYOUT_METHODS } from "../schemas";
+import { missingFields } from "@/lib/required-fields";
 
 const errText = (e: { message: string; fieldErrors?: Record<string, string[]> }) => (e.fieldErrors ? Object.values(e.fieldErrors).flat()[0] ?? e.message : e.message);
 const NONE = "__none";
@@ -80,7 +81,7 @@ export function EmployeeFormDialog({ employee, departments, branches, managers, 
               <Field label="IBAN / n° de compte / téléphone" htmlFor="em-pr"><Input id="em-pr" value={f.payoutReference} onChange={(e) => set("payoutReference", e.target.value)} /></Field>
             </>
           )}
-          <Button className="sm:col-span-2" disabled={pending || !f.firstName.trim() || !f.lastName.trim() || !f.hireDate} onClick={submit}>{employee ? "Enregistrer" : "Créer le salarié"}</Button>
+          <Button className="sm:col-span-2" disabled={pending} onClick={() => { const m = missingFields([[Boolean(f.firstName.trim()), "Prénom"], [Boolean(f.lastName.trim()), "Nom"], [Boolean(f.hireDate), "Date d'embauche"]]); if (m) return setError(m); submit(); }}>{employee ? "Enregistrer" : "Créer le salarié"}</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -113,7 +114,7 @@ export function ContractDialog({ employeeId, currentSalary }: { employeeId: stri
           <Field label="Fin" htmlFor="ct-end" hint="Obligatoire pour un CDD"><Input id="ct-end" type="date" value={f.endDate} onChange={(e) => setF({ ...f, endDate: e.target.value })} /></Field>
           <Field label="Poste" htmlFor="ct-job" className="sm:col-span-2"><Input id="ct-job" value={f.jobTitle} onChange={(e) => setF({ ...f, jobTitle: e.target.value })} /></Field>
           <Field label="Notes" htmlFor="ct-notes" className="sm:col-span-2"><Textarea id="ct-notes" rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></Field>
-          <Button className="sm:col-span-2" disabled={pending || !(Number(f.salary) >= 0) || !f.startDate} onClick={submit}>Enregistrer le contrat</Button>
+          <Button className="sm:col-span-2" disabled={pending} onClick={() => { const m = missingFields([[Number(f.salary) >= 0, "Salaire de base"], [Boolean(f.startDate), "Début"]]); if (m) return setError(m); submit(); }}>Enregistrer le contrat</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -141,7 +142,7 @@ export function TerminateDialog({ employeeId, name }: { employeeId: string; name
           <FormAlert message={error} />
           <Field label="Date de sortie" htmlFor="tm-date"><Input id="tm-date" type="date" value={f.endDate} onChange={(e) => setF({ ...f, endDate: e.target.value })} /></Field>
           <Field label="Motif" htmlFor="tm-reason"><Input id="tm-reason" value={f.reason} placeholder="Démission, fin de contrat…" onChange={(e) => setF({ ...f, reason: e.target.value })} /></Field>
-          <Button variant="destructive" disabled={pending || !f.endDate} onClick={submit}>Confirmer la sortie</Button>
+          <Button variant="destructive" disabled={pending} onClick={() => { const m = missingFields([[Boolean(f.endDate), "Date de sortie"]]); if (m) return setError(m); submit(); }}>Confirmer la sortie</Button>
         </div>
       </DialogContent>
     </Dialog>

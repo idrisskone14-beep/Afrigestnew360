@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Field, FormAlert } from "@/components/app/form-kit";
 import { addHolidayAction, deleteHolidayAction, generateHolidaysAction, setWorkDaysAction } from "../actions";
+import { missingFields } from "@/lib/required-fields";
 
 type Fail = { message: string; fieldErrors?: Record<string, string[]> };
 const errText = (e: Fail) => (e.fieldErrors ? Object.values(e.fieldErrors).flat()[0] ?? e.message : e.message);
@@ -89,7 +90,7 @@ export function HolidaysPanel({ year, rows, workDays, countries, defaultCountry,
           <div className="flex flex-wrap items-end gap-2">
             <Field label="Date" htmlFor="hd-date"><Input id="hd-date" type="date" value={date} min={`${year}-01-01`} max={`${year}-12-31`} onChange={(e) => setDate(e.target.value)} /></Field>
             <Field label="Nom" htmlFor="hd-name" className="min-w-48 flex-1"><Input id="hd-name" value={name} placeholder="Ex. Tabaski (Aïd el-Kébir)" onChange={(e) => setName(e.target.value)} /></Field>
-            <Button disabled={pending || !date || name.trim().length < 2} onClick={() => run(async () => { const r = await addHolidayAction({ date, name }); if (r.ok) { setDate(""); setName(""); return { ok: true }; } return r; }, "Jour férié ajouté")}><CalendarPlus className="size-4" /> Ajouter</Button>
+            <Button disabled={pending} onClick={() => { const m = missingFields([[Boolean(date), "Date"], [name.trim().length >= 2, "Nom"]]); if (m) return setError(m); run(async () => { const r = await addHolidayAction({ date, name }); if (r.ok) { setDate(""); setName(""); return { ok: true }; } return r; }, "Jour férié ajouté"); }}><CalendarPlus className="size-4" /> Ajouter</Button>
           </div>
         )}
       </Card>

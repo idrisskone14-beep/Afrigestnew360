@@ -45,7 +45,7 @@ export function EntityDialog({ title, description, fields, initial, trigger, sub
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [v, setV] = useState<Values>(initial);
-  const missing = fields.some((f) => f.required && f.kind !== "switch" && !String(v[f.name] ?? "").trim());
+  const missingFields = fields.filter((f) => f.required && f.kind !== "switch" && !String(v[f.name] ?? "").trim());
   const submit = () => start(async () => {
     setError(null);
     const res = await onSubmit(v);
@@ -58,7 +58,13 @@ export function EntityDialog({ title, description, fields, initial, trigger, sub
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className={wide ? "max-h-[90vh] overflow-y-auto sm:max-w-2xl" : "max-h-[90vh] overflow-y-auto"}>
         <DialogHeader><DialogTitle>{title}</DialogTitle>{description && <DialogDescription>{description}</DialogDescription>}</DialogHeader>
-        <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); if (!missing && !pending) submit(); }}>
+        <form className="grid gap-4" onSubmit={(e) => {
+          e.preventDefault();
+          if (pending) return;
+          // le bouton reste actif : un bouton grisé sans explication donne l'impression qu'il ne marche pas
+          if (missingFields.length > 0) return setError(`Renseignez les champs obligatoires : ${missingFields.map((f) => f.label).join(", ")}.`);
+          submit();
+        }}>
           <FormAlert message={error} />
           <div className={wide ? "grid gap-4 sm:grid-cols-2" : "grid gap-4"}>
             {fields.map((f) => {
@@ -68,7 +74,7 @@ export function EntityDialog({ title, description, fields, initial, trigger, sub
               if (f.kind === "switch") return <label key={f.name} className={`flex items-center gap-2 text-sm ${span ?? ""}`}><Switch checked={Boolean(v[f.name])} onCheckedChange={(c) => setV({ ...v, [f.name]: c })} /> {f.label}</label>;
               if (f.kind === "select") {
                 return (
-                  <Field key={f.name} label={label} className={span} hint={f.hint}>
+                  <Field key={f.name} label={label} className={span} hint={f.required && !f.options?.length ? "Aucun choix disponible : créez d'abord l'élément correspondant." : f.hint}>
                     <Select value={String(v[f.name] ?? "") || NONE} onValueChange={(x) => setV({ ...v, [f.name]: x === NONE ? "" : x })}>
                       <SelectTrigger className="w-full" aria-label={f.label}><SelectValue /></SelectTrigger>
                       <SelectContent>{(f.emptyLabel !== undefined || !f.required) && <SelectItem value={NONE}>{f.emptyLabel ?? "— Aucun —"}</SelectItem>}{f.options?.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
@@ -81,7 +87,7 @@ export function EntityDialog({ title, description, fields, initial, trigger, sub
               return <Field key={f.name} label={label} htmlFor={id} className={span} hint={f.hint}><Input id={id} type={type} step={f.step ?? (f.kind === "number" ? "any" : undefined)} min={f.kind === "number" ? 0 : undefined} maxLength={f.maxLength} value={String(v[f.name] ?? "")} placeholder={f.placeholder} onChange={(e) => setV({ ...v, [f.name]: e.target.value })} /></Field>;
             })}
           </div>
-          <Button type="submit" disabled={pending || missing}>{pending ? "Enregistrement…" : submitLabel}</Button>
+          <Button type="submit" disabled={pending}>{pending ? "Enregistrement…" : submitLabel}</Button>
         </form>
       </DialogContent>
     </Dialog>

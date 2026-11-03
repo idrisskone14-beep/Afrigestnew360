@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Field, FormAlert } from "@/components/app/form-kit";
 import { d } from "@/core/money";
+import { missingFields } from "@/lib/required-fields";
 import { formatMoney } from "@/lib/reference-data";
 import { createEntryAction, updateEntryAction } from "../actions";
 
@@ -31,7 +32,9 @@ export function EntryEditor({ id, initial, journals, accounts, currency }: {
   const totalDebit = lines.reduce((a, l) => a.plus(Number(l.debit) || 0), d(0));
   const totalCredit = lines.reduce((a, l) => a.plus(Number(l.credit) || 0), d(0));
   const balanced = totalDebit.gt(0) && totalDebit.eq(totalCredit);
-  const valid = f.journalId && f.description.trim().length >= 2 && lines.every((l) => l.ledgerAccountId && l.label.trim() && (Number(l.debit) > 0) !== (Number(l.credit) > 0));
+  const linesOk = lines.every((l) => l.ledgerAccountId && l.label.trim() && (Number(l.debit) > 0) !== (Number(l.credit) > 0));
+  const problem = missingFields([[Boolean(f.journalId), "Journal"], [f.description.trim().length >= 2, "Libellé"]])
+    ?? (linesOk ? null : "Chaque ligne doit avoir un compte, un libellé et un montant au débit OU au crédit (pas les deux).");
 
   const submit = () => start(async () => {
     setError(null);
@@ -84,7 +87,7 @@ export function EntryEditor({ id, initial, journals, accounts, currency }: {
         </p>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.push(id ? `/app/accounting/ecritures/${id}` : "/app/accounting/ecritures")} disabled={pending}>Annuler</Button>
-          <Button onClick={submit} disabled={pending || !valid}>{id ? "Enregistrer le brouillon" : "Créer le brouillon"}</Button>
+          <Button onClick={() => (problem ? setError(problem) : submit())} disabled={pending}>{id ? "Enregistrer le brouillon" : "Créer le brouillon"}</Button>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">Le brouillon n'a pas de numéro ; il est numéroté à sa validation, après laquelle il devient immuable (correction par contre-passation).</p>
