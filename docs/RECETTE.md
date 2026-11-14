@@ -4,7 +4,7 @@
 
 Légende : ✅ vérifié · ⬜ à faire · ❌ anomalie (voir la note).
 
-## A. Sans connexion (vérifié automatiquement le 26/10/2026 sur le site déployé)
+## A. Sans connexion (vérifié automatiquement le 26/10/2026 sur le site déployé ; A7 à A9 recontrôlés le 14/11/2026)
 
 | # | Contrôle | Résultat attendu | |
 |---|---|---|---|
@@ -14,9 +14,9 @@ Légende : ✅ vérifié · ⬜ à faire · ❌ anomalie (voir la note).
 | A4 | `/api/export`, `/api/pdf`, `/api/files/logo` sans session ; `/api/cron/*` sans ou avec un mauvais secret | 401 | ✅ |
 | A5 | En-têtes : CSP à nonce, HSTS, X-Frame-Options DENY, nosniff, referrer, COOP/CORP | présents | ✅ |
 | A6 | Aucune trace de l'ancien nom (« AfriGest ») dans les pages publiques | 0 occurrence | ✅ |
-| A7 | `/api/health` | `ok:true`, `database:"ok"`, `storage:"s3"`, aucun problème bloquant | ❌ `storage:"disk"` : S3 non configuré |
-| A8 | Pages légales sans « [à compléter] » | variables `LEGAL_*` renseignées | ❌ à renseigner |
-| A9 | Sitemap : adresses canoniques (sans redirection) | `APP_URL` = adresse canonique (ici `https://www…`) | ❌ liste `https://ivoireactu.com` qui redirige (308) |
+| A7 | `/api/health` | `ok:true`, `database:"ok"`, `storage:"s3"`, aucun problème bloquant | ✅ `storage:"s3"`, base ok (14/11) ; avertissements restants : `SENTRY_DSN`, `LEGAL_*`, clés VAPID absentes |
+| A8 | Pages légales sans « [à compléter] » | variables `LEGAL_*` renseignées | ❌ les 9 variables `LEGAL_*` toujours absentes (14/11) |
+| A9 | Sitemap : adresses canoniques (sans redirection) | `APP_URL` = adresse canonique (ici `https://www…`) | ❌ liste toujours `https://ivoireactu.com` qui redirige (308) vers `www` (14/11) : mettre `APP_URL=https://www.ivoireactu.com` puis redéployer |
 
 ## B. Premier accès (compte propriétaire de la plateforme)
 
@@ -151,3 +151,4 @@ Supprimer les données `TEST-` (clients, produits, fournisseurs, documents), les
 | Date | Environnement | Anomalies ouvertes | Réalisée par |
 |---|---|---|---|
 | 26/10/2026 | www.ivoireactu.com (A seulement) | A7, A8, A9 | Claude |
+| 14/11/2026 | www.ivoireactu.com (A7 à A9 seulement) | A8, A9 (A7 corrigé : stockage S3) | Claude |
