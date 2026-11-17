@@ -116,7 +116,7 @@ export default async function LandingPage() {
             </Reveal>
           ))}
         </div>
-        <p className="mt-6 text-center text-sm text-muted-foreground">Fondations (comptes, rôles, entreprises, administration) disponibles ; modules métier livrés par étapes — <Link href="/fonctionnalites" className="text-brand hover:underline">voir le détail</Link>.</p>
+        <p className="mt-6 text-center text-sm text-muted-foreground">Tous ces modules sont disponibles dès aujourd'hui, selon votre offre, à l'exception de Global Gest Intelligence (bientôt) — <Link href="/fonctionnalites" className="text-brand hover:underline">voir le détail</Link>.</p>
       </Section>
 
       {/* 7. Fonctionnement */}
@@ -227,7 +227,7 @@ export default async function LandingPage() {
       </Section>
 
       {/* 14. Témoignages */}
-      <Section eyebrow="Témoignages" title="Ce que les dirigeants attendent de Global Gest" description="Cas d'usage types, formulés d'après les besoins que nous entendons sur le terrain.">
+      <Section eyebrow="Cas d'usage" title="Ce que les dirigeants attendent de Global Gest" description="Cas d'usage types, formulés d'après les besoins que nous entendons sur le terrain.">
         <div className="grid gap-6 md:grid-cols-3">
           {USE_CASES.map((u) => (
             <figure key={u.initials} className="flex h-full flex-col rounded-2xl border bg-card p-6">

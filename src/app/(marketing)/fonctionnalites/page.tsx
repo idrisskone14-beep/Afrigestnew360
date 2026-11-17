@@ -56,7 +56,7 @@ export default function FeaturesPage() {
             );
           })}
         </div>
-        <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-muted-foreground">« Bientôt » : l'architecture, les permissions et l'activation par offre sont en place ; les écrans sont livrés module par module. Demandez-nous le calendrier.</p>
+        <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-muted-foreground">« Bientôt » : Global Gest Intelligence est en préparation (architecture, permissions et activation par offre déjà en place). Demandez-nous le calendrier.</p>
         <div className="mt-8 text-center"><Button size="lg" asChild><Link href="/demo">Demander une démo</Link></Button></div>
       </Section>
     </>
