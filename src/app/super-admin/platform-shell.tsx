@@ -26,8 +26,8 @@ function Nav({ newDemos, pendingRegistrations, onNavigate }: { newDemos: number;
   return (
     <div className="flex h-full flex-col bg-primary text-primary-foreground dark:bg-sidebar dark:text-sidebar-foreground">
       <div className="flex h-14 items-center gap-2 px-5">
-        <Logo />
-        <Badge className="ml-1 bg-brand/90 text-[10px] text-brand-foreground hover:bg-brand/90">ADMIN</Badge>
+        <Logo className="shrink-0 [&_img]:size-8 [&_span[role=img]]:h-[1.1rem]" />
+        <Badge className="shrink-0 bg-brand/90 px-1.5 text-[10px] text-brand-foreground hover:bg-brand/90">ADMIN</Badge>
       </div>
       <nav aria-label="Console plateforme" className="flex-1 space-y-0.5 px-3 py-3">
         {NAV.map((n) => {

@@ -17,12 +17,14 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { ActionButton } from "@/components/app/action-button";
 import { Field, FormAlert, SubmitButton, applyServerErrors, runAction } from "@/components/app/form-kit";
 import { LIMIT_KEYS, UNLIMITED } from "@/core/modules/registry";
 import {
-  changePlanAction, reactivateCompanyAction, resetCompanyModuleAction, setCompanyLimitAction, setCompanyModuleAction,
+  changePlanAction, inviteCompanyMemberAction, reactivateCompanyAction, resetCompanyModuleAction, revokeCompanyInvitationAction, setCompanyLimitAction, setCompanyModuleAction,
   suspendCompanyAction, updateCompanyAction,
 } from "@/modules/platform/actions";
+import { InvitationResultDialog, InviteMemberDialog, type InviteResult, type RoleOption } from "./invite-member-dialog";
 import { platformUpdateCompanySchema } from "@/modules/platform/schemas";
 import { COUNTRIES, CURRENCIES, formatMoney } from "@/lib/reference-data";
 
@@ -33,7 +35,8 @@ interface Props {
   modules: { key: string; name: string; kind: string; enabled: boolean; source: "PLAN" | "OVERRIDE" }[];
   limits: { key: string; effective: number; used: number; overridden: boolean }[];
   members: { id: string; name: string; email: string; role: string; status: string; isOwner: boolean; lastLogin: string }[];
-  invitations: { id: string; email: string; role: string; expires: string }[];
+  invitations: { id: string; email: string; role: string; roleId: string; expires: string }[];
+  roles: RoleOption[];
   activity: { id: string; summary: string; who: string; at: string }[];
 }
 
@@ -42,10 +45,19 @@ const SUB_STATUS = [
 ];
 
 export function CompanyAdminPanel(props: Props) {
-  const { company, subscription, plans, modules, limits, members, invitations, activity } = props;
+  const { company, subscription, plans, modules, limits, members, invitations, roles, activity } = props;
   const router = useRouter();
   const [pending, start] = useTransition();
   const [suspendOpen, setSuspendOpen] = useState(false);
+  const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
+  const [resending, setResending] = useState<string | null>(null);
+  const resend = (i: Props["invitations"][number]) => {
+    setResending(i.id);
+    void runAction(inviteCompanyMemberAction({ companyId: company.id, email: i.email, roleId: i.roleId })).then((res) => {
+      setResending(null);
+      if (res.ok) { setInviteResult(res.data); router.refresh(); }
+    });
+  };
   const [reason, setReason] = useState("");
 
   const run = (p: Promise<Awaited<ReturnType<typeof reactivateCompanyAction>>>, success: string) =>
@@ -109,10 +121,18 @@ export function CompanyAdminPanel(props: Props) {
         </TabsContent>
 
         <TabsContent value="utilisateurs" className="mt-4 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">Invitez une personne avec son adresse e-mail et son rôle : elle confirme son adresse en ouvrant le lien reçu.</p>
+            <InviteMemberDialog companyId={company.id} roles={roles} disabled={company.status === "SUSPENDED"} onInvited={(r) => { setInviteResult(r); router.refresh(); }} />
+          </div>
+          <InvitationResultDialog result={inviteResult} onClose={() => setInviteResult(null)} />
           <Card className="overflow-hidden p-0">
             <Table>
               <TableHeader><TableRow><TableHead>Membre</TableHead><TableHead>Rôle</TableHead><TableHead className="hidden sm:table-cell">Dernière connexion</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
               <TableBody>
+                {members.length === 0 && (
+                  <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">Aucun utilisateur pour l'instant. Cliquez sur « Ajouter un utilisateur » pour inviter le premier.</TableCell></TableRow>
+                )}
                 {members.map((m) => (
                   <TableRow key={m.id}>
                     <TableCell><p className="text-sm font-medium">{m.name}{m.isOwner && <Badge variant="secondary" className="ml-2">Propriétaire</Badge>}</p><p className="text-xs text-muted-foreground">{m.email}</p></TableCell>
@@ -125,8 +145,27 @@ export function CompanyAdminPanel(props: Props) {
             </Table>
           </Card>
           {invitations.length > 0 && (
-            <Card><CardHeader><CardTitle className="text-base">Invitations en attente</CardTitle></CardHeader>
-              <CardContent className="divide-y p-0">{invitations.map((i) => <p key={i.id} className="px-6 py-2.5 text-sm">{i.email} <span className="text-muted-foreground">· {i.role} · expire le {i.expires}</span></p>)}</CardContent></Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Invitations en attente</CardTitle>
+                <CardDescription>Ces personnes n'ont pas encore ouvert le lien reçu par e-mail : elles ne peuvent pas se connecter.</CardDescription>
+              </CardHeader>
+              <CardContent className="divide-y p-0">
+                {invitations.map((i) => (
+                  <div key={i.id} className="flex flex-wrap items-center gap-3 px-6 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{i.email}</p>
+                      <p className="text-xs text-muted-foreground">{i.role} · expire le {i.expires}</p>
+                    </div>
+                    <Button variant="outline" size="sm" disabled={resending === i.id} onClick={() => resend(i)}>{resending === i.id ? "Envoi…" : "Renvoyer"}</Button>
+                    <ActionButton
+                      action={revokeCompanyInvitationAction} input={{ companyId: company.id, invitationId: i.id }} variant="ghost" size="sm" label="Annuler" success="Invitation annulée"
+                      confirm={{ title: "Annuler cette invitation ?", description: `Le lien envoyé à ${i.email} cessera de fonctionner.`, confirmLabel: "Annuler l'invitation" }}
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 

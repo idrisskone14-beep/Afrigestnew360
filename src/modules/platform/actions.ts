@@ -7,14 +7,14 @@ import { platformDb } from "@/core/db/client";
 import { AppError, notFound } from "@/core/errors";
 import { COUNTRIES } from "@/lib/reference-data";
 import {
-  changeCompanyPlan, createCompanyByPlatform, resetCompanyModule, setCompanyLimit, setCompanyModule, setCompanyStatus,
+  changeCompanyPlan, createCompanyByPlatform, inviteCompanyMember, resetCompanyModule, revokeCompanyInvitation, setCompanyLimit, setCompanyModule, setCompanyStatus,
   updateCompanyIdentity,
 } from "./companies";
 import { setSignupMode } from "@/core/platform-settings";
 import { updatePlan } from "./plans";
 import { approveRegistration, rejectRegistration } from "./registrations";
 import {
-  changePlanSchema, companyLimitSchema, companyIdSchema, companyModuleSchema, platformCreateCompanySchema,
+  changePlanSchema, companyLimitSchema, companyIdSchema, companyModuleSchema, inviteMemberSchema, platformCreateCompanySchema, revokeInvitationSchema,
   platformUpdateCompanySchema, registrationIdSchema, resetModuleSchema, signupModeSchema, suspendCompanySchema, toggleModuleSchema, updateDemoRequestSchema, updatePlanSchema,
 } from "./schemas";
 
@@ -40,6 +40,36 @@ export const createCompanyAction = definePlatformAction({
     });
     revalidatePath("/super-admin", "layout");
     return { id: c.id, adminWasExisting };
+  },
+});
+
+/** Invite (ou renvoie l'invitation d') une personne dans une entreprise, avec un rôle. Renvoie le lien d'activation : l'e-mail peut échouer. */
+export const inviteCompanyMemberAction = definePlatformAction({
+  input: inviteMemberSchema,
+  handler: async ({ session, input }) => {
+    const c = await company(input.companyId);
+    const r = await inviteCompanyMember(c.id, { email: input.email, roleId: input.roleId }, session.user);
+    // le lien d'activation (secret) n'est JAMAIS écrit dans le journal d'audit
+    await auditPlatform(session.user, {
+      companyId: c.id, action: "company.member.invite", resource: "Invitation", resourceId: r.invitation.id,
+      summary: `${session.user.name} a invité ${r.email} dans ${name(c)} avec le rôle « ${r.roleName} »${r.emailSent ? "" : " (e-mail non envoyé : lien remis à l'administrateur)"}.`,
+      after: { email: r.email, role: r.roleName, emailSent: r.emailSent },
+    });
+    revalidatePath("/super-admin", "layout");
+    return { link: r.link, emailSent: r.emailSent, email: r.email, roleName: r.roleName };
+  },
+});
+
+export const revokeCompanyInvitationAction = definePlatformAction({
+  input: revokeInvitationSchema,
+  handler: async ({ session, input }) => {
+    const c = await company(input.companyId);
+    const inv = await revokeCompanyInvitation(c.id, input.invitationId);
+    await auditPlatform(session.user, {
+      companyId: c.id, action: "company.member.invite_revoke", resource: "Invitation", resourceId: inv.id,
+      summary: `${session.user.name} a annulé l'invitation de ${inv.email} dans ${name(c)}.`,
+    });
+    revalidatePath("/super-admin", "layout");
   },
 });
 

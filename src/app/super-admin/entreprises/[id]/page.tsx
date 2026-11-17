@@ -16,7 +16,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   if (!z.string().uuid().safeParse(id).success) notFound();
   const data = await getCompanyDetail(id).catch(() => null);
   if (!data) notFound();
-  const { company: c, modules, overrides, members, activity, limits, usage, plans, invitations } = data;
+  const { company: c, modules, overrides, members, activity, limits, usage, plans, invitations, roles } = data;
   const moduleState = new Map(modules.map((m) => [m.module.key, m]));
 
   return (
@@ -47,7 +47,8 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           key, effective: value, used: usage[key as keyof typeof usage] ?? 0, overridden: overrides.some((o) => o.key === key),
         }))}
         members={members.map((m) => ({ id: m.id, name: m.user.name, email: m.user.email, role: m.role.name, status: m.status, isOwner: m.isOwner, lastLogin: m.user.lastLoginAt ? dt.format(m.user.lastLoginAt) : "Jamais" }))}
-        invitations={invitations.map((i) => ({ id: i.id, email: i.email, role: i.role.name, expires: d.format(i.expiresAt) }))}
+        invitations={invitations.map((i) => ({ id: i.id, email: i.email, role: i.role.name, roleId: i.roleId, expires: d.format(i.expiresAt) }))}
+        roles={roles}
         activity={activity.map((a) => ({ id: a.id, summary: a.summary ?? a.action, who: a.userLabel ?? "Système", at: dt.format(a.createdAt) }))}
       />
     </>

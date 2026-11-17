@@ -27,6 +27,8 @@ export const registrationIdSchema = z.object({ userId: uuid });
 export const signupModeSchema = z.object({ mode: z.enum(["email", "approval"]) });
 
 export const companyIdSchema = z.object({ companyId: uuid });
+export const inviteMemberSchema = z.object({ companyId: uuid, email: emailSchema, roleId: z.string().uuid("Choisissez un rôle") });
+export const revokeInvitationSchema = z.object({ companyId: uuid, invitationId: uuid });
 export const suspendCompanySchema = z.object({ companyId: uuid, reason: z.string().trim().max(300).optional() });
 export const changePlanSchema = z.object({
   companyId: uuid,
