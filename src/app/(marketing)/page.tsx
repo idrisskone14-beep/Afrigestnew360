@@ -1,32 +1,35 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  ArrowRight, BarChart3, Building2, Check, Fingerprint, KeyRound, Layers, LockKeyhole, ScrollText, ShieldCheck, Sparkles, XCircle,
+  ArrowRight, Briefcase, Building2, Camera, Check, Fingerprint, HardHat, KeyRound, Layers, LockKeyhole, PlusCircle, ScanLine, ScrollText, ShieldCheck, Smartphone, Store, Truck,
 } from "lucide-react";
 import { ModuleIcon } from "@/components/app/icons";
-import { DashboardMockup } from "@/components/marketing/dashboard-mockup";
+import { DesktopShot, PhoneShot } from "@/components/marketing/browser-frame";
 import { DemoForm } from "@/components/marketing/demo-form";
+import { FlowShowcase } from "@/components/marketing/flow-showcase";
 import { PricingTable } from "@/components/marketing/pricing-table";
 import { Reveal } from "@/components/marketing/reveal";
 import { Section } from "@/components/marketing/section";
-import {
-  BENEFITS, FAQ, PILLARS, PROBLEMS, SECTORS_LIST, SECURITY_POINTS, STEPS, USE_CASES,
-} from "@/components/marketing/content";
+import { FAQ, FIELD_ACTIONS, FLOW, HERO_CHIPS, IMPORT_ITEMS, SECURITY_POINTS, TRADES } from "@/components/marketing/content";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MODULES } from "@/core/modules/registry";
-import { COUNTRIES } from "@/lib/reference-data";
 import { getPublicPlans } from "@/modules/platform/demo";
 
 export const metadata: Metadata = {
-  title: { absolute: "Global Gest — Toute votre entreprise. Une seule plateforme." },
-  description: "Finances, ventes, clients, employés, stocks, projets et opérations : gérez toute votre entreprise depuis Global Gest, la plateforme de gestion pensée pour l'Afrique.",
+  title: { absolute: "Global Gest — Du devis à la comptabilité, sans ressaisir une seule ligne" },
+  description: "Devis, factures, paiements, stock, comptabilité SYSCOHADA et RH dans un seul outil, en FCFA, sur ordinateur comme sur téléphone. Global Gest, la gestion d'entreprise pensée pour l'Afrique.",
   alternates: { canonical: "/" },
 };
 
 const SECURITY_ICONS = [Building2, KeyRound, Fingerprint, ScrollText, Layers, LockKeyhole];
-const CORE_COUNTRIES = COUNTRIES.filter((c) => ["CI", "SN", "ML", "BF", "BJ", "TG", "CM", "GA", "GH", "NG", "MA", "RW"].includes(c.code));
+const FIELD_ICONS = { ScanLine, Camera, PlusCircle, Smartphone };
+const TRADE_ICONS = { Store, HardHat, Truck, Briefcase };
+
+/** Quadrillage de la marque (le même motif que sur le logo), estompé vers les bords. */
+const GRID =
+  "[background-image:linear-gradient(to_right,rgb(0_208_152/0.11)_1px,transparent_1px),linear-gradient(to_bottom,rgb(0_208_152/0.11)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(ellipse_at_70%_35%,#000_15%,transparent_72%)]";
 
 export default async function LandingPage() {
   const plans = await getPublicPlans();
@@ -34,75 +37,98 @@ export default async function LandingPage() {
 
   return (
     <>
-      {/* 2. Hero */}
-      <section className="relative overflow-hidden">
-        <div className="accent-line" aria-hidden />
-        <div className="pointer-events-none absolute right-0 top-[3px] -z-10 hidden h-[34rem] w-1/2 bg-secondary lg:block" aria-hidden />
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1fr_1.1fr] lg:gap-8 lg:px-8 lg:pb-24">
+      {/* Héros : un résultat concret, et le vrai produit */}
+      <section className="relative overflow-hidden bg-navy text-white">
+        <div className={"pointer-events-none absolute inset-0 " + GRID} aria-hidden />
+        <div className="accent-line relative" aria-hidden />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pb-20 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[0.9fr_1.2fr] lg:gap-10 lg:px-8 lg:pb-28">
           <Reveal>
-            <p className="eyebrow mb-5 flex items-center gap-2"><Sparkles className="size-3.5" /> La plateforme de gestion pensée pour l'Afrique</p>
-            <h1 className="font-display text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-[4.2rem]">Toute votre entreprise. <span className="relative inline-block italic text-brand">Une seule plateforme.<svg aria-hidden viewBox="0 0 300 12" preserveAspectRatio="none" className="absolute -bottom-1 left-0 h-2.5 w-full text-brand-2"><path d="M2 8 C60 2 120 11 180 5 S270 3 298 7" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" pathLength={1} strokeDasharray={1} className="animate-[draw-line_1.2s_ease-out_0.9s_backwards]" /></svg></span></h1>
-            <p className="mt-6 max-w-xl text-lg text-muted-foreground">Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis Global Gest.</p>
+            <p className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-brand-2">Gestion commerciale, stock, comptabilité et RH · en FCFA</p>
+            <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-[3.5rem]">
+              Du devis à la comptabilité, <span className="italic text-brand-2">sans ressaisir une seule ligne.</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-lg text-white/75">
+              Global Gest relie vos devis, factures, paiements, stocks et écritures comptables. En FCFA, avec un plan comptable SYSCOHADA, sur ordinateur comme sur téléphone.
+            </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button size="lg" className="h-12 px-7 text-base" asChild><Link href="/demo">Demander une démo <ArrowRight className="size-4" /></Link></Button>
-              <Button size="lg" variant="outline" className="h-12 px-7 text-base" asChild><Link href="#presentation">Découvrir Global Gest</Link></Button>
+              <Button size="lg" className="h-12 bg-brand-2 px-7 text-base text-brand-2-foreground hover:bg-brand-2/90" asChild><Link href="/demo">Demander une démo <ArrowRight className="size-4" /></Link></Button>
+              <Button size="lg" variant="outline" className="h-12 border-white/30 bg-transparent px-7 text-base text-white hover:bg-white/10 hover:text-white" asChild><Link href="#parcours">Voir comment ça marche</Link></Button>
             </div>
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              {["FCFA & multi-devises", "Multi-entreprises", "Données isolées et auditées"].map((t) => <li key={t} className="flex items-center gap-1.5"><Check className="size-4 text-brand-blue" />{t}</li>)}
+            <ul className="mt-8 grid max-w-xl gap-x-6 gap-y-2 text-sm text-white/70 sm:grid-cols-2">
+              {HERO_CHIPS.map((t) => <li key={t} className="flex items-center gap-1.5"><Check className="size-4 shrink-0 text-brand-2" aria-hidden="true" />{t}</li>)}
             </ul>
           </Reveal>
-          <Reveal delay={0.1}><DashboardMockup /></Reveal>
+          <Reveal delay={0.1}>
+            <DesktopShot src="/landing/hero.webp" alt="Les encaissements dans Global Gest : paiements en espèces, Mobile Money, virement et chèque, avec leur reçu" priority className="border-white/10 shadow-2xl" />
+          </Reveal>
         </div>
       </section>
 
-      {/* 3. Pays & secteurs couverts */}
-      <section aria-label="Pays couverts" className="border-y bg-card/50 py-8">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <p className="text-sm text-muted-foreground">Conçu pour les entreprises de toute l'Afrique francophone et anglophone</p>
+      {/* Le flux : du devis à l'écriture comptable */}
+      <Section id="parcours" eyebrow="Un seul flux" title="Saisissez une fois, retrouvez partout" description="Chaque étape alimente la suivante : le devis devient une facture, la facture un encaissement, l'encaissement une écriture comptable.">
+        <FlowShowcase steps={FLOW} />
+      </Section>
+
+      {/* Mobile : le terrain */}
+      <Section tone="muted" eyebrow="Sur le terrain" title="Au dépôt, sur le chantier, en tournée : tout se fait depuis le téléphone">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {FIELD_ACTIONS.map((a, i) => {
+              const Icon = FIELD_ICONS[a.icon];
+              return (
+                <Reveal key={a.title} delay={i * 0.05}>
+                  <div className="h-full rounded-xl border bg-card p-6">
+                    <span className="flex size-10 items-center justify-center rounded-lg bg-accent text-accent-foreground"><Icon className="size-5" aria-hidden="true" /></span>
+                    <h3 className="mt-4 font-semibold">{a.title}</h3>
+                    <p className="mt-1.5 text-sm text-muted-foreground">{a.text}</p>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+          <Reveal delay={0.1}><PhoneShot src="/landing/mobile.webp" alt="Global Gest sur un téléphone : tableau de bord et barre de navigation du bas" /></Reveal>
         </div>
-        <div className="marquee mt-5 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
-          <div className="marquee-track flex w-max gap-2.5">
-            {[0, 1].map((k) => (
-              <ul key={k} className="flex gap-2.5" aria-hidden={k === 1 ? true : undefined}>
-                {CORE_COUNTRIES.map((c) => <li key={c.code} className="rounded-full border border-foreground/20 bg-card px-4 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:border-foreground hover:bg-brand-2/30">{c.name}</li>)}
-              </ul>
-            ))}
+      </Section>
+
+      {/* Les métiers */}
+      <Section id="metiers" eyebrow="Pour votre métier" title="Des outils qui parlent votre métier" description="Commerce, chantiers, transport, services : les fonctions dont vous avez réellement besoin, déjà dans l'outil.">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {TRADES.map((t, i) => {
+            const Icon = TRADE_ICONS[t.icon];
+            return (
+              <Reveal key={t.key} delay={i * 0.05}>
+                <div className="flex h-full flex-col rounded-xl border bg-card p-6">
+                  <span className="flex size-10 items-center justify-center rounded-lg bg-accent text-accent-foreground"><Icon className="size-5" aria-hidden="true" /></span>
+                  <h3 className="mt-4 flex flex-wrap items-center gap-2 font-semibold">{t.title}{t.extension && <Badge variant="outline">Extension</Badge>}</h3>
+                  <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                    {t.points.map((p) => <li key={p} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />{p}</li>)}
+                  </ul>
+                </div>
+              </Reveal>
+            );
+          })}
+        </div>
+        <p className="mt-8 text-center text-sm"><Link href="/solutions" className="text-brand hover:underline">Voir les solutions par fonction →</Link></p>
+      </Section>
+
+      {/* Reprise des données */}
+      <section className="pb-4 sm:pb-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-5xl items-center gap-8 rounded-2xl border bg-card p-8 sm:p-10 md:grid-cols-[1.1fr_1fr]">
+            <div>
+              <p className="eyebrow">Reprise de vos données</p>
+              <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">Vous venez d'Excel ? Ne repartez pas de zéro.</h2>
+              <p className="mt-3 text-muted-foreground">Importez vos fichiers Excel ou CSV à partir de nos modèles. Un rapport d'anomalies vous indique, ligne par ligne, ce qu'il faut corriger.</p>
+            </div>
+            <ul className="flex flex-wrap gap-2" aria-label="Données importables">
+              {IMPORT_ITEMS.map((t) => <li key={t} className="rounded-full border bg-secondary px-3.5 py-1.5 text-sm font-medium">{t}</li>)}
+            </ul>
           </div>
         </div>
       </section>
 
-      {/* 4. Problèmes */}
-      <Section eyebrow="Le constat" title="Piloter une entreprise ne devrait pas ressembler à ça" description="Trop d'outils, trop de ressaisies, trop peu de visibilité. Voilà ce que nous entendons le plus.">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {PROBLEMS.map((p, i) => (
-            <Reveal key={p.title} delay={i * 0.04}>
-              <div className="h-full rounded-xl border bg-card p-6">
-                <XCircle className="size-5 text-destructive/80" />
-                <h3 className="mt-3 font-semibold">{p.title}</h3>
-                <p className="mt-1.5 text-sm text-muted-foreground">{p.text}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* 5. Présentation */}
-      <Section id="presentation" tone="muted" eyebrow="La solution" title="Global Gest : le système central de votre entreprise" description="Un dirigeant doit pouvoir répondre en quelques secondes : combien gagnons-nous, qui nous doit de l'argent, que doit-on commander, quels projets sont en retard ?">
-        <div className="grid gap-6 lg:grid-cols-3">
-          {PILLARS.map((p, i) => (
-            <Reveal key={p.title} delay={i * 0.06}>
-              <div className="h-full rounded-xl border bg-card p-7">
-                <span className="flex size-10 items-center justify-center rounded-lg bg-accent text-accent-foreground"><BarChart3 className="size-5" /></span>
-                <h3 className="mt-4 text-lg font-semibold">{p.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{p.text}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
       {/* 6. Modules */}
-      <Section id="modules" eyebrow="Modules" title="Tout ce dont votre entreprise a besoin" description="Activez les modules selon votre offre. Les extensions métier se greffent sans transformer la plateforme.">
+      <Section id="modules" eyebrow="Modules" title="Activez seulement ce dont vous avez besoin" description="Chaque offre inclut les modules utiles à votre activité ; les extensions Transport et Chantiers se greffent sans changer d'outil.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {modules.map((m, i) => (
             <Reveal key={m.key} delay={(i % 3) * 0.05}>
@@ -117,44 +143,6 @@ export default async function LandingPage() {
           ))}
         </div>
         <p className="mt-6 text-center text-sm text-muted-foreground">Tous ces modules sont disponibles dès aujourd'hui, selon votre offre, à l'exception de Global Gest Intelligence (bientôt) — <Link href="/fonctionnalites" className="text-brand hover:underline">voir le détail</Link>.</p>
-      </Section>
-
-      {/* 7. Fonctionnement */}
-      <Section tone="muted" eyebrow="Fonctionnement" title="Opérationnel en quatre étapes">
-        <ol className="grid gap-6 md:grid-cols-4">
-          {STEPS.map((s, i) => (
-            <Reveal as="li" key={s.n} delay={i * 0.06} className="relative h-full rounded-xl border bg-card p-6">
-                <span className="flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">{s.n}</span>
-                <h3 className="mt-4 font-semibold">{s.title}</h3>
-                <p className="mt-1.5 text-sm text-muted-foreground">{s.text}</p>
-            </Reveal>
-          ))}
-        </ol>
-      </Section>
-
-      {/* 8. Avantages */}
-      <Section eyebrow="Avantages" title="Ce que vous gagnez concrètement">
-        <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-          {BENEFITS.map((b) => (
-            <div key={b.title} className="flex gap-3">
-              <Check className="mt-1 size-5 shrink-0 text-brand-blue" />
-              <div><h3 className="font-semibold">{b.title}</h3><p className="mt-1 text-sm text-muted-foreground">{b.text}</p></div>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* 9. Secteurs */}
-      <Section tone="muted" eyebrow="Secteurs" title="Adapté à votre métier">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {SECTORS_LIST.map((s) => (
-            <div key={s.title} className="rounded-xl border bg-card p-5">
-              <h3 className="font-semibold">{s.title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{s.text}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-6 text-center text-sm"><Link href="/solutions" className="text-brand hover:underline">Voir les solutions par fonction →</Link></p>
       </Section>
 
       {/* 10. Sécurité */}
@@ -200,46 +188,10 @@ export default async function LandingPage() {
         </div>
       </Section>
 
-      {/* 12. Intelligence & Analytics */}
-      <Section eyebrow="Intelligence & Analytics" title="Des réponses, pas seulement des tableaux" description="Tableaux de bord exécutifs, rapports transversaux et assistant Global Gest Intelligence.">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border bg-card p-7">
-            <h3 className="flex items-center gap-2 font-semibold"><BarChart3 className="size-5 text-brand" /> Pilotage</h3>
-            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-              {["Chiffre d'affaires, dépenses, résultat, trésorerie", "Factures à encaisser et échues, dettes fournisseurs", "Stocks critiques, projets en retard, validations en attente", "Analyses par agence, département, projet, centre de coûts", "Exports PDF et Excel"].map((t) => <li key={t} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-blue" />{t}</li>)}
-            </ul>
-          </div>
-          <div className="rounded-2xl border bg-card p-7">
-            <h3 className="flex items-center gap-2 font-semibold"><Sparkles className="size-5 text-brand" /> Global Gest Intelligence <Badge variant="secondary">Bientôt</Badge></h3>
-            <p className="mt-4 text-sm text-muted-foreground">Posez vos questions en français :</p>
-            <ul className="mt-3 space-y-2 text-sm">
-              {["« Quelles factures sont en retard ? »", "« Quels clients me doivent le plus d'argent ? »", "« Quels produits arrivent en rupture ? »", "« Quels projets dépassent leur budget ? »"].map((t) => <li key={t} className="rounded-lg bg-muted/60 px-3 py-2 italic text-muted-foreground">{t}</li>)}
-            </ul>
-            <p className="mt-4 text-xs text-muted-foreground">L'assistant n'accède jamais aux données d'une autre entreprise, ni aux modules désactivés, ni à ce que vos permissions interdisent.</p>
-          </div>
-        </div>
-      </Section>
-
       {/* 13. Tarifs */}
       <Section id="tarifs" tone="muted" eyebrow="Tarifs" title="Des offres simples, qui évoluent avec vous" description="Essai gratuit inclus. Passez d'une offre à l'autre à tout moment.">
         <PricingTable plans={plans} />
         <p className="mt-8 text-center text-sm text-muted-foreground">Besoin d'un devis sur mesure ? <Link href="/contact" className="text-brand hover:underline">Contactez-nous</Link></p>
-      </Section>
-
-      {/* 14. Témoignages */}
-      <Section eyebrow="Cas d'usage" title="Ce que les dirigeants attendent de Global Gest" description="Cas d'usage types, formulés d'après les besoins que nous entendons sur le terrain.">
-        <div className="grid gap-6 md:grid-cols-3">
-          {USE_CASES.map((u) => (
-            <figure key={u.initials} className="flex h-full flex-col rounded-2xl border bg-card p-6">
-              <blockquote className="flex-1 text-sm leading-relaxed">« {u.quote} »</blockquote>
-              <figcaption className="mt-5 flex items-center gap-3 border-t pt-4">
-                <span className="flex size-10 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">{u.initials}</span>
-                <span className="text-sm"><span className="block font-medium">{u.benefit}</span><span className="text-xs text-muted-foreground">{u.role}</span></span>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-        <p className="mt-5 text-center text-xs text-muted-foreground">Profils illustratifs — pas de témoignages clients réels à ce jour.</p>
       </Section>
 
       {/* 15. FAQ */}
@@ -257,7 +209,7 @@ export default async function LandingPage() {
       {/* 16. CTA final */}
       <section className="bg-primary text-primary-foreground">
         <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Prêt à piloter toute votre entreprise depuis un seul endroit ?</h2>
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Et si votre prochain devis passait en comptabilité tout seul ?</h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-primary-foreground/70">Un conseiller configure avec vous un environnement adapté à votre activité.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button size="lg" variant="secondary" asChild><Link href="#demo">Demander une démo</Link></Button>

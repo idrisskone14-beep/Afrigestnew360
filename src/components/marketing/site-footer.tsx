@@ -14,7 +14,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-8">
         <div className="max-w-sm">
           <Logo />
-          <p className="mt-4 text-sm text-muted-foreground">Toute votre entreprise. Une seule plateforme. Finances, ventes, stocks, RH, projets et opérations réunis, pensés pour les entreprises africaines.</p>
+          <p className="mt-4 text-sm text-muted-foreground">Du devis à la comptabilité, sans ressaisir une seule ligne. Ventes, stock, finance, RH, projets et flotte réunis, en FCFA, pour les entreprises africaines.</p>
         </div>
         {COLUMNS.map((c) => (
           <nav key={c.title} aria-label={c.title}>

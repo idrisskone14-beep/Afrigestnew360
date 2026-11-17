@@ -17,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Link href="/" className="animate-fade-in text-[#E8F2F7]"><Logo /></Link>
           <div className="max-w-md space-y-9">
             <h2 className="animate-fade-up font-display text-5xl font-semibold leading-[1.05] tracking-tight">
-              Toute votre entreprise. <span className="italic text-brand-2">Une seule plateforme.</span>
+              Du devis à la comptabilité, <span className="italic text-brand-2">sans ressaisie.</span>
             </h2>
             <ul className="stagger space-y-4 text-sm text-[#E8F2F7]/85">
               {POINTS.map(({ icon: Icon, text }) => (

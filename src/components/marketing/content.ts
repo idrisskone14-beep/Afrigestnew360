@@ -1,34 +1,3 @@
-export const PROBLEMS = [
-  { title: "Des outils dispersés", text: "Excel pour le stock, un logiciel pour la compta, WhatsApp pour les commandes : l'information est partout, jamais au même endroit." },
-  { title: "Aucune vision en temps réel", text: "Combien avons-nous en banque ? Qui nous doit de l'argent ? Il faut attendre la fin du mois pour le savoir." },
-  { title: "Factures et relances oubliées", text: "Des impayés qui s'accumulent faute de suivi, des devis jamais transformés en factures." },
-  { title: "Stocks et achats mal maîtrisés", text: "Ruptures imprévues, sur-stockage, commandes fournisseur sans validation ni traçabilité." },
-  { title: "Équipes et projets difficiles à piloter", text: "Congés, présences, tâches et budgets de projets suivis à la main, sans lien avec les coûts réels." },
-  { title: "Peu de contrôle sur les accès", text: "Tout le monde voit tout, ou personne ne voit rien : impossible de déléguer sereinement." },
-];
-
-export const PILLARS = [
-  { title: "Une seule plateforme", text: "Finance, ventes, achats, stocks, RH, projets et documents partagent les mêmes données : un devis devient une facture sans ressaisie, une réception alimente le stock, un paiement écrit en comptabilité." },
-  { title: "Pensée pour l'Afrique", text: "FCFA par défaut (XOF/XAF) et multi-devises, plan comptable compatible SYSCOHADA, interface en français, mobile-first." },
-  { title: "Modulaire, vous payez ce que vous utilisez", text: "Activez les modules dont vous avez besoin, ajoutez des extensions métier (transport, chantiers) quand vous grandissez." },
-];
-
-export const STEPS = [
-  { n: "1", title: "Créez votre entreprise", text: "Quelques minutes : identité, pays, devise, exercice. Vos rôles et votre siège sont prêts." },
-  { n: "2", title: "Invitez votre équipe", text: "Attribuez des rôles précis : chacun ne voit que ce qui le concerne." },
-  { n: "3", title: "Activez vos modules", text: "Finance, ventes, stock, RH… selon votre offre. D'autres s'ajoutent à tout moment." },
-  { n: "4", title: "Pilotez", text: "Un tableau de bord exécutif, des alertes et des rapports pour décider vite." },
-];
-
-export const BENEFITS = [
-  { title: "Gagnez du temps", text: "Zéro ressaisie entre devis, commande, facture et paiement." },
-  { title: "Décidez sur des chiffres justes", text: "Trésorerie, créances, dettes et marges toujours à jour." },
-  { title: "Gardez le contrôle", text: "Permissions fines, validations, journal d'audit complet." },
-  { title: "Travaillez partout", text: "Interface adaptée au téléphone, à la tablette et à l'ordinateur." },
-  { title: "Évoluez sans migrer", text: "Ajoutez des modules, des agences ou des entreprises sur le même compte." },
-  { title: "Restez maître de vos données", text: "Chaque entreprise est isolée ; vos exports sont à vous." },
-];
-
 export const SECTORS_LIST = [
   { title: "Commerce & distribution", text: "Ventes, stocks multi-entrepôts, achats fournisseurs, encaissements." },
   { title: "Services & conseil", text: "Devis, facturation récurrente, projets, temps passé, rentabilité." },
@@ -59,13 +28,6 @@ export const FAQ = [
   { q: "Puis-je essayer avant de m'engager ?", a: "Oui : les offres incluent une période d'essai. Demandez une démonstration pour qu'un conseiller configure un environnement adapté à votre activité." },
 ];
 
-/** Cas d'usage illustratifs (personas) — à remplacer par de vrais témoignages clients avant la mise en production. */
-export const USE_CASES = [
-  { initials: "DG", role: "Directrice générale — distribution", quote: "Je veux ouvrir mon tableau de bord le matin et savoir où en sont mes ventes, ma trésorerie et mes impayés, sans appeler trois personnes.", benefit: "Pilotage en temps réel" },
-  { initials: "RC", role: "Responsable comptable — services", quote: "Quand une facture est payée, l'écriture comptable doit se faire toute seule. Fini les doubles saisies entre ventes et compta.", benefit: "Zéro ressaisie" },
-  { initials: "GE", role: "Gérant — multi-sociétés", quote: "J'administre deux sociétés et je conseille une troisième. Un seul compte, des droits différents dans chacune, et jamais de mélange des données.", benefit: "Multi-entreprises" },
-];
-
 export const FEATURE_GROUPS = [
   { module: "finance", title: "Finance", bullets: ["Recettes, dépenses et catégories", "Banques, caisses, transferts", "Budgets, prévisions, centres de coûts", "Échéances et trésorerie prévisionnelle"] },
   { module: "accounting", title: "Comptabilité", bullets: ["Plan comptable compatible SYSCOHADA", "Journaux, écritures, pièces comptables", "Grand livre, balance, compte de résultat, bilan", "Verrouillage de période, clôture d'exercice"] },
@@ -91,3 +53,79 @@ export const SOLUTIONS = [
   { slug: "rh", title: "RH & paie", pain: "Gérer les équipes sans paperasse.", points: ["Dossier employé et organigramme", "Congés avec circuit de validation", "Paie configurable et bulletins PDF"], modules: ["hr", "payroll"] },
   { slug: "projets", title: "Projets & chantiers", pain: "Livrer dans les délais et le budget.", points: ["Tâches, jalons, Kanban et Gantt", "Coûts réels vs budget", "Rapports terrain et documents rattachés"], modules: ["projects", "construction", "documents"] },
 ];
+
+/** Les quatre étapes du « flux » de l'accueil : chaque saisie alimente l'étape suivante. Captures réelles du produit (public/landing). */
+export const FLOW = [
+  {
+    key: "devis", label: "Le devis", image: "/landing/devis.webp", alt: "Un devis dans Global Gest : le document tel qu'il sera envoyé au client",
+    title: "Un devis qui se transforme tout seul",
+    you: "Vous composez le devis dans un éditeur à deux volets : le document se met en forme sous vos yeux.",
+    auto: [
+      "Envoi par e-mail avec un lien public : le client consulte et accepte le devis en ligne",
+      "Un clic le transforme en commande ou en facture",
+      "Facture d'acompte créée depuis le devis, déduite automatiquement de la facture finale",
+    ],
+  },
+  {
+    key: "facture", label: "La facture", image: "/landing/facture.webp", alt: "Une facture dans Global Gest avec son numéro, son échéancier et ses actions",
+    title: "Une facture conforme, sans y penser",
+    you: "Vous émettez la facture depuis le devis ou la commande : les lignes, les prix et la TVA sont déjà là.",
+    auto: [
+      "Numéro légal attribué à l'émission, sans trou dans la série",
+      "Échéancier en plusieurs tranches et plafond de crédit contrôlé par client",
+      "PDF prêt à envoyer, avec vos mentions légales en pied de page",
+    ],
+  },
+  {
+    key: "encaissement", label: "L'encaissement", image: "/landing/encaissement.webp", alt: "Le suivi des encaissements et des factures échues dans Global Gest",
+    title: "Des encaissements suivis, des impayés relancés",
+    you: "Vous enregistrez le paiement : espèces, Mobile Money, virement, chèque ou carte.",
+    auto: [
+      "Le règlement s'impute sur la bonne échéance et un reçu PDF est généré",
+      "Les factures échues sont signalées et relancées par e-mail : chaque relance est tracée",
+      "Trésorerie, créances par ancienneté et alertes d'échéance à jour sur le tableau de bord",
+    ],
+  },
+  {
+    key: "compta", label: "La comptabilité", image: "/landing/comptabilite.webp", alt: "Les écritures comptables générées automatiquement par les factures, les paiements et les achats dans Global Gest",
+    title: "Une comptabilité qui s'écrit toute seule",
+    you: "Vous n'avez rien à faire : chaque facture, paiement, achat et dépense est comptabilisé à votre place.",
+    auto: [
+      "Écritures passées automatiquement dans un plan comptable SYSCOHADA (simplifié)",
+      "Journal, grand livre, balance, compte de résultat et bilan toujours à jour",
+      "Votre expert-comptable consulte et exporte : plus de ressaisie en fin de mois",
+    ],
+  },
+] as const;
+
+export const HERO_CHIPS = ["FCFA par défaut", "Plan comptable SYSCOHADA", "Plusieurs entreprises, un seul compte", "Application mobile installable"];
+
+/** Ce qui se fait depuis le téléphone (application installable, voir README « Mobile »). `icon` : nom d'une icône lucide, résolue dans la page. */
+export const FIELD_ACTIONS = [
+  { icon: "ScanLine", title: "Scanner un code-barres", text: "L'appareil photo du téléphone retrouve le produit dans votre stock." },
+  { icon: "Camera", title: "Photographier un justificatif", text: "La dépense est saisie sur place et la photo du reçu rattachée." },
+  { icon: "PlusCircle", title: "Créer en un geste", text: "Devis, facture, commande ou client depuis le bouton « + » de la barre du bas." },
+  { icon: "Smartphone", title: "Installer l'application", text: "Ajoutée à l'écran d'accueil, en plein écran, sans passer par un magasin d'applications." },
+] as const;
+
+/** Les métiers : uniquement des fonctions qui existent dans le produit. */
+export const TRADES = [
+  {
+    key: "commerce", icon: "Store", title: "Commerce & distribution", extension: false,
+    points: ["Stock par entrepôt, seuils minimum et alertes de rupture", "Prix par client et listes de prix", "Achats fournisseurs avec circuit de validation", "Réceptions et inventaires qui alimentent le stock"],
+  },
+  {
+    key: "chantiers", icon: "HardHat", title: "BTP & chantiers", extension: true,
+    points: ["Budget et avancement par chantier", "Matériaux sortis du stock et imputés au chantier", "Équipes, engins et sous-traitants", "Rapports de terrain datés"],
+  },
+  {
+    key: "transport", icon: "Truck", title: "Transport & logistique", extension: true,
+    points: ["Véhicules, chauffeurs et missions", "Assurances et visites techniques : alertes avant l'échéance", "Carburant, entretiens et contraventions", "Coût et rentabilité par véhicule"],
+  },
+  {
+    key: "services", icon: "Briefcase", title: "Services & conseil", extension: false,
+    points: ["Facturation récurrente automatique", "Projets et tâches en liste, Kanban ou Gantt", "Temps passé facturé en un clic", "Rentabilité par projet"],
+  },
+] as const;
+
+export const IMPORT_ITEMS = ["Clients", "Fournisseurs", "Produits", "Salariés", "Factures impayées", "Plan comptable", "Balance d'ouverture"];

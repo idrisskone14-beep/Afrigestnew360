@@ -13,8 +13,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const siteUrl = (() => {
   try { return new URL(process.env.APP_URL ?? ""); } catch { return new URL("http://localhost:3000"); }
 })();
-const TITLE = "Global Gest — Toute votre entreprise. Une seule plateforme.";
-const DESCRIPTION = "Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis Global Gest.";
+const TITLE = "Global Gest — Du devis à la comptabilité, sans ressaisir une seule ligne";
+const DESCRIPTION = "Devis, factures, paiements, stock, comptabilité SYSCOHADA et RH dans un seul outil, en FCFA, sur ordinateur comme sur téléphone.";
 const SHARE_IMAGE = { url: "/brand/og-global-gest.jpg", width: 1200, height: 630, alt: "Global Gest" };
 
 export const metadata: Metadata = {

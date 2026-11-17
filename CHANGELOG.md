@@ -2,6 +2,16 @@
 
 Format : une entrée par phase livrée, des changements les plus récents aux plus anciens. Détail technique : `docs/ARCHITECTURE.md`.
 
+## Page d'accueil repensée : concrète, avec le vrai produit (2026-11)
+- **Constat** : la page ressemblait à un modèle de site de logiciel (promesses vagues, 17 sections, maquette aux faux chiffres). Elle passe à 12 sections, toutes appuyées sur des fonctions qui existent.
+- **Nouveau message** : « Du devis à la comptabilité, sans ressaisir une seule ligne » (page, titre du site, aperçu au partage, pied de page, écran de connexion).
+- **Héros sombre** au quadrillage de la marque, avec une **vraie capture** du produit (encaissements : espèces, Mobile Money, virement, chèque) à la place de la maquette.
+- **Un seul flux** : quatre onglets (devis, facture, encaissement, comptabilité), une capture réelle par étape, « ce que vous faites » et « ce que Global Gest fait à votre place ». Navigation au clavier (flèches, Début, Fin).
+- **Sur le terrain** : scan de code-barres, photo de justificatif, création en un geste, installation sur l'écran d'accueil, avec une capture mobile.
+- **Pour votre métier** : commerce, BTP et chantiers, transport, services, avec les fonctions réelles de chaque module ; **reprise des données** depuis Excel ou CSV.
+- **Retirés** : constat, solution, étapes, avantages, secteurs, bloc « Intelligence » et profils illustratifs (génériques), pays défilants, maquette fictive.
+- Captures prises sur le compte de démonstration (noms de personnes remplacés par des noms fictifs), en WebP léger dans `public/landing/` (≈ 490 Ko pour les six).
+
 ## Nouvelle identité : Global Gest (2026-11)
 - **Nouveau nom, nouveau logo, nouvelle palette « Vert & Marine »** tirée du logo : vert menthe #00D098 et marine #000D20, en thème clair comme en thème sombre. Contrastes AA vérifiés : le vert du logo étant trop clair pour du texte sur blanc, les boutons et liens du thème clair utilisent un vert plus profond (#00805C, #007A58) ; en thème sombre, c'est le vert du logo qui porte l'action.
 - **Remplacé partout** : interface, e-mails, PDF (en-têtes verts, « Document généré par Global Gest »), exports Excel, aperçu des documents, pages publiques et légales, manifeste de l'application installable, icônes, service worker, nom affiché dans les applications d'authentification (2FA), graphiques et pastilles de modules.
