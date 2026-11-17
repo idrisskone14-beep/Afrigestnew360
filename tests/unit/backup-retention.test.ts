@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { backupDate, expiredBackups } from "../../scripts/backup-retention";
 
 const NOW = new Date("2026-12-20T03:00:00Z");
-const key = (iso: string, prefix = "backups/") => `${prefix}kako-gestion-${iso.replace(/:/g, "-").replace(/\.\d+Z$/, "Z")}.dump.gpg`;
+const key = (iso: string, prefix = "backups/") => `${prefix}global-gest-${iso.replace(/:/g, "-").replace(/\.\d+Z$/, "Z")}.dump.gpg`;
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
 const opts = { keepDays: 30, minKeep: 7, maxDelete: 20, now: NOW };
 
@@ -11,13 +11,13 @@ const nightly = (n: number) => Array.from({ length: n }, (_, i) => key(daysAgo(i
 
 describe("rétention des sauvegardes", () => {
   it("reconnaît le nom d'une sauvegarde et refuse tout le reste, dates impossibles comprises", () => {
-    expect(backupDate("backups/kako-gestion-2026-11-18T02-30-05Z.dump.gpg")?.toISOString()).toBe("2026-11-18T02:30:05.000Z");
-    expect(backupDate("kako-gestion-2026-11-18T02-30-05Z.dump.gpg")).not.toBeNull();
-    expect(backupDate("backups/kako-gestion-2026-02-30T02-30-05Z.dump.gpg")).toBeNull(); // 30 février
-    expect(backupDate("backups/kako-gestion-2026-11-18T25-30-05Z.dump.gpg")).toBeNull();
+    expect(backupDate("backups/global-gest-2026-11-18T02-30-05Z.dump.gpg")?.toISOString()).toBe("2026-11-18T02:30:05.000Z");
+    expect(backupDate("global-gest-2026-11-18T02-30-05Z.dump.gpg")).not.toBeNull();
+    expect(backupDate("backups/global-gest-2026-02-30T02-30-05Z.dump.gpg")).toBeNull(); // 30 février
+    expect(backupDate("backups/global-gest-2026-11-18T25-30-05Z.dump.gpg")).toBeNull();
     expect(backupDate("backups/notes.txt")).toBeNull();
-    expect(backupDate("backups/kako-gestion-2026-11-18T02-30-05Z.dump")).toBeNull(); // non chiffrée : pas la nôtre
-    expect(backupDate("backups/evil-kako-gestion-2026-11-18T02-30-05Z.dump.gpg")).toBeNull();
+    expect(backupDate("backups/global-gest-2026-11-18T02-30-05Z.dump")).toBeNull(); // non chiffrée : pas la nôtre
+    expect(backupDate("backups/evil-global-gest-2026-11-18T02-30-05Z.dump.gpg")).toBeNull();
   });
 
   it("supprime ce qui a plus de 30 jours, garde le reste", () => {
@@ -48,9 +48,9 @@ describe("rétention des sauvegardes", () => {
   });
 
   it("ne touche à rien d'autre : fichiers inconnus, autres dossiers, sauvegardes datées du futur", () => {
-    const keys = [...nightly(40), "backups/README.txt", "backups/kako-gestion-2026-01-01T00-00-00Z.dump", "autre/dossier/fichier.bin", key(new Date(NOW.getTime() + 5 * 86_400_000).toISOString())];
+    const keys = [...nightly(40), "backups/README.txt", "backups/global-gest-2026-01-01T00-00-00Z.dump", "autre/dossier/fichier.bin", key(new Date(NOW.getTime() + 5 * 86_400_000).toISOString())];
     const expired = expiredBackups(keys, opts);
-    expect(expired.every((k) => /kako-gestion-.*\.dump\.gpg$/.test(k))).toBe(true);
+    expect(expired.every((k) => /global-gest-.*\.dump\.gpg$/.test(k))).toBe(true);
     expect(expired).not.toContain("backups/README.txt");
     expect(expired).not.toContain("autre/dossier/fichier.bin");
     expect(expired).not.toContain(keys[keys.length - 1]);

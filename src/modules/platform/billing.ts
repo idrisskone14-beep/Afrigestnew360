@@ -28,7 +28,7 @@ const priceOf = (plan: { priceMonthly: { toString(): string }; priceYearly: { to
  */
 export async function startSubscriptionPayment(ctx: TenantContext, input: { planId: string; cycle: Cycle }): Promise<{ url: string }> {
   const cfg = paydunyaConfig();
-  if (!cfg) throw businessRule("Le paiement en ligne n'est pas encore activé. Contactez votre gestionnaire de compte KAKO Gestion.");
+  if (!cfg) throw businessRule("Le paiement en ligne n'est pas encore activé. Contactez votre gestionnaire de compte Global Gest.");
   const plan = await platformDb.plan.findFirst({ where: { id: input.planId, isActive: true, isPublic: true } });
   if (!plan) throw notFound("Offre");
   const amount = priceOf(plan, input.cycle);
@@ -38,12 +38,12 @@ export async function startSubscriptionPayment(ctx: TenantContext, input: { plan
   const payment = await platformDb.subscriptionPayment.create({
     data: { companyId: ctx.company.id, planId: plan.id, billingCycle: input.cycle, amount: amount.toString(), currency: plan.currency, createdById: ctx.user.id },
   });
-  const label = `Abonnement KAKO Gestion — offre ${plan.name} (${input.cycle === "YEARLY" ? "1 an" : "1 mois"})`;
+  const label = `Abonnement Global Gest — offre ${plan.name} (${input.cycle === "YEARLY" ? "1 an" : "1 mois"})`;
   try {
     const invoice = await createInvoice(cfg, {
       amount: amount.toNumber(),
       description: label,
-      storeName: "KAKO Gestion",
+      storeName: "Global Gest",
       websiteUrl: appUrl(),
       returnUrl: appUrl(`${BILLING_PATH}?paiement=${payment.id}`),
       cancelUrl: appUrl(`${BILLING_PATH}?paiement=${payment.id}`),

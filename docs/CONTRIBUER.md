@@ -1,6 +1,6 @@
 # Contribuer
 
-Conventions et recettes pour faire évoluer KAKO Gestion sans casser l'isolation, les droits ni les données.
+Conventions et recettes pour faire évoluer Global Gest sans casser l'isolation, les droits ni les données.
 
 ## 1. Poste de développement
 

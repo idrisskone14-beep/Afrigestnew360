@@ -10,7 +10,7 @@ export default async function HelpPage() {
   await requireTenantContext();
   return (
     <>
-      <PageHeader title="Aide" description="Les essentiels pour prendre en main KAKO Gestion." />
+      <PageHeader title="Aide" description="Les essentiels pour prendre en main Global Gest." />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Raccourcis clavier</CardTitle></CardHeader>

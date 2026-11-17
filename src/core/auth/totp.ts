@@ -65,7 +65,7 @@ export function verifyTotp(secretBase32: string, code: string, atMs = Date.now()
   return false;
 }
 
-export function totpUri(secretBase32: string, accountEmail: string, issuer = "KAKO Gestion"): string {
+export function totpUri(secretBase32: string, accountEmail: string, issuer = "Global Gest"): string {
   const label = encodeURIComponent(`${issuer}:${accountEmail}`);
   return `otpauth://totp/${label}?secret=${secretBase32}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=${DIGITS}&period=${STEP_SECONDS}`;
 }

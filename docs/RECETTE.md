@@ -9,11 +9,11 @@ Légende : ✅ vérifié · ⬜ à faire · ❌ anomalie (voir la note).
 | # | Contrôle | Résultat attendu | |
 |---|---|---|---|
 | A1 | 12 pages publiques (accueil, fonctionnalités, solutions, tarifs, contact, démo, connexion, inscription, mot de passe oublié, 3 pages légales) | toutes en 200 | ✅ |
-| A2 | `robots.txt`, `sitemap.xml`, manifeste, service worker, icônes, logos `/brand/*` | 200, nom « KAKO Gestion » | ✅ |
+| A2 | `robots.txt`, `sitemap.xml`, manifeste, service worker, icônes, logos `/brand/*` | 200, nom « Global Gest » | ✅ |
 | A3 | `/app/*` et `/super-admin` sans session | redirection vers `/connexion?next=…` | ✅ |
 | A4 | `/api/export`, `/api/pdf`, `/api/files/logo` sans session ; `/api/cron/*` sans ou avec un mauvais secret | 401 | ✅ |
 | A5 | En-têtes : CSP à nonce, HSTS, X-Frame-Options DENY, nosniff, referrer, COOP/CORP | présents | ✅ |
-| A6 | Aucune trace de l'ancien nom (« AfriGest ») dans les pages publiques | 0 occurrence | ✅ |
+| A6 | Aucune trace des anciens noms (« AfriGest », « KAKO ») dans les pages publiques, les e-mails et les PDF | 0 occurrence | ⬜ |
 | A7 | `/api/health` | `ok:true`, `database:"ok"`, `storage:"s3"`, aucun problème bloquant | ✅ `storage:"s3"`, base ok (14/11) ; avertissements restants : `SENTRY_DSN`, `LEGAL_*`, clés VAPID absentes |
 | A8 | Pages légales sans « [à compléter] » | variables `LEGAL_*` renseignées | ❌ les 9 variables `LEGAL_*` toujours absentes (14/11) |
 | A9 | Sitemap : adresses canoniques (sans redirection) | `APP_URL` = adresse canonique (ici `https://www…`) | ❌ liste toujours `https://ivoireactu.com` qui redirige (308) vers `www` (14/11) : mettre `APP_URL=https://www.ivoireactu.com` puis redéployer |
@@ -59,9 +59,9 @@ Légende : ✅ vérifié · ⬜ à faire · ❌ anomalie (voir la note).
 | # | Étapes | Résultat attendu | |
 |---|---|---|---|
 | E1 | Voir et télécharger le PDF d'un devis, d'une facture, d'un avoir, d'un reçu, d'un bon de livraison | PDF lisible | ⬜ |
-| E2 | Pied de page des PDF | mentions légales de l'entreprise + « Document généré par KAKO Gestion » sur chaque page | ⬜ |
+| E2 | Pied de page des PDF | mentions légales de l'entreprise + « Document généré par Global Gest » sur chaque page | ⬜ |
 | E3 | Facture de plus de 30 lignes | plusieurs pages, pied de page et « Page n / N » sur chacune | ⬜ |
-| E4 | Aperçu à l'écran = PDF (couleurs violettes, mêmes blocs) | identique | ⬜ |
+| E4 | Aperçu à l'écran = PDF (couleurs vertes, mêmes blocs) | identique | ⬜ |
 
 ## F. Achats et stocks
 
@@ -143,7 +143,7 @@ Légende : ✅ vérifié · ⬜ à faire · ❌ anomalie (voir la note).
 | N1 | Provoquer une erreur de test (page inexistante côté app connecté) ; vérifier Sentry | événement reçu avec la « Référence » ; aucune donnée personnelle | ⬜ |
 | N2 | Sonde externe sur `/api/health` | alerte si ≠ 200 | ⬜ |
 | N3 | Restauration d'une sauvegarde de la base sur une base vide (voir `docs/EXPLOITATION.md` §3) | application démarre dessus ; mêmes entreprises et mêmes utilisateurs qu'en production | ⬜ |
-| N4 | Sauvegarde nocturne (§3 bis) : lancer le workflow « Sauvegarde » à la main | exécution verte ; fichier `kako-gestion-….dump.gpg` dans le bucket externe ; rien d'identifiant dans les journaux | ⬜ |
+| N4 | Sauvegarde nocturne (§3 bis) : lancer le workflow « Sauvegarde » à la main | exécution verte ; fichier `global-gest-….dump.gpg` dans le bucket externe ; rien d'identifiant dans les journaux | ⬜ |
 | N5 | Restaurer CE fichier (déchiffrement avec la phrase secrète, puis N3) | base identique à la production ; une mauvaise phrase secrète est refusée | ⬜ |
 
 ## P. Nettoyage

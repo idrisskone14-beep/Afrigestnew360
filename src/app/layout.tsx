@@ -9,16 +9,28 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
+// adresse publique du site (APP_URL) : sert à rendre absolues les adresses d'images d'aperçu au partage
+const siteUrl = (() => {
+  try { return new URL(process.env.APP_URL ?? ""); } catch { return new URL("http://localhost:3000"); }
+})();
+const TITLE = "Global Gest — Toute votre entreprise. Une seule plateforme.";
+const DESCRIPTION = "Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis Global Gest.";
+const SHARE_IMAGE = { url: "/brand/og-global-gest.jpg", width: 1200, height: 630, alt: "Global Gest" };
+
 export const metadata: Metadata = {
-  title: { default: "KAKO Gestion — Toute votre entreprise. Une seule plateforme.", template: "%s · KAKO Gestion" },
-  description:
-    "Gérez vos finances, vos ventes, vos clients, vos employés, vos stocks, vos projets et vos opérations depuis KAKO Gestion.",
+  metadataBase: siteUrl,
+  applicationName: "Global Gest",
+  title: { default: TITLE, template: "%s · Global Gest" },
+  description: DESCRIPTION,
+  // aperçu quand le lien est partagé (WhatsApp, Facebook, LinkedIn, X…)
+  openGraph: { type: "website", siteName: "Global Gest", locale: "fr_FR", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
 };
 
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a1020" },
+    { media: "(prefers-color-scheme: dark)", color: "#000d20" },
   ],
 };
 

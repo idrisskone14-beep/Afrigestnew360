@@ -1,7 +1,7 @@
 import { formatMoney, taxIdLabel } from "@/lib/reference-data";
 
 /** Mention de marque imprimée sous les mentions légales de tous les documents. */
-export const DOCUMENT_BRAND = "Document généré par KAKO Gestion";
+export const DOCUMENT_BRAND = "Document généré par Global Gest";
 
 /** Formes juridiques courantes, écrites en toutes lettres (« SARL » → « Société à Responsabilité Limitée (SARL) »). */
 const LEGAL_FORMS: Record<string, string> = {

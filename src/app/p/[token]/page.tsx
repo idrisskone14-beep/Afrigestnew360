@@ -58,7 +58,7 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
       )}
 
       <section aria-label="Document" className="rounded-xl bg-muted/70 p-3 sm:p-6"><DocumentPreview data={doc.preview} /></section>
-      <footer className="flex items-center justify-center gap-2 pb-4 text-xs text-muted-foreground">Document partagé via <Logo compact className="[&_svg]:size-5" /> KAKO Gestion</footer>
+      <footer className="flex items-center justify-center gap-2 pb-4 text-xs text-muted-foreground">Document partagé via <Logo compact className="[&_svg]:size-5" /> Global Gest</footer>
     </main>
   );
 }

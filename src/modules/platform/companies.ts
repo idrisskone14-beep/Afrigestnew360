@@ -64,8 +64,8 @@ export async function inviteCompanyAdmin(companyId: string, email: string, invit
   });
   await sendMail({
     to: clean,
-    subject: `Votre espace ${companyName} est prêt sur KAKO Gestion`,
-    text: `Vous avez été désigné(e) administrateur de « ${companyName} » sur KAKO Gestion.\n\nActivez votre accès :\n${appUrl(`/invitation/${token}`)}\n\nCe lien est valable 7 jours.`,
+    subject: `Votre espace ${companyName} est prêt sur Global Gest`,
+    text: `Vous avez été désigné(e) administrateur de « ${companyName} » sur Global Gest.\n\nActivez votre accès :\n${appUrl(`/invitation/${token}`)}\n\nCe lien est valable 7 jours.`,
   });
   return inv;
 }

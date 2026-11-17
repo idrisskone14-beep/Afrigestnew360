@@ -2,6 +2,14 @@
 
 Format : une entrée par phase livrée, des changements les plus récents aux plus anciens. Détail technique : `docs/ARCHITECTURE.md`.
 
+## Nouvelle identité : Global Gest (2026-11)
+- **Nouveau nom, nouveau logo, nouvelle palette « Vert & Marine »** tirée du logo : vert menthe #00D098 et marine #000D20, en thème clair comme en thème sombre. Contrastes AA vérifiés : le vert du logo étant trop clair pour du texte sur blanc, les boutons et liens du thème clair utilisent un vert plus profond (#00805C, #007A58) ; en thème sombre, c'est le vert du logo qui porte l'action.
+- **Remplacé partout** : interface, e-mails, PDF (en-têtes verts, « Document généré par Global Gest »), exports Excel, aperçu des documents, pages publiques et légales, manifeste de l'application installable, icônes, service worker, nom affiché dans les applications d'authentification (2FA), graphiques et pastilles de modules.
+- **Logo** : le « G » et le nom sont extraits de l'image source (`assets/brand/global-gest-logo-source.webp`) par `node scripts/make-brand-assets.mjs`. Le nom sert de masque : il prend la couleur du thème (blanc en sombre, marine en clair) avec la typographie exacte du logo. Un original vectoriel (SVG) donnerait un résultat encore plus net.
+- **Aperçu au partage** (Open Graph et Twitter) : image 1200 × 630 et titre quand le lien est partagé (WhatsApp, Facebook, LinkedIn…).
+- Les fichiers de sauvegarde nocturne s'appellent désormais `global-gest-….dump.gpg`.
+- **Inchangé volontairement** : les noms techniques (base et rôles `afrigest_app` / `afrigest_backup`, paquet npm, comptes de démonstration), dont le renommage casserait la base en service.
+
 ## Sauvegarde nocturne hors fournisseur (2026-11)
 - **Workflow `backup.yml`** (inactif tant que `BACKUP_ENABLED` n'est pas « true ») : chaque nuit, export de la base, contrôle (une sauvegarde vide est refusée), chiffrement GPG AES-256 vérifié par déchiffrement, envoi dans un stockage S3 externe, suppression des sauvegardes de plus de 30 jours (7 toujours conservées).
 - **Compte de sauvegarde en lecture seule** `afrigest_backup` (`npm run db:backup-role`) : c'est son mot de passe, et non celui du propriétaire de la base, qui est confié à GitHub. Testé : lecture de toutes les lignes avec `app.bypass_rls`, aucun droit d'écriture, ni superutilisateur ni BYPASSRLS.

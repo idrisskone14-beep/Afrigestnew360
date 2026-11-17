@@ -49,10 +49,10 @@ export interface BusinessDocument {
   signatureLabel?: string;
 }
 
-const INK = "#0b0c24";
-const MUTED = "#5a5b7a";
-const ACCENT = "#5c08da";
-const LINE = "#e2e0f4";
+const INK = "#06192B";
+const MUTED = "#4B6073";
+const ACCENT = "#007A58";
+const LINE = "#DCE6EC";
 
 /** « FACTURE PROFORMA » → « Facture proforma » : le titre s'affiche en minuscules, comme sur les devis de référence. */
 export const sentenceCase = (s: string) => {
@@ -81,7 +81,7 @@ export function pdfFooterHeight(pdf: PdfDoc, text: string, width: number): numbe
 }
 
 /**
- * Imprime le pied de page sur CHAQUE page : filet, mentions légales de l'émetteur, puis « Document généré par KAKO Gestion »
+ * Imprime le pied de page sur CHAQUE page : filet, mentions légales de l'émetteur, puis « Document généré par Global Gest »
  * (et « Page n / N » dès qu'il y a plusieurs pages). Le document doit avoir été créé avec `bufferPages: true`.
  */
 export function drawPdfFooters(pdf: PdfDoc, o: { text: string; left: number; width: number; brand?: string }) {

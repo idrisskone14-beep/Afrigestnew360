@@ -4,7 +4,7 @@ import { TO_COMPLETE, legalInfo } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Mentions légales",
-  description: "Éditeur, hébergeur et contact du service KAKO Gestion.",
+  description: "Éditeur, hébergeur et contact du service Global Gest.",
   alternates: { canonical: "/mentions-legales" },
 };
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default function LegalNoticePage() {
   const L = legalInfo();
   return (
-    <LegalPage title="Mentions légales" intro="Informations sur l'éditeur et l'hébergeur du service KAKO Gestion.">
+    <LegalPage title="Mentions légales" intro="Informations sur l'éditeur et l'hébergeur du service Global Gest.">
       <section>
         <h2>Éditeur du service</h2>
         <ul>
@@ -30,7 +30,7 @@ export default function LegalNoticePage() {
       </section>
       <section>
         <h2>Propriété intellectuelle</h2>
-        <p>Le logiciel KAKO Gestion, son interface, sa marque, son logo et ses contenus sont protégés par le droit de la propriété intellectuelle. Toute reproduction ou représentation, totale ou partielle, sans autorisation écrite de l&apos;éditeur est interdite. Les données saisies par les clients dans leur espace leur appartiennent (voir les <a href="/conditions-utilisation">conditions d&apos;utilisation</a>).</p>
+        <p>Le logiciel Global Gest, son interface, sa marque, son logo et ses contenus sont protégés par le droit de la propriété intellectuelle. Toute reproduction ou représentation, totale ou partielle, sans autorisation écrite de l&apos;éditeur est interdite. Les données saisies par les clients dans leur espace leur appartiennent (voir les <a href="/conditions-utilisation">conditions d&apos;utilisation</a>).</p>
       </section>
       <section>
         <h2>Données personnelles et cookies</h2>

@@ -11,24 +11,24 @@ const POINTS = [
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-navy text-[#eef3ff] lg:flex">
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-navy text-[#E8F2F7] lg:flex">
         <div className="accent-line" aria-hidden />
         <div className="relative z-10 flex flex-1 flex-col justify-between p-12">
-          <Link href="/" className="animate-fade-in text-[#eef3ff]"><Logo /></Link>
+          <Link href="/" className="animate-fade-in text-[#E8F2F7]"><Logo /></Link>
           <div className="max-w-md space-y-9">
             <h2 className="animate-fade-up font-display text-5xl font-semibold leading-[1.05] tracking-tight">
               Toute votre entreprise. <span className="italic text-brand-2">Une seule plateforme.</span>
             </h2>
-            <ul className="stagger space-y-4 text-sm text-[#eef3ff]/85">
+            <ul className="stagger space-y-4 text-sm text-[#E8F2F7]/85">
               {POINTS.map(({ icon: Icon, text }) => (
-                <li key={text} className="flex items-start gap-4 border-t border-[#eef3ff]/20 pt-4">
+                <li key={text} className="flex items-start gap-4 border-t border-[#E8F2F7]/20 pt-4">
                   <Icon className="mt-0.5 size-5 shrink-0 text-brand-2" />
                   <span>{text}</span>
                 </li>
               ))}
             </ul>
           </div>
-          <p className="text-xs text-[#eef3ff]/55">© {new Date().getFullYear()} KAKO Gestion</p>
+          <p className="text-xs text-[#E8F2F7]/55">© {new Date().getFullYear()} Global Gest</p>
         </div>
       </aside>
       <main className="flex min-h-dvh flex-col justify-center px-5 py-10 sm:px-10">

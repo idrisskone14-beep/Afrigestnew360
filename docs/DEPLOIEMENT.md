@@ -50,7 +50,7 @@ SEED_DEMO=false npm run db:seed  # catalogue (modules, offres, permissions) + co
 | `APP_URL` | oui | URL publique, `https://…` (liens des e-mails) |
 | `PLATFORM_OWNER_EMAIL` / `PLATFORM_OWNER_PASSWORD` | au premier seed | compte propriétaire de la plateforme (`/super-admin`) — mot de passe fort, à changer après la première connexion |
 | `REQUIRE_EMAIL_VERIFICATION` | recommandé | `true` : la connexion exige une adresse e-mail confirmée — **sauf en mode « validation par le Super Admin »** (choisi dans la console, ou imposé faute d'envoi d'e-mails), où aucune confirmation n'est demandée. `false` : jamais exigée |
-| `RESEND_API_KEY`, `MAIL_FROM` | si e-mails | clé Resend ; `MAIL_FROM="KAKO Gestion <no-reply@votre-domaine>"` sur un domaine **vérifié** |
+| `RESEND_API_KEY`, `MAIL_FROM` | si e-mails | clé Resend ; `MAIL_FROM="Global Gest <no-reply@votre-domaine>"` sur un domaine **vérifié** |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | si notifications push | générer UNE paire avec `npm run push:keys` ; `VAPID_SUBJECT=mailto:contact@votre-domaine`. Changer de clés oblige chaque utilisateur à réactiver les notifications sur ses appareils |
 | `PAYDUNYA_MASTER_KEY`, `PAYDUNYA_PRIVATE_KEY`, `PAYDUNYA_TOKEN`, `PAYDUNYA_MODE` | si paiement en ligne des abonnements | clés de l'application PayDunya (§14). `PAYDUNYA_MODE=live` avec les clés de production ; sans cette valeur, bac à sable (aucun débit réel) |
 | `CRON_SECRET` | oui | `openssl rand -hex 24` (16 caractères minimum) — Vercel l'envoie automatiquement au cron |
@@ -137,7 +137,7 @@ Domaine actuel : **global-gest.com**, acheté chez OVH (domaine seul, **sans** h
 
 1. **Vercel** → *Settings → Domains* → ajouter `www.global-gest.com` (principal) puis `global-gest.com` en choisissant « Redirect to www.global-gest.com » (redirection permanente). Vercel affiche les enregistrements DNS à créer : utiliser **ces valeurs**.
 2. **OVH** → *Noms de domaine → global-gest.com → Zone DNS*. D'abord **supprimer** les enregistrements par défaut d'OVH sur la racine et sur `www` (A, AAAA ou CNAME vers leurs serveurs ou une page de parking), puis ajouter ceux de Vercel : un **A** pour la racine et un **CNAME** pour `www`. Ne pas rattacher le domaine à un hébergement OVH. Les serveurs de messagerie (MX) éventuels du domaine ne sont pas concernés. Propagation : de quelques minutes à quelques heures ; Vercel active ensuite le HTTPS tout seul.
-3. **Variables Vercel** (*Production*) : `APP_URL=https://www.global-gest.com`, `MAIL_FROM="KAKO Gestion <no-reply@global-gest.com>"`, `VAPID_SUBJECT=mailto:contact@global-gest.com` si les notifications push sont activées ; puis **Redeploy**.
+3. **Variables Vercel** (*Production*) : `APP_URL=https://www.global-gest.com`, `MAIL_FROM="Global Gest <no-reply@global-gest.com>"`, `VAPID_SUBJECT=mailto:contact@global-gest.com` si les notifications push sont activées ; puis **Redeploy**.
 4. **Resend** (§7) : ajouter `global-gest.com`, copier ses enregistrements DNS (SPF, DKIM…) dans la même zone OVH, puis *Verify*. Sans cela, aucun e-mail d'invitation ou de vérification ne part.
 5. **Ancien domaine** (`ivoireactu.com`) : le garder quelques mois et le rediriger vers le nouveau (*Domains → Redirect*) pour ne perdre ni utilisateurs ni liens.
 6. **PayDunya** : si des adresses de retour ou de notification ont été saisies à la main avec l'ancien domaine dans l'application PayDunya, les mettre à jour (le code les déduit de `APP_URL`).
@@ -172,7 +172,7 @@ Un déploiement manuel reste possible (`vercel deploy --prod`). **Retour arrièr
 
 ## 14. Paiement en ligne des abonnements (PayDunya)
 
-Les entreprises clientes règlent leur abonnement KAKO Gestion depuis **Paramètres → Abonnement → Payer en ligne** (Mobile Money, carte). L'argent arrive sur VOTRE compte PayDunya : une seule application PayDunya pour toute la plateforme.
+Les entreprises clientes règlent leur abonnement Global Gest depuis **Paramètres → Abonnement → Payer en ligne** (Mobile Money, carte). L'argent arrive sur VOTRE compte PayDunya : une seule application PayDunya pour toute la plateforme.
 
 1. Sur paydunya.com : créer le compte marchand, faire valider le KYC, puis **Intégrez notre API → créer une application**. Relever les trois clés (maître, privée, jeton), d'abord en **mode test**.
 2. Dans Vercel (*Production*) : `PAYDUNYA_MASTER_KEY`, `PAYDUNYA_PRIVATE_KEY`, `PAYDUNYA_TOKEN`, sans `PAYDUNYA_MODE` (bac à sable). Redéployer (`vercel deploy --prod --yes`).

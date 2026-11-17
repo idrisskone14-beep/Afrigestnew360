@@ -47,7 +47,7 @@ export async function createInvitation(ctx: TenantContext, input: { email: strin
   const companyName = ctx.company.tradeName ?? ctx.company.legalName;
   await sendMail({
     to: email,
-    subject: `${ctx.user.name} vous invite à rejoindre ${companyName} sur KAKO Gestion`,
+    subject: `${ctx.user.name} vous invite à rejoindre ${companyName} sur Global Gest`,
     text: `${ctx.user.name} vous invite à rejoindre « ${companyName} » avec le rôle « ${role.name} ».\n\nAccepter l'invitation :\n${appUrl(`/invitation/${token}`)}\n\nCe lien est valable 7 jours.`,
   });
   return invitation;

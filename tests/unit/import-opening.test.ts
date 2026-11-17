@@ -105,7 +105,7 @@ describe("applications d'origine reconnues", () => {
     expect(detectSource(s)).not.toBeUndefined();
   });
 
-  it("fichier au modèle KAKO Gestion : détecté comme générique ; l'application choisie peut être changée", () => {
+  it("fichier au modèle Global Gest : détecté comme générique ; l'application choisie peut être changée", () => {
     const headers = ["Raison sociale", "E-mail", "Téléphone", "Ville"];
     const s = suggestBySource("customers", headers, fields("customers"));
     expect(detectSource(s)).toBe("excel");

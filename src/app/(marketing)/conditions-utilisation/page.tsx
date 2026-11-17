@@ -4,7 +4,7 @@ import { legalInfo } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Conditions d'utilisation",
-  description: "Conditions générales d'utilisation du service KAKO Gestion.",
+  description: "Conditions générales d'utilisation du service Global Gest.",
   alternates: { canonical: "/conditions-utilisation" },
 };
 export const dynamic = "force-dynamic";
@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 export default function TermsPage() {
   const L = legalInfo();
   return (
-    <LegalPage title="Conditions d'utilisation" intro="Elles encadrent l'accès et l'utilisation du service KAKO Gestion. En créant un compte, vous les acceptez.">
+    <LegalPage title="Conditions d'utilisation" intro="Elles encadrent l'accès et l'utilisation du service Global Gest. En créant un compte, vous les acceptez.">
       <section>
         <h2>1. Objet et définitions</h2>
-        <p>Le service KAKO Gestion (« le Service ») est un logiciel de gestion d&apos;entreprise accessible en ligne : ventes, achats, stocks, finance, comptabilité, ressources humaines, projets, documents et extensions. Il est édité par <Val>{L.company}</Val> (« l&apos;Éditeur »). Le « Client » est l&apos;entreprise qui utilise le Service ; l&apos;« Utilisateur » est toute personne qu&apos;elle autorise à y accéder.</p>
+        <p>Le service Global Gest (« le Service ») est un logiciel de gestion d&apos;entreprise accessible en ligne : ventes, achats, stocks, finance, comptabilité, ressources humaines, projets, documents et extensions. Il est édité par <Val>{L.company}</Val> (« l&apos;Éditeur »). Le « Client » est l&apos;entreprise qui utilise le Service ; l&apos;« Utilisateur » est toute personne qu&apos;elle autorise à y accéder.</p>
       </section>
       <section>
         <h2>2. Compte et accès</h2>

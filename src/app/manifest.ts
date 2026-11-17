@@ -4,15 +4,15 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/app/dashboard",
-    name: "KAKO Gestion",
-    short_name: "KAKO",
+    name: "Global Gest",
+    short_name: "Global Gest",
     description: "Gestion d'entreprise : ventes, stock, finance, RH, chantiers et flotte.",
     start_url: "/app/dashboard",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#ffffff",
-    theme_color: "#0b0a35",
+    background_color: "#000d20",
+    theme_color: "#000d20",
     lang: "fr",
     categories: ["business", "productivity", "finance"],
     icons: [

@@ -472,7 +472,7 @@ enum SubscriptionPaymentStatus {
   CANCELED
 }
 
-// Règlement d'un abonnement KAKO par une entreprise, via une passerelle de paiement (PayDunya). `providerToken` identifie la
+// Règlement d'un abonnement Global Gest par une entreprise, via une passerelle de paiement (PayDunya). `providerToken` identifie la
 // facture côté passerelle ; le statut n'est passé à COMPLETED qu'après confirmation serveur à serveur (jamais sur la seule
 // foi d'une redirection du navigateur).
 model SubscriptionPayment {

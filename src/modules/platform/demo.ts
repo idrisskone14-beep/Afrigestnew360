@@ -64,8 +64,8 @@ export async function recordDemoRequest(input: DemoRequestData) {
       : Promise.resolve(),
     sendMail({
       to: email,
-      subject: "Votre demande a bien été reçue — KAKO Gestion",
-      text: `Bonjour ${created.fullName},\n\nMerci pour votre intérêt pour KAKO Gestion. Notre équipe vous recontacte très prochainement pour organiser votre démonstration.\n\nL'équipe KAKO Gestion`,
+      subject: "Votre demande a bien été reçue — Global Gest",
+      text: `Bonjour ${created.fullName},\n\nMerci pour votre intérêt pour Global Gest. Notre équipe vous recontacte très prochainement pour organiser votre démonstration.\n\nL'équipe Global Gest`,
     }),
   ]);
   return { id: created.id, duplicate: false };

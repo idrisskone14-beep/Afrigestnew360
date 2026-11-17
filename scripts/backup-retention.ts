@@ -4,13 +4,13 @@
  * standard (une par ligne) et écrit sur la sortie celles à supprimer. Aucune suppression ici : le workflow s'en charge.
  *
  * Garde-fous, pour qu'un défaut de ce code ne puisse jamais vider le stockage :
- *   - seuls les fichiers nommés `kako-gestion-AAAA-MM-JJThh-mm-ssZ.dump.gpg` sont considérés : tout autre fichier est ignoré ;
+ *   - seuls les fichiers nommés `global-gest-AAAA-MM-JJThh-mm-ssZ.dump.gpg` sont considérés : tout autre fichier est ignoré ;
  *   - les `minKeep` sauvegardes les plus récentes sont TOUJOURS conservées, quel que soit leur âge ;
  *   - une sauvegarde plus récente que `keepDays` n'est jamais supprimée (ni une datée du futur) ;
  *   - au plus `maxDelete` suppressions par exécution (les plus anciennes d'abord).
  */
 
-const NAME = /(?:^|\/)kako-gestion-(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})Z\.dump\.gpg$/;
+const NAME = /(?:^|\/)global-gest-(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})Z\.dump\.gpg$/;
 const DAY = 86_400_000;
 
 export interface RetentionOptions { keepDays: number; minKeep: number; maxDelete: number; now: Date }

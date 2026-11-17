@@ -6,7 +6,7 @@ import { suggestMapping, type FieldDef, type ImportEntity } from "./entities";
  * Les intitulés sont comparés sans accents, majuscules ni ponctuation (voir `normHeader`).
  */
 export const IMPORT_SOURCES = [
-  { key: "excel", label: "Excel / CSV (modèle KAKO Gestion)" },
+  { key: "excel", label: "Excel / CSV (modèle Global Gest)" },
   { key: "sage", label: "Sage" },
   { key: "ciel", label: "Ciel" },
   { key: "odoo", label: "Odoo" },

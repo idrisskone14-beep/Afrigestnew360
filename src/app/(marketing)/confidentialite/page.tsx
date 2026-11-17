@@ -4,7 +4,7 @@ import { legalInfo } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Politique de confidentialité",
-  description: "Comment KAKO Gestion traite les données personnelles et utilise les cookies.",
+  description: "Comment Global Gest traite les données personnelles et utilise les cookies.",
   alternates: { canonical: "/confidentialite" },
 };
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default function PrivacyPage() {
   const L = legalInfo();
   return (
-    <LegalPage title="Politique de confidentialité" intro="Elle explique quelles données personnelles KAKO Gestion traite, pourquoi, pendant combien de temps, et quels sont vos droits.">
+    <LegalPage title="Politique de confidentialité" intro="Elle explique quelles données personnelles Global Gest traite, pourquoi, pendant combien de temps, et quels sont vos droits.">
       <section>
         <h2>1. Qui est responsable ?</h2>
         <p>Deux situations coexistent :</p>

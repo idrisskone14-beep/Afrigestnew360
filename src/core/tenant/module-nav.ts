@@ -111,9 +111,9 @@ export function moduleItems(ctx: Pick<TenantContext, "can">, moduleKey: string):
  * ouverte, ce qui garde un menu court même quand tous les modules sont activés.
  */
 export const FAMILIES = [
-  { key: "gestion", label: "Gestion commerciale", code: "Com", color: "#7b1ff0", modules: ["sales", "crm", "purchases", "inventory"] },
-  { key: "finance", label: "Finance et comptabilité", code: "Fin", color: "#0b63e5", modules: ["finance", "accounting"] },
-  { key: "rh", label: "Ressources humaines et paie", code: "RH", color: "#0d0b45", modules: ["hr", "payroll"] },
+  { key: "gestion", label: "Gestion commerciale", code: "Com", color: "#00805C", modules: ["sales", "crm", "purchases", "inventory"] },
+  { key: "finance", label: "Finance et comptabilité", code: "Fin", color: "#0B6EA8", modules: ["finance", "accounting"] },
+  { key: "rh", label: "Ressources humaines et paie", code: "RH", color: "#6D45C8", modules: ["hr", "payroll"] },
   { key: "projets", label: "Projets et chantiers", code: "Prj", color: "#d97706", modules: ["projects", "construction"] },
   { key: "transport", label: "Transport et flotte", code: "Trp", color: "#0e7490", modules: ["fleet"] },
   { key: "documents", label: "Documents et analyses", code: "Doc", color: "#475569", modules: ["documents", "reports", "intelligence"] },
