@@ -17,6 +17,7 @@
     "db:seed": "tsx --conditions=react-server prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
     "db:app-role": "tsx scripts/db-app-role.ts",
+    "db:backup-role": "tsx scripts/db-backup-role.ts",
     "db:owner-password": "tsx scripts/reset-owner-password.ts",
     "push:keys": "tsx scripts/vapid-keys.ts",
     "secrets": "tsx scripts/gen-secrets.ts",

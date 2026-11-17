@@ -142,7 +142,9 @@ Légende : ✅ vérifié · ⬜ à faire · ❌ anomalie (voir la note).
 |---|---|---|---|
 | N1 | Provoquer une erreur de test (page inexistante côté app connecté) ; vérifier Sentry | événement reçu avec la « Référence » ; aucune donnée personnelle | ⬜ |
 | N2 | Sonde externe sur `/api/health` | alerte si ≠ 200 | ⬜ |
-| N3 | Restauration d'une sauvegarde de la base sur une base vide | application démarre dessus | ⬜ |
+| N3 | Restauration d'une sauvegarde de la base sur une base vide (voir `docs/EXPLOITATION.md` §3) | application démarre dessus ; mêmes entreprises et mêmes utilisateurs qu'en production | ⬜ |
+| N4 | Sauvegarde nocturne (§3 bis) : lancer le workflow « Sauvegarde » à la main | exécution verte ; fichier `kako-gestion-….dump.gpg` dans le bucket externe ; rien d'identifiant dans les journaux | ⬜ |
+| N5 | Restaurer CE fichier (déchiffrement avec la phrase secrète, puis N3) | base identique à la production ; une mauvaise phrase secrète est refusée | ⬜ |
 
 ## P. Nettoyage
 

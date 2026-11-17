@@ -1,0 +1,163 @@
+name: Sauvegarde
+
+# Sauvegarde NOCTURNE de la base de production, hors du fournisseur de la base : export complet (pg_dump), contrôle, chiffrement
+# (GPG, AES-256) puis envoi dans un stockage S3 externe ; les sauvegardes de plus de 30 jours sont supprimées (jamais moins de 7 conservées).
+# Inactif tant que la variable de dépôt BACKUP_ENABLED n'est pas « true ». Mise en place, secrets et restauration : docs/EXPLOITATION.md §3 bis.
+# Dépôt public : les journaux sont publics, d'où le masquage et l'absence de chiffres métier dans les messages ci-dessous.
+#
+#   Secrets   : BACKUP_DATABASE_URL (compte en lecture seule « afrigest_backup », créé par `npm run db:backup-role`),
+#               BACKUP_PASSPHRASE (phrase secrète de chiffrement : à garder AUSSI dans un gestionnaire de mots de passe),
+#               BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY
+#   Variables : BACKUP_ENABLED=true, BACKUP_S3_BUCKET ; facultatives : BACKUP_S3_ENDPOINT (hors Amazon S3), BACKUP_S3_REGION (défaut « auto »),
+#               BACKUP_S3_PREFIX (défaut « backups/ »), BACKUP_S3_FORCE_PATH_STYLE, BACKUP_PG_VERSION (défaut 18 : la version de la base),
+#               BACKUP_RETENTION_DAYS (défaut 30), BACKUP_MIN_KEEP (défaut 7)
+on:
+  schedule:
+    - cron: "30 2 * * *" # chaque nuit à 02 h 30 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Une seule sauvegarde à la fois, sans jamais en interrompre une en cours.
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Sauvegarde de la base de production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: vars.BACKUP_ENABLED == 'true'
+    env:
+      DB_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ vars.BACKUP_S3_REGION || 'auto' }}
+      # les fournisseurs compatibles S3 (R2, Scaleway…) n'acceptent pas toujours les sommes de contrôle ajoutées par défaut
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+      S3_BUCKET: ${{ vars.BACKUP_S3_BUCKET }}
+      S3_ENDPOINT: ${{ vars.BACKUP_S3_ENDPOINT }}
+      S3_PREFIX: ${{ vars.BACKUP_S3_PREFIX || 'backups/' }}
+      S3_FORCE_PATH_STYLE: ${{ vars.BACKUP_S3_FORCE_PATH_STYLE }}
+      PG_VERSION: ${{ vars.BACKUP_PG_VERSION || '18' }}
+      RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS || '30' }}
+      MIN_KEEP: ${{ vars.BACKUP_MIN_KEEP || '7' }}
+      # L'isolation entre entreprises (RLS forcée) s'applique à tout compte, y compris celui de sauvegarde : comme l'application,
+      # on pose ce réglage de session pour lire TOUTES les lignes. Sans lui, la sauvegarde serait vide.
+      PGOPTIONS: "-c app.bypass_rls=on"
+    steps:
+      - name: Vérifier la configuration
+        run: |
+          set -euo pipefail
+          # Le dépôt est PUBLIC : les journaux d'exécution sont lisibles par tous. GitHub ne masque que les secrets entiers ;
+          # on masque aussi le mot de passe, l'hôte de la base, le bucket et le point d'accès, et on n'affiche aucun chiffre métier.
+          pass=$(printf '%s' "$DB_URL" | sed -E 's#^[a-z]+://[^:@/]*:([^@]*)@.*#\1#')
+          host=$(printf '%s' "$DB_URL" | sed -E 's#^[a-z]+://[^@]*@([^:/?]+).*#\1#')
+          for v in "$pass" "$host" "$S3_BUCKET" "${S3_ENDPOINT:-}"; do
+            if [ -n "$v" ]; then echo "::add-mask::$v"; fi
+          done
+          missing=""
+          for v in DB_URL PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY S3_BUCKET; do
+            if [ -z "${!v:-}" ]; then missing="$missing $v"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Configuration incomplète (secrets BACKUP_* et variable BACKUP_S3_BUCKET, voir l'en-tête de ce fichier) :$missing"
+            exit 1
+          fi
+          if [ "${#PASSPHRASE}" -lt 20 ]; then echo "::error::BACKUP_PASSPHRASE trop courte (20 caractères minimum)."; exit 1; fi
+          case "$DB_URL" in
+            *://afrigest_backup:*) ;;
+            *) echo "::warning::BACKUP_DATABASE_URL n'utilise pas le compte en lecture seule « afrigest_backup » : ne confiez pas le mot de passe du propriétaire de la base à GitHub (npm run db:backup-role).";;
+          esac
+          PREFIX="${S3_PREFIX%/}/"
+          echo "PREFIX=$PREFIX" >> "$GITHUB_ENV"
+          STAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ)
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          echo "FILE=kako-gestion-$STAMP.dump.gpg" >> "$GITHUB_ENV"
+          if [ "${S3_FORCE_PATH_STYLE:-}" = "true" ]; then aws configure set default.s3.addressing_style path; fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # pg_dump doit être de la même version que la base (ou plus récent) : on utilise l'image officielle PostgreSQL de cette version.
+      - name: Exporter la base (lecture seule)
+        run: |
+          set -euo pipefail
+          docker run --rm -e PGOPTIONS -e DB_URL "postgres:${PG_VERSION}" \
+            sh -c 'exec pg_dump --format=custom --no-owner --enable-row-security "$DB_URL"' > dump.pg
+          echo "Export : $(stat -c %s dump.pg) octets"
+
+      # Une sauvegarde vide ou tronquée est pire que pas de sauvegarde : on la refuse avant de l'envoyer.
+      - name: Contrôler l'export
+        run: |
+          set -euo pipefail
+          SIZE=$(stat -c %s dump.pg)
+          if [ "$SIZE" -lt 20000 ]; then echo "::error::Export anormalement petit ($SIZE octets)."; exit 1; fi
+          docker run --rm -v "$PWD:/work" -w /work "postgres:${PG_VERSION}" pg_restore --list dump.pg > dump.toc
+          grep -Eq 'TABLE DATA public Company( |$)' dump.toc || { echo "::error::La table des entreprises est absente de l'export."; exit 1; }
+          LIVE=$(docker run --rm -e PGOPTIONS -e DB_URL "postgres:${PG_VERSION}" sh -c 'exec psql "$DB_URL" -At -c "select count(*) from \"Company\""')
+          DUMPED=$(docker run --rm -v "$PWD:/work" -w /work "postgres:${PG_VERSION}" pg_restore --data-only --table=Company --file=- dump.pg \
+            | awk '/^COPY /{c=1;next} /^\\\.$/{c=0;next} c{n++} END{print n+0}')
+          # (aucun nombre affiché : journaux publics)
+          if [ "$LIVE" -gt 0 ] && [ "$DUMPED" -eq 0 ]; then
+            echo "::error::L'export ne contient aucune entreprise alors que la base en contient : l'isolation par entreprise (app.bypass_rls) a filtré les données."
+            exit 1
+          fi
+          if [ "$LIVE" -eq 0 ]; then echo "::warning::La base ne contient aucune entreprise (rien à vérifier)."; else echo "Contrôle des entreprises : OK"; fi
+
+      - name: Chiffrer (AES-256)
+        run: |
+          set -euo pipefail
+          printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 --compress-algo none --output "$FILE" dump.pg
+          # on vérifie qu'on SAIT redéchiffrer : une sauvegarde illisible ne vaut rien
+          A=$(sha256sum dump.pg | cut -d' ' -f1)
+          B=$(printf '%s' "$PASSPHRASE" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --decrypt "$FILE" 2>/dev/null | sha256sum | cut -d' ' -f1)
+          if [ "$A" != "$B" ]; then echo "::error::Le fichier chiffré ne se déchiffre pas à l'identique."; exit 1; fi
+          rm -f dump.pg
+          echo "Chiffré : $(stat -c %s "$FILE") octets"
+
+      - name: Envoyer vers le stockage externe
+        run: |
+          set -euo pipefail
+          EP=(); if [ -n "${S3_ENDPOINT:-}" ]; then EP=(--endpoint-url "$S3_ENDPOINT"); fi
+          aws s3 cp "$FILE" "s3://$S3_BUCKET/$PREFIX$FILE" "${EP[@]}" --only-show-errors
+          REMOTE=$(aws s3api head-object --bucket "$S3_BUCKET" --key "$PREFIX$FILE" "${EP[@]}" --query ContentLength --output text)
+          LOCAL=$(stat -c %s "$FILE")
+          if [ "$REMOTE" != "$LOCAL" ]; then echo "::error::Taille différente dans le stockage ($REMOTE) et en local ($LOCAL)."; exit 1; fi
+          echo "Envoyé dans le stockage externe ($REMOTE octets)"
+
+      # Après l'envoi réussi seulement : on ne supprime jamais d'ancienne sauvegarde tant que la nouvelle n'est pas en place.
+      # Garde-fous dans scripts/backup-retention.ts (testés) : seuls les fichiers « kako-gestion-….dump.gpg » sont concernés, les
+      # MIN_KEEP plus récents sont toujours conservés, 20 suppressions au plus par exécution.
+      - name: Supprimer les sauvegardes de plus de ${{ vars.BACKUP_RETENTION_DAYS || '30' }} jours
+        run: |
+          set -euo pipefail
+          EP=(); if [ -n "${S3_ENDPOINT:-}" ]; then EP=(--endpoint-url "$S3_ENDPOINT"); fi
+          aws s3api list-objects-v2 --bucket "$S3_BUCKET" --prefix "$PREFIX" "${EP[@]}" --query 'Contents[].Key' --output json | jq -r '.[]?' > keys.txt
+          node --experimental-strip-types scripts/backup-retention.ts < keys.txt > expired.txt
+          n=0
+          while IFS= read -r key; do
+            [ -n "$key" ] || continue
+            aws s3 rm "s3://$S3_BUCKET/$key" "${EP[@]}" --only-show-errors
+            echo "Supprimé : ${key##*/}"
+            n=$((n + 1))
+          done < expired.txt
+          {
+            echo "### Sauvegarde de la base"
+            echo ""
+            echo "- Fichier : \`$FILE\`"
+            echo "- Sauvegardes présentes avant nettoyage : $(wc -l < keys.txt)"
+            echo "- Anciennes sauvegardes supprimées : $n"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Nettoyer
+        if: always()
+        run: rm -f dump.pg dump.toc kako-gestion-*.dump.gpg keys.txt expired.txt

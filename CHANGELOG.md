@@ -2,6 +2,12 @@
 
 Format : une entrée par phase livrée, des changements les plus récents aux plus anciens. Détail technique : `docs/ARCHITECTURE.md`.
 
+## Sauvegarde nocturne hors fournisseur (2026-11)
+- **Workflow `backup.yml`** (inactif tant que `BACKUP_ENABLED` n'est pas « true ») : chaque nuit, export de la base, contrôle (une sauvegarde vide est refusée), chiffrement GPG AES-256 vérifié par déchiffrement, envoi dans un stockage S3 externe, suppression des sauvegardes de plus de 30 jours (7 toujours conservées).
+- **Compte de sauvegarde en lecture seule** `afrigest_backup` (`npm run db:backup-role`) : c'est son mot de passe, et non celui du propriétaire de la base, qui est confié à GitHub. Testé : lecture de toutes les lignes avec `app.bypass_rls`, aucun droit d'écriture, ni superutilisateur ni BYPASSRLS.
+- **Correction de la procédure manuelle** (docs/EXPLOITATION.md §3) : l'isolation entre entreprises étant forcée même pour le propriétaire, l'ancien `pg_dump` échouait ou ne ramenait aucune entreprise. Nouvelle commande (`PGOPTIONS`, `--enable-row-security`, `--file`) et restauration avec création préalable des rôles.
+- `npm run secrets` génère aussi `BACKUP_DB_PASSWORD` et `BACKUP_PASSPHRASE`. Dépôt public : le workflow masque les identifiants et n'affiche aucun chiffre métier.
+
 ## Phase 8 — Durcissement, performances, documentation (2026-10)
 
 **Inscriptions** : nouveau mode **validation par le Super Admin** (aucun e-mail requis), réglable sans redéploiement dans la console (Inscriptions) ; le compte reste en attente jusqu'à validation ou refus. En mode « validation par le Super Admin », la confirmation d'e-mail n'est plus exigée à la connexion. Une panne d'envoi d'e-mail à l'inscription ne laisse plus de compte bloqué ni d'erreur : le compte passe en attente de validation, et les comptes déjà bloqués se débloquent depuis la console. « Mot de passe oublié » ne révèle plus l'existence d'un compte en cas d'échec d'envoi d'e-mail.
