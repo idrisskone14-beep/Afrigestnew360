@@ -133,7 +133,15 @@ Les fichiers sont rangés sous `<identifiant-entreprise>/…`. Activer la **sauv
 
 ## 10. Domaine personnalisé
 
-*Vercel → Settings → Domains* ; mettre `APP_URL` à jour ; redéployer ; mettre à jour `MAIL_FROM` si le domaine d'envoi change.
+Domaine actuel : **global-gest.com**, acheté chez OVH (domaine seul, **sans** hébergement OVH : l'application reste sur Vercel). Adresse principale : `https://www.global-gest.com` ; le domaine sans `www` redirige vers elle.
+
+1. **Vercel** → *Settings → Domains* → ajouter `www.global-gest.com` (principal) puis `global-gest.com` en choisissant « Redirect to www.global-gest.com » (redirection permanente). Vercel affiche les enregistrements DNS à créer : utiliser **ces valeurs**.
+2. **OVH** → *Noms de domaine → global-gest.com → Zone DNS*. D'abord **supprimer** les enregistrements par défaut d'OVH sur la racine et sur `www` (A, AAAA ou CNAME vers leurs serveurs ou une page de parking), puis ajouter ceux de Vercel : un **A** pour la racine et un **CNAME** pour `www`. Ne pas rattacher le domaine à un hébergement OVH. Les serveurs de messagerie (MX) éventuels du domaine ne sont pas concernés. Propagation : de quelques minutes à quelques heures ; Vercel active ensuite le HTTPS tout seul.
+3. **Variables Vercel** (*Production*) : `APP_URL=https://www.global-gest.com`, `MAIL_FROM="KAKO Gestion <no-reply@global-gest.com>"`, `VAPID_SUBJECT=mailto:contact@global-gest.com` si les notifications push sont activées ; puis **Redeploy**.
+4. **Resend** (§7) : ajouter `global-gest.com`, copier ses enregistrements DNS (SPF, DKIM…) dans la même zone OVH, puis *Verify*. Sans cela, aucun e-mail d'invitation ou de vérification ne part.
+5. **Ancien domaine** (`ivoireactu.com`) : le garder quelques mois et le rediriger vers le nouveau (*Domains → Redirect*) pour ne perdre ni utilisateurs ni liens.
+6. **PayDunya** : si des adresses de retour ou de notification ont été saisies à la main avec l'ancien domaine dans l'application PayDunya, les mettre à jour (le code les déduit de `APP_URL`).
+7. **Contrôle** : `curl https://www.global-gest.com/api/health`, puis `https://www.global-gest.com/sitemap.xml` : toutes les adresses doivent commencer par `https://www.global-gest.com` (recette A9). Renseigner aussi `LEGAL_EMAIL` avec une adresse de ce domaine.
 
 ## 11. Pages légales
 

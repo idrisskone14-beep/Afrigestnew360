@@ -37,7 +37,7 @@ export interface BrowserSubscription { endpoint: string; keys: { p256dh: string;
 
 async function lib() {
   const webpush = (await import("web-push")).default;
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:contact@ivoireactu.com", process.env.VAPID_PUBLIC_KEY!, process.env.VAPID_PRIVATE_KEY!);
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:contact@global-gest.com", process.env.VAPID_PUBLIC_KEY!, process.env.VAPID_PRIVATE_KEY!);
   return webpush;
 }
 
