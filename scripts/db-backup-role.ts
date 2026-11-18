@@ -24,8 +24,14 @@ export async function ensureBackupRole(client: Queryable, password: string) {
       CREATE ROLE ${BACKUP_ROLE} LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
     END IF;
   END $$`);
-  // deux connexions au plus : une sauvegarde n'en a pas besoin de plus
-  await client.query(`ALTER ROLE ${BACKUP_ROLE} WITH LOGIN NOSUPERUSER NOBYPASSRLS CONNECTION LIMIT 2 PASSWORD ${client.escapeLiteral(password)}`);
+  // deux connexions au plus : une sauvegarde n'en a pas besoin de plus.
+  // Pas de NOSUPERUSER / NOBYPASSRLS ici : sur les bases gérées (Render…), le propriétaire n'est pas super-utilisateur et PostgreSQL
+  // refuse alors toute mention de ces attributs, même pour les retirer. Le compte les a déjà (CREATE ROLE ci-dessus) ; on le vérifie.
+  await client.query(`ALTER ROLE ${BACKUP_ROLE} WITH LOGIN CONNECTION LIMIT 2 PASSWORD ${client.escapeLiteral(password)}`);
+  const attrs = await client.query(`SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = '${BACKUP_ROLE}'`);
+  if (attrs.rows[0]?.rolsuper || attrs.rows[0]?.rolbypassrls) {
+    throw new Error(`Le compte ${BACKUP_ROLE} existe déjà avec des droits trop larges (super-utilisateur ou contournement de l'isolation) : supprimez-le (DROP ROLE ${BACKUP_ROLE}) puis relancez.`);
+  }
   await client.query(`GRANT USAGE ON SCHEMA public TO ${BACKUP_ROLE}`);
   await client.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${BACKUP_ROLE}`);
   await client.query(`GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${BACKUP_ROLE}`);

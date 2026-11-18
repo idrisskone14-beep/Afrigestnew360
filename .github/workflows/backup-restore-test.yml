@@ -1,0 +1,112 @@
+name: Test de restauration
+
+# Prouve qu'une sauvegarde SERT : on télécharge la dernière sauvegarde nocturne, on la déchiffre, puis on la restaure dans une base
+# PostgreSQL vide et jetable (conteneur du poste GitHub) et on vérifie que les données sont là. La vraie base n'est jamais modifiée
+# (le compte « afrigest_backup » n'a que le droit de lecture, et sert seulement à comparer le nombre d'entreprises).
+# Lancement à la main (onglet Actions), et automatiquement le 1er de chaque mois. Mêmes secrets et variables que backup.yml.
+# Dépôt public : les journaux sont publics, donc aucun chiffre métier n'est affiché, seulement « OK » ou la raison de l'échec.
+on:
+  schedule:
+    - cron: "0 4 1 * *" # le 1er de chaque mois à 04 h 00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore-test:
+    name: Restaurer la dernière sauvegarde dans une base jetable
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: vars.BACKUP_ENABLED == 'true'
+    services:
+      postgres:
+        image: postgres:${{ vars.BACKUP_PG_VERSION || '18' }}
+        env:
+          POSTGRES_PASSWORD: restore-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DB_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ vars.BACKUP_S3_REGION || 'auto' }}
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+      S3_BUCKET: ${{ vars.BACKUP_S3_BUCKET }}
+      S3_ENDPOINT: ${{ vars.BACKUP_S3_ENDPOINT }}
+      S3_PREFIX: ${{ vars.BACKUP_S3_PREFIX || 'backups/' }}
+      S3_FORCE_PATH_STYLE: ${{ vars.BACKUP_S3_FORCE_PATH_STYLE }}
+      PG_VERSION: ${{ vars.BACKUP_PG_VERSION || '18' }}
+      PGOPTIONS: "-c app.bypass_rls=on"
+    steps:
+      - name: Vérifier la configuration
+        run: |
+          set -euo pipefail
+          pass=$(printf '%s' "$DB_URL" | sed -E 's#^[a-z]+://[^:@/]*:([^@]*)@.*#\1#')
+          host=$(printf '%s' "$DB_URL" | sed -E 's#^[a-z]+://[^@]*@([^:/?]+).*#\1#')
+          for v in "$pass" "$host" "$S3_BUCKET" "${S3_ENDPOINT:-}"; do
+            if [ -n "$v" ]; then echo "::add-mask::$v"; fi
+          done
+          missing=""
+          for v in DB_URL PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY S3_BUCKET; do
+            if [ -z "${!v:-}" ]; then missing="$missing $v"; fi
+          done
+          if [ -n "$missing" ]; then echo "::error::Configuration incomplète :$missing"; exit 1; fi
+          echo "PREFIX=${S3_PREFIX%/}/" >> "$GITHUB_ENV"
+          if [ "${S3_FORCE_PATH_STYLE:-}" = "true" ]; then aws configure set default.s3.addressing_style path; fi
+
+      - name: Télécharger la dernière sauvegarde
+        run: |
+          set -euo pipefail
+          EP=(); if [ -n "${S3_ENDPOINT:-}" ]; then EP=(--endpoint-url "$S3_ENDPOINT"); fi
+          KEY=$(aws s3api list-objects-v2 --bucket "$S3_BUCKET" --prefix "$PREFIX" "${EP[@]}" --query 'Contents[].Key' --output json \
+            | jq -r '.[]?' | grep -E 'global-gest-.*\.dump\.gpg$' | sort | tail -1 || true)
+          if [ -z "$KEY" ]; then echo "::error::Aucune sauvegarde trouvée dans le stockage."; exit 1; fi
+          echo "Sauvegarde utilisée : ${KEY##*/}"
+          aws s3 cp "s3://$S3_BUCKET/$KEY" backup.dump.gpg "${EP[@]}" --only-show-errors
+
+      - name: Déchiffrer
+        run: |
+          set -euo pipefail
+          printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --output backup.dump --decrypt backup.dump.gpg
+          if [ "$(stat -c %s backup.dump)" -lt 20000 ]; then echo "::error::Fichier déchiffré anormalement petit."; exit 1; fi
+          echo "Déchiffrement : OK"
+
+      # Les rôles ne font pas partie d'une sauvegarde : on les crée d'abord, comme dans la procédure de restauration (docs/EXPLOITATION.md §3).
+      - name: Restaurer dans la base jetable
+        run: |
+          set -euo pipefail
+          P() { docker run --rm --network host -e PGOPTIONS -e PGPASSWORD=restore-test-only -v "$PWD:/work" -w /work "postgres:${PG_VERSION}" "$@"; }
+          P psql -h 127.0.0.1 -U postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE afrigest_app NOLOGIN NOSUPERUSER NOBYPASSRLS" -c "CREATE ROLE afrigest_backup NOLOGIN NOSUPERUSER NOBYPASSRLS" -c "CREATE DATABASE restore_test"
+          P pg_restore --no-owner --exit-on-error -h 127.0.0.1 -U postgres -d restore_test backup.dump
+          echo "Restauration : OK (aucune erreur)"
+
+      - name: Vérifier les données restaurées
+        run: |
+          set -euo pipefail
+          Q() { docker run --rm --network host -e PGOPTIONS -e PGPASSWORD=restore-test-only "postgres:${PG_VERSION}" psql -h 127.0.0.1 -U postgres -d restore_test -At -c "$1"; }
+          TABLES=$(Q "select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE'")
+          if [ "$TABLES" -lt 50 ]; then echo "::error::Trop peu de tables restaurées."; exit 1; fi
+          RESTORED=$(Q 'select count(*) from "Company"')
+          LIVE=$(docker run --rm -e PGOPTIONS -e DB_URL "postgres:${PG_VERSION}" sh -c 'exec psql "$DB_URL" -At -c "select count(*) from \"Company\""')
+          # (aucun nombre affiché : journaux publics)
+          if [ "$LIVE" -gt 0 ] && [ "$RESTORED" -eq 0 ]; then echo "::error::La base restaurée ne contient aucune entreprise alors que la production en contient."; exit 1; fi
+          USERS=$(Q 'select count(*) from "User"')
+          if [ "$LIVE" -gt 0 ] && [ "$USERS" -eq 0 ]; then echo "::error::La base restaurée ne contient aucun utilisateur."; exit 1; fi
+          echo "Contrôle des données : OK"
+          {
+            echo "### Test de restauration"
+            echo ""
+            echo "La dernière sauvegarde a été déchiffrée, restaurée dans une base vide et contrôlée : **elle est utilisable**."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Nettoyer
+        if: always()
+        run: rm -f backup.dump backup.dump.gpg
