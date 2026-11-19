@@ -16,8 +16,10 @@ import { fmtDate } from "@/lib/format";
 import { PAGE_SIZE, parseListParams, type SearchParams } from "@/lib/list-params";
 import { formatMoney } from "@/lib/reference-data";
 import { fneFeatureEnabled } from "@/modules/sales/fne/feature";
+import { countPendingIntegration } from "@/modules/sales/fne/integrate";
 import { loadFneRevenue } from "@/modules/sales/fne/registry";
 import { FneRegistryImportCard } from "@/modules/sales/fne/registry-import-card";
+import { FneIntegrationCard } from "@/modules/sales/fne/registry-integration-card";
 
 export const metadata: Metadata = { title: "Registre FNE" };
 
@@ -34,11 +36,13 @@ export default async function FneRegistryPage({ searchParams }: { searchParams: 
   const lp = parseListParams(sp);
   const period = await periodFor(sp, "date");
   const canImport = ctx.can("finance.invoice.create");
+  const canIntegrate = canImport && ctx.can("crm.customer.create");
   const currency = ctx.company.currency;
   const where = { issuedAt: { ...(period.gte ? { gte: period.gte } : {}), ...(period.lt ? { lt: period.lt } : {}) } };
 
-  const [totalEver, revenue, rows, total] = await Promise.all([
+  const [totalEver, pending, revenue, rows, total] = await Promise.all([
     ctx.db.fneRegistryEntry.count(),
+    countPendingIntegration(ctx),
     loadFneRevenue(ctx, period),
     ctx.db.fneRegistryEntry.findMany({ where, orderBy: [{ issuedAt: "desc" }, { reference: "desc" }], skip: lp.skip, take: lp.take }),
     ctx.db.fneRegistryEntry.count({ where }),
@@ -51,6 +55,7 @@ export default async function FneRegistryPage({ searchParams }: { searchParams: 
         Le chiffre d&apos;affaires de vos factures certifiées par la DGI, d&apos;après l&apos;export de votre espace FNE : les avoirs sont retranchés, les proformas ne sont pas comptées.
       </p>
       {canImport && <FneRegistryImportCard hasData={totalEver > 0} />}
+      {canIntegrate && totalEver > 0 && <FneIntegrationCard invoices={pending.invoices} refunds={pending.refunds} />}
 
       {totalEver === 0 ? (
         <EmptyState icon={<FileSpreadsheet className="size-8" />} title="Registre vide" description="Importez l'export de vos factures FNE pour suivre votre chiffre d'affaires par mois, par client et par mode de paiement." />

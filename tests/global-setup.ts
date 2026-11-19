@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import EmbeddedPostgres from "embedded-postgres";
 
-const PORT = 54330;
+const PORT = Number(process.env.TEST_DB_PORT) || 54330; // voir vitest.config.mts
 const DB = "afrigest_test";
 
 export default async function setup() {

@@ -52,7 +52,7 @@ export function FneRegistryImportCard({ hasData }: { hasData: boolean }) {
           <Input ref={input} type="file" accept=".xlsx" className="max-w-sm" aria-label="Export des factures FNE" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setError(null); }} />
           <Button onClick={submit} disabled={pending || !file}><Upload className="size-4" aria-hidden="true" /> {pending ? "Import en cours…" : "Importer"}</Button>
         </div>
-        <p className="text-xs text-muted-foreground">Fichier .xlsx, {IMPORT_MAX_MB} Mo au plus. Le chiffre d&apos;affaires suivi ici ne modifie ni votre comptabilité, ni vos créances, ni votre stock.</p>
+        <p className="text-xs text-muted-foreground">Fichier .xlsx, {IMPORT_MAX_MB} Mo au plus. L&apos;import seul ne modifie ni votre comptabilité, ni vos créances, ni votre stock : il alimente le suivi du chiffre d&apos;affaires. Les factures ne sont créées dans Ventes qu&apos;à l&apos;étape « Intégrer aux ventes », plus bas.</p>
         {result && (
           <div role="status" className="rounded-lg border bg-muted/40 p-3 text-sm">
             <p className="flex items-center gap-2 font-medium"><CheckCircle2 className="size-4 text-success" aria-hidden="true" /> {plural(result.total, "ligne lue", "lignes lues")}</p>

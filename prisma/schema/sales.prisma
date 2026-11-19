@@ -307,6 +307,8 @@ model Invoice {
   fneError         String?
   fneAttemptAt     DateTime?
   fneCertifiedAt   DateTime?
+  // provenance d'une facture reprise d'un export ("fne_export") : jamais comptabilisée par le rattrapage, jamais renvoyée à la FNE
+  importSource     String?
 
   company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
@@ -320,6 +322,7 @@ model Invoice {
   projectId    String?              @db.Uuid
   project      Project?             @relation(fields: [projectId], references: [id], onDelete: SetNull)
   timeEntries  TimeEntry[]
+  fneEntries   FneRegistryEntry[]
 
   @@unique([companyId, number])
   @@index([companyId, status, dueDate])
@@ -397,10 +400,12 @@ model CreditNote {
   fneError       String?
   fneAttemptAt   DateTime?
   fneCertifiedAt DateTime?
+  importSource   String?
 
-  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  invoice Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
-  lines   CreditNoteLine[]
+  company    Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoice    Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  lines      CreditNoteLine[]
+  fneEntries FneRegistryEntry[]
 
   @@unique([companyId, number])
   @@index([companyId, invoiceId])
@@ -658,9 +663,17 @@ model FneRegistryEntry {
   establishment    String?
   pointOfSale      String?
   importedAt       DateTime   @default(now())
+  // intégration aux ventes : facture ou avoir créé (ou déjà existant) pour ce document ; null tant que non intégré
+  invoiceId        String?    @db.Uuid
+  creditNoteId     String?    @db.Uuid
+  integratedAt     DateTime?
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoice    Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  creditNote CreditNote? @relation(fields: [creditNoteId], references: [id], onDelete: SetNull)
 
+  @@index([invoiceId])
+  @@index([creditNoteId])
   @@unique([companyId, reference])
   @@index([companyId, issuedAt])
   @@index([companyId, customerNcc])
