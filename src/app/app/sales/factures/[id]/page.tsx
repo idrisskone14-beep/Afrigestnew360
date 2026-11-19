@@ -25,6 +25,10 @@ import { listDispatches, sendDefaults } from "@/modules/sales/dispatch";
 import { invoicePreview } from "@/modules/sales/ui/sales-editor-data";
 import { CreditNoteDialog, IssueInvoiceDialog, PaymentDialog, ReminderDialog } from "@/modules/sales/ui/invoice-dialogs";
 import { PaymentRowActions } from "@/modules/sales/ui/payment-row-actions";
+import { defaultFneTemplate, fneFeatureEnabled } from "@/modules/sales/fne/client";
+import type { FnePaymentMethod, FneTemplate } from "@/modules/sales/fne/schemas";
+import { getFneSettings } from "@/modules/sales/fne/service";
+import { FneStatusCard } from "@/modules/sales/fne/status-card";
 
 export const metadata: Metadata = { title: "Facture" };
 const METHOD: Record<string, string> = { CASH: "Espèces", BANK_TRANSFER: "Virement", CHEQUE: "Chèque", MOBILE_MONEY: "Mobile money", CARD: "Carte", OTHER: "Autre" };
@@ -53,6 +57,11 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   for (const c of credited) if (c.invoiceLineId) creditedBy.set(c.invoiceLineId, (creditedBy.get(c.invoiceLineId) ?? 0) + num(c.quantity));
   const creditable = i.lines.map((l) => ({ id: l.id, description: l.description, unit: l.unit, unitPrice: num(l.unitPrice), creditable: d(l.quantity).minus(creditedBy.get(l.id) ?? 0).toNumber() }));
 
+  // certification FNE : type de client proposé d'après la fiche client (B2G se choisit à la main)
+  const fneSettings = await getFneSettings(ctx);
+  const fneEnabled = fneFeatureEnabled() && Boolean(fneSettings?.enabled);
+  const fneDefaults = { template: (i.fneTemplate as FneTemplate | null) ?? defaultFneTemplate(i.customer, ctx.company.country), payment: (i.fnePaymentMethod as FnePaymentMethod | null) ?? "deferred" as FnePaymentMethod };
+
   // contexte crédit pour l'émission d'un brouillon
   let creditWarning: string | undefined;
   if (i.status === "DRAFT" && i.customer.creditLimit) {
@@ -75,15 +84,19 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           {sendable && defaults && <SendDocumentDialog kind="invoice" id={i.id} defaults={defaults} resend={Boolean(i.sentAt)} />}
           {sendable && <CopyShareLinkButton kind="invoice" id={i.id} />}
           {i.status !== "CANCELLED" && i.kind === "STANDARD" && ctx.can("finance.invoice.create") && <MakeRecurringDialog invoiceId={i.id} customerName={i.customer.name} />}
-          {i.status === "DRAFT" && canUpdate && <IssueInvoiceDialog invoiceId={i.id} total={num(i.total)} currency={cur} canOverride={ctx.can("sales.discount.approve")} creditWarning={creditWarning} />}
+          {i.status === "DRAFT" && canUpdate && <IssueInvoiceDialog invoiceId={i.id} total={num(i.total)} currency={cur} canOverride={ctx.can("sales.discount.approve")} creditWarning={creditWarning} fne={fneEnabled && fneSettings?.autoCertify ? fneDefaults : undefined} />}
           {open && ctx.can("finance.payment.create") && balance > 0 && <PaymentDialog invoiceId={i.id} balance={balance} currency={cur} willValidate={canValidate} accounts={accounts} />}
           {live && ctx.can("finance.credit_note.create") && creditable.some((l) => l.creditable > 0) && <CreditNoteDialog invoiceId={i.id} lines={creditable} />}
           {overdue && canUpdate && <ReminderDialog invoiceId={i.id} hasEmail={Boolean(i.customer.email)} nextLevel={i.reminders.length + 1} />}
-          {open && ctx.can("finance.invoice.delete") && i.payments.every((p) => p.status === "CANCELLED") && num(i.creditedAmount) === 0 && <ActionButton action={cancelInvoiceAction} input={{ id: i.id }} variant="outline" label="Annuler la facture" icon={<Ban className="size-4" />} success="Facture annulée" confirm={{ title: "Annuler cette facture ?", description: "Le numéro est conservé (statut « annulée ») et les quantités facturées sont libérées sur la commande.", confirmLabel: "Annuler la facture" }} />}
+          {open && ctx.can("finance.invoice.delete") && i.payments.every((p) => p.status === "CANCELLED") && num(i.creditedAmount) === 0 && !(i.fneStatus && i.fneStatus !== "FAILED") && <ActionButton action={cancelInvoiceAction} input={{ id: i.id }} variant="outline" label="Annuler la facture" icon={<Ban className="size-4" />} success="Facture annulée" confirm={{ title: "Annuler cette facture ?", description: "Le numéro est conservé (statut « annulée ») et les quantités facturées sont libérées sur la commande.", confirmLabel: "Annuler la facture" }} />}
           {i.status === "DRAFT" && ctx.can("finance.invoice.delete") && <ActionButton action={deleteInvoiceAction} input={{ id: i.id }} variant="destructive" label="Supprimer le brouillon" icon={<Trash2 className="size-4" />} redirectTo="/app/sales/factures" success="Brouillon supprimé" confirm={{ title: "Supprimer ce brouillon ?" }} />}
           {i.status === "CANCELLED" && <p className="text-sm text-muted-foreground">Facture annulée le {fmtDate(i.cancelledAt)}.</p>}
         </CardContent>
       </Card>
+
+      {i.status !== "DRAFT" && (i.status !== "CANCELLED" || i.fneStatus) && (
+        <FneStatusCard kind="invoice" doc={i} enabled={fneEnabled && i.status !== "CANCELLED"} canCertify={canUpdate} invoiceDefaults={fneDefaults} />
+      )}
 
       <section aria-label="Document" className="rounded-xl bg-muted/70 p-3 sm:p-6">
         <DocumentPreview data={await invoicePreview(ctx, i, balance)} />

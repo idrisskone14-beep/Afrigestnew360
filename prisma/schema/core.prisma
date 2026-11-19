@@ -240,6 +240,7 @@ model Company {
   priceListItems        PriceListItem[]
   holidays              Holiday[]
   hrSettings            HrSettings?
+  fneSettings           FneSettings?
   suppliers             Supplier[]
   purchaseRequests      PurchaseRequest[]
   purchaseRequestLines  PurchaseRequestLine[]

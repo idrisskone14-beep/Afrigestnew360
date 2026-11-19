@@ -51,6 +51,7 @@ export const TENANT_KEY: Readonly<Record<string, "companyId" | "id">> = {
   Reminder: "companyId",
   Holiday: "companyId",
   HrSettings: "companyId",
+  FneSettings: "companyId",
   ShareLink: "companyId",
   DocumentDispatch: "companyId",
   RecurringInvoice: "companyId",

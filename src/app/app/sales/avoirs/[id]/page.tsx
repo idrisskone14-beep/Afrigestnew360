@@ -13,6 +13,9 @@ import { fmtDate } from "@/lib/format";
 import { deleteCreditNoteAction, issueCreditNoteAction } from "@/modules/sales/actions";
 import { getCreditNote } from "@/modules/sales/invoices";
 import { DocHeader, LinesView, PdfLinks, TotalsView } from "@/modules/sales/ui/doc-kit";
+import { fneFeatureEnabled } from "@/modules/sales/fne/client";
+import { getFneSettings } from "@/modules/sales/fne/service";
+import { FneStatusCard } from "@/modules/sales/fne/status-card";
 
 export const metadata: Metadata = { title: "Avoir" };
 
@@ -22,6 +25,7 @@ export default async function CreditNoteDetailPage({ params }: { params: Promise
   if (!z.string().uuid().safeParse(id).success) notFound();
   const cn = await getCreditNote(ctx, id).catch((e) => { if (e instanceof AppError && e.code === "NOT_FOUND") notFound(); throw e; });
   const canUpdate = ctx.can("finance.credit_note.update");
+  const fne = await getFneSettings(ctx);
   return (
     <div className="space-y-6">
       <DocHeader
@@ -38,6 +42,10 @@ export default async function CreditNoteDetailPage({ params }: { params: Promise
             <ActionButton action={deleteCreditNoteAction} input={{ id: cn.id }} variant="destructive" label="Supprimer" icon={<Trash2 className="size-4" />} redirectTo="/app/sales/avoirs" success="Brouillon supprimé" confirm={{ title: "Supprimer ce brouillon d'avoir ?" }} />
           </CardContent>
         </Card>
+      )}
+      {cn.status === "ISSUED" && (
+        <FneStatusCard kind="credit-note" doc={cn} enabled={fneFeatureEnabled() && Boolean(fne?.enabled)} canCertify={canUpdate}
+          blockedReason={cn.invoice.fneStatus !== "CERTIFIED" ? `La facture d'origine ${cn.invoice.number} n'est pas certifiée FNE : certifiez-la d'abord.` : undefined} />
       )}
       <p className="text-sm text-muted-foreground">Motif : {cn.reason}{cn.restock ? " · retour en stock" : ""}</p>
       <LinesView lines={cn.lines} currency={cn.currency} />

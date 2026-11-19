@@ -53,6 +53,9 @@ Légende : ✅ vérifié · ⬜ à faire · ❌ anomalie (voir la note).
 | D7 | Enregistrer un paiement partiel, puis le solde | statut « Payée en partie » puis « Payée » ; reçu PDF | ⬜ |
 | D8 | Émettre un avoir partiel | reste à payer recalculé | ⬜ |
 | D9 | Relance d'une facture échue | trace enregistrée | ⬜ |
+| D10 | FNE (environnement de test DGI) : Paramètres → FNE, clé API de test, point de vente, établissement ; émettre une facture B2B (client avec NCC, téléphone, e-mail) | « Certifiée FNE », numéro FNE ; PDF avec QR code ; le lien de vérification s'ouvre sur la plateforme DGI | ⬜ |
+| D11 | FNE : facture B2C, puis avoir partiel sur la facture B2B | avoir « Certifié FNE » (numéro `A…`) ; la facture certifiée ne propose plus « Annuler » | ⬜ |
+| D12 | FNE : client sans téléphone, puis le compléter et « Relancer la certification » | motif clair, facture émise mais non certifiée ; certifiée après correction | ⬜ |
 
 ## E. Documents PDF et partage
 

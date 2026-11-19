@@ -47,6 +47,8 @@ export interface BusinessDocument {
   extraBlocks?: { heading: string; rows: string[][] }[];
   /** Cadre de signature (« Bon pour accord » sur un devis). */
   signatureLabel?: string;
+  /** Certification fiscale (FNE, Côte d'Ivoire) : QR code de vérification (PNG) et mentions, imprimés sous le récapitulatif. */
+  certification?: { title: string; qr: Buffer; lines: string[] };
 }
 
 const INK = "#06192B";
@@ -231,6 +233,25 @@ export function renderBusinessDocument(doc: BusinessDocument): Promise<Buffer> {
         pdf.moveTo(recapX, ry - 4).lineTo(right, ry - 4).strokeColor(LINE).lineWidth(0.5).stroke();
       }
       y = Math.max(vy, ry) + 6;
+    }
+
+    // ── Certification FNE : cadre avec QR code de vérification, numéro FNE et lien
+    if (doc.certification) {
+      const c = doc.certification;
+      const qr = 78;
+      y += 14;
+      if (y + qr + 16 > bottomLimit()) { pdf.addPage(); y = 40; }
+      pdf.rect(left, y, width, qr + 16).strokeColor(ACCENT).lineWidth(1).stroke();
+      try {
+        pdf.image(c.qr, left + 8, y + 8, { width: qr, height: qr });
+      } catch {
+        /* image illisible : les mentions restent imprimées */
+      }
+      const tx = left + qr + 20;
+      pdf.fillColor(ACCENT).font("Helvetica-Bold").fontSize(10).text(c.title, tx, y + 10, { width: right - tx - 8 });
+      pdf.fillColor(INK).font("Helvetica").fontSize(8.5);
+      for (const l of c.lines) pdf.text(l, tx, pdf.y + 3, { width: right - tx - 8 });
+      y += qr + 16;
     }
 
     // ── Blocs complémentaires (échéancier, paiements…)

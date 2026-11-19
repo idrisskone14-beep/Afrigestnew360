@@ -2,6 +2,14 @@
 
 Format : une entrée par phase livrée, des changements les plus récents aux plus anciens. Détail technique : `docs/ARCHITECTURE.md`.
 
+## Facture normalisée électronique (FNE, Côte d'Ivoire) (2026-11)
+- **Fermée par défaut** : tant que la DGI n'a pas autorisé le raccordement, la FNE est invisible et inactive ; la variable `FNE_ENABLED=true` l'ouvre.
+- **Raccordement par API** à la plateforme FNE de la DGI (procédure d'interfaçage de mai 2025) : Paramètres › **FNE (DGI)** — environnement test ou production, clé API **chiffrée** (jamais renvoyée au navigateur), point de vente, établissement, messages, code d'exonération pour la TVA 0 % (TVAC / TVAD), solde de stickers.
+- **Factures** : certification automatique à l'émission (ou manuelle depuis la fiche), type de client (B2B/B2C/B2G/B2F, proposé d'après la fiche client) et mode de paiement choisis à l'émission. Numéro FNE, lien de vérification et **QR code imprimés sur le PDF**.
+- **Avoirs** : certifiés sur les articles de la facture d'origine certifiée (API « refund »).
+- **Fiabilité** : un refus ou une panne de la FNE n'annule jamais l'émission ; l'état est enregistré (certifiée / refusée / incertaine) avec son motif et la certification se relance depuis la fiche. Réservation atomique : jamais deux certifications pour la même facture. Après une panne réseau (issue incertaine), une confirmation est demandée avant de réessayer. Une facture certifiée ne peut plus être annulée (avoir obligatoire).
+- Limites : lignes négatives (déduction d'acompte) et taux de TVA autres que 18 / 9 / 0 % non transmis ; bordereau d'achat de produits agricoles (API #3) et reçus normalisés (RNE) non pris en charge ; factures en XOF uniquement.
+
 ## Paramétrage du dossier de l'entreprise à la première connexion (2026-11)
 - **Parcours en 4 étapes** pour l'administrateur invité par le Super Admin : Identification, Dossier fiscal, Dossier social, Équipe. Page `/app/parametrage`, proposée une seule fois à la première connexion de l'administrateur, puis accessible à tout moment (Paramètres › « Dossier (fiscal et social) »).
 - **Chaque étape s'enregistre séparément** et peut être passée. « Passer pour l'instant » ne redirige plus l'administrateur, mais un rappel reste affiché sur le tableau de bord jusqu'à « Terminer le paramétrage ».

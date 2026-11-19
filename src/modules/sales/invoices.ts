@@ -17,6 +17,7 @@ import { formatMoney } from "@/lib/reference-data";
 import type { z } from "zod";
 import { lineData, parseDate, resolveLines } from "@/core/documents/lines";
 import { getOrder, refreshOrderStatus } from "./orders";
+import { autoCertify } from "./fne/service";
 import type { creditNoteSchema, invoiceSchema, issueInvoiceSchema, reminderSchema, updateInvoiceSchema } from "./schemas";
 
 type Ctx = TenantContext;
@@ -242,13 +243,19 @@ export async function issueInvoice(ctx: Ctx, input: z.output<typeof issueInvoice
     return res;
   });
   await audit(ctx, { action: "invoice.issue", resource: "Invoice", resourceId: inv.id, summary: `${ctx.user.name} a émis la facture ${issued.number} (${customer.name}, ${formatMoney(d(inv.total).toNumber(), inv.currency)}).`, after: { number: issued.number, total: inv.total } });
-  return issued;
+  // certification FNE (si activée) APRÈS l'émission : un refus ou une panne de la FNE n'annule jamais l'émission,
+  // l'état est enregistré sur la facture et la certification peut être relancée depuis sa fiche
+  const fne = await autoCertify(ctx, "invoice", inv.id, { template: input.fneTemplate, paymentMethod: input.fnePaymentMethod });
+  return Object.assign(issued, { fne });
 }
 
 export async function cancelInvoice(ctx: Ctx, id: string) {
   const inv = await getInvoice(ctx, id);
   if (inv.status === "CANCELLED") throw businessRule("Cette facture est déjà annulée.");
   if (inv.status === "DRAFT") throw businessRule("Supprimez le brouillon plutôt que de l'annuler.");
+  if (inv.fneStatus === "CERTIFIED" || inv.fneStatus === "PENDING" || inv.fneStatus === "UNKNOWN") {
+    throw businessRule(inv.fneStatus === "CERTIFIED" ? "Facture certifiée FNE : elle ne peut plus être annulée. Émettez un avoir." : "Certification FNE en cours ou incertaine : vérifiez-la avant d'annuler (un avoir s'impose si la facture est certifiée).");
+  }
   if (d(inv.amountPaid).gt(0) || d(inv.creditedAmount).gt(0) || inv.payments.some((p) => p.status !== "CANCELLED")) {
     throw businessRule("Des paiements ou avoirs existent : annulez les paiements, ou émettez un avoir.");
   }
@@ -340,7 +347,8 @@ export async function issueCreditNote(ctx: Ctx, id: string) {
     return res;
   });
   await audit(ctx, { action: "credit_note.issue", resource: "CreditNote", resourceId: id, summary: `${ctx.user.name} a émis l'avoir ${issued.number} (facture ${cn.invoice.number}).`, after: { total: cn.total } });
-  return issued;
+  const fne = await autoCertify(ctx, "credit-note", id);
+  return Object.assign(issued, { fne });
 }
 
 const Decimal_min = (a: Decimal, b: Decimal) => (a.lt(b) ? a : b);

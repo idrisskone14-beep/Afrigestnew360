@@ -75,6 +75,18 @@ enum CreditNoteStatus {
   CANCELLED
 }
 
+// Certification FNE (facture normalisée électronique, DGI Côte d'Ivoire)
+//   PENDING   : appel en cours
+//   CERTIFIED : certifiée (numéro et QR code FNE reçus)
+//   FAILED    : refusée par la FNE ou non envoyée : la réessayer est sans risque
+//   UNKNOWN   : envoyée mais réponse non reçue : vérifier sur l'espace FNE avant de réessayer
+enum FneStatus {
+  PENDING
+  CERTIFIED
+  FAILED
+  UNKNOWN
+}
+
 enum PaymentMethod {
   CASH
   BANK_TRANSFER
@@ -284,6 +296,18 @@ model Invoice {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
+  // Certification FNE : numéro et lien de vérification (QR code) attribués par la plateforme de la DGI
+  fneStatus        FneStatus?
+  fneReference     String?
+  fneVerifyUrl     String?
+  fneId            String? // identifiant FNE de la facture (nécessaire aux avoirs)
+  fneItems         Json? // [{ lineId, fneItemId }] : correspondance des lignes pour les avoirs
+  fneTemplate      String? // B2B, B2C, B2G, B2F
+  fnePaymentMethod String? // cash, card, check, mobile-money, transfer, deferred
+  fneError         String?
+  fneAttemptAt     DateTime?
+  fneCertifiedAt   DateTime?
+
   company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
   order        SalesOrder?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
@@ -365,6 +389,14 @@ model CreditNote {
   createdById String?          @db.Uuid
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+
+  // Certification FNE de l'avoir (rattaché à la facture certifiée d'origine)
+  fneStatus      FneStatus?
+  fneReference   String?
+  fneVerifyUrl   String?
+  fneError       String?
+  fneAttemptAt   DateTime?
+  fneCertifiedAt DateTime?
 
   company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   invoice Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
@@ -559,4 +591,31 @@ model PriceListItem {
 
   @@unique([priceListId, productId])
   @@index([companyId, productId])
+}
+
+// Facture normalisée électronique (FNE, Côte d'Ivoire) : raccordement de l'entreprise à la plateforme de la DGI par API.
+// La clé API est chiffrée (AES-256-GCM, ENCRYPTION_KEY) et n'est jamais renvoyée au navigateur.
+model FneSettings {
+  id                String    @id @default(uuid()) @db.Uuid
+  companyId         String    @unique @db.Uuid
+  enabled           Boolean   @default(false)
+  // "test" (environnement de test de la DGI) ou "production" (après validation des spécimens par la DGI)
+  environment       String    @default("test")
+  apiKeyEnc         String?
+  apiKeyHint        String? // 4 derniers caractères, pour l'affichage
+  pointOfSale       String?
+  establishment     String?
+  commercialMessage String?
+  footer            String?
+  // certifier automatiquement chaque facture et avoir à l'émission
+  autoCertify       Boolean   @default(true)
+  // code FNE des lignes à TVA 0 % : TVAC (exonération conventionnelle) ou TVAD (exonération légale)
+  exemptTaxCode     String    @default("TVAD")
+  // solde de stickers électroniques renvoyé par la FNE à chaque certification
+  stickerBalance    Int?
+  stickerWarning    Boolean   @default(false)
+  stickerCheckedAt  DateTime?
+  updatedAt         DateTime  @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }

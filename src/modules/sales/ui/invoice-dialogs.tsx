@@ -15,24 +15,32 @@ import { todayInput } from "@/lib/format";
 import { formatMoney } from "@/lib/reference-data";
 import { createCreditNoteAction, issueInvoiceAction, recordPaymentAction, remindInvoiceAction } from "../actions";
 import { PAYMENT_METHODS } from "../schemas";
+import type { FnePaymentMethod, FneTemplate } from "../fne/schemas";
+import { FneInvoiceFields } from "../fne/ui";
 
 const errText = (e: { message: string; fieldErrors?: Record<string, string[]> }) => (e.fieldErrors ? Object.values(e.fieldErrors).flat()[0] ?? e.message : e.message);
 
-export function IssueInvoiceDialog({ invoiceId, total, currency, canOverride, creditWarning }: { invoiceId: string; total: number; currency: string; canOverride: boolean; creditWarning?: string }) {
+export function IssueInvoiceDialog({ invoiceId, total, currency, canOverride, creditWarning, fne }: { invoiceId: string; total: number; currency: string; canOverride: boolean; creditWarning?: string; fne?: { template: FneTemplate; payment: FnePaymentMethod } }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [n, setN] = useState("1");
   const [override, setOverride] = useState(false);
+  const [template, setTemplate] = useState<FneTemplate>(fne?.template ?? "B2C");
+  const [payment, setPayment] = useState<FnePaymentMethod>(fne?.payment ?? "deferred");
   const count = Math.min(24, Math.max(1, Number(n) || 1));
   const parts = splitInstallments(total, count, currency);
 
   const submit = () => start(async () => {
     setError(null);
-    const res = await issueInvoiceAction({ id: invoiceId, installments: count, allowOverLimit: override });
+    const res = await issueInvoiceAction({ id: invoiceId, installments: count, allowOverLimit: override, ...(fne ? { fneTemplate: template, fnePaymentMethod: payment } : {}) });
     if (!res.ok) return setError(errText(res.error));
-    toast.success(`Facture ${res.data.number} émise`);
+    const f = res.data.fne;
+    if (!f) toast.success(`Facture ${res.data.number} émise`);
+    else if (f.status === "CERTIFIED") toast.success(`Facture ${res.data.number} émise et certifiée FNE (n° ${f.reference})`);
+    else toast.warning(`Facture ${res.data.number} émise, mais non certifiée FNE : ${f.message}`, { duration: 15_000 });
+    if (f?.status === "CERTIFIED" && f.stickerWarning) toast.warning("Stock de stickers FNE bientôt épuisé : rechargez-le depuis votre espace FNE.");
     setOpen(false); router.refresh();
   });
 
@@ -47,6 +55,7 @@ export function IssueInvoiceDialog({ invoiceId, total, currency, canOverride, cr
             <Input id="is-n" type="number" min={1} max={24} value={n} onChange={(e) => setN(e.target.value)} className="w-28" />
           </Field>
           {count > 1 && <ul className="rounded-lg bg-muted/50 p-3 text-sm">{parts.map((p, i) => <li key={i} className="flex justify-between"><span className="text-muted-foreground">Échéance {i + 1}</span><span className="tabular">{formatMoney(p.toNumber(), currency)}</span></li>)}</ul>}
+          {fne && <FneInvoiceFields idPrefix="is" template={template} payment={payment} onTemplate={setTemplate} onPayment={setPayment} />}
           {creditWarning && <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">{creditWarning}</p>}
           {canOverride && <label className="flex items-center gap-2 text-sm"><Checkbox checked={override} onCheckedChange={(v) => setOverride(v === true)} /> Autoriser malgré un dépassement du plafond de crédit</label>}
           <Button disabled={pending} onClick={submit}>Émettre ({formatMoney(total, currency)})</Button>

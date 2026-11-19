@@ -1,4 +1,5 @@
 import "server-only";
+import QRCode from "qrcode";
 import { notFound } from "@/core/errors";
 import { num } from "@/core/money";
 import { renderBusinessDocument, type BusinessDocument, type PdfLine } from "@/core/pdf/business-document";
@@ -12,6 +13,18 @@ import { getCreditNote, getInvoice, invoiceBalance, isOverdue } from "./invoices
 import { getPayment } from "./payments";
 
 type Ctx = TenantContext;
+
+/** Cadre de certification FNE d'une facture ou d'un avoir certifié : QR code du lien de vérification de la DGI. */
+export async function fneCertification(doc: { fneStatus: string | null; fneReference: string | null; fneVerifyUrl: string | null; fneCertifiedAt: Date | null }): Promise<BusinessDocument["certification"]> {
+  if (doc.fneStatus !== "CERTIFIED" || !doc.fneReference || !doc.fneVerifyUrl) return undefined;
+  const qr = await QRCode.toBuffer(doc.fneVerifyUrl, { type: "png", margin: 1, width: 240, errorCorrectionLevel: "M" });
+  return {
+    title: "Facture normalisée électronique (FNE) — DGI Côte d'Ivoire",
+    qr,
+    lines: [`N° FNE : ${doc.fneReference}`, ...(doc.fneCertifiedAt ? [`Certifiée le ${doc.fneCertifiedAt.toLocaleDateString("fr-FR")}`] : []), `Vérification : ${doc.fneVerifyUrl}`],
+  };
+}
+
 export type PdfKind = "quote" | "order" | "delivery" | "invoice" | "credit-note" | "receipt";
 
 /** Permission requise pour télécharger chaque type de document. */
@@ -94,7 +107,7 @@ export async function buildPdf(ctx: Ctx, kind: PdfKind, id: string): Promise<{ d
           ...(num(i.amountPaid) ? [{ label: "Déjà réglé", value: -num(i.amountPaid) }] : []),
           ...(i.status !== "DRAFT" && i.status !== "CANCELLED" ? [{ label: "Reste à payer", value: balance, bold: true }] : []),
         ],
-        notes: i.notes, terms: i.terms,
+        notes: i.notes, terms: i.terms, certification: await fneCertification(i),
         extraBlocks: [
           { heading: "Échéancier", rows: i.installments.length > 1 ? i.installments.map((x) => [`Échéance ${x.position + 1} — ${x.dueDate.toLocaleDateString("fr-FR")}`, `${num(x.paidAmount) >= num(x.amount) ? "Réglée" : "À régler"}`, num(x.amount).toLocaleString("fr-FR").replace(/[  ]/g, " ")]) : [] },
           { heading: "Paiements reçus", rows: i.payments.filter((p) => p.status === "VALIDATED").map((p) => [`${p.number} — ${p.date.toLocaleDateString("fr-FR")}`, p.method, num(p.amount).toLocaleString("fr-FR").replace(/[  ]/g, " ")]) },
@@ -110,6 +123,7 @@ export async function buildPdf(ctx: Ctx, kind: PdfKind, id: string): Promise<{ d
         dates: [{ label: "Date d'émission", value: cn.issueDate }], lines: toLines(cn.lines),
         totals: [{ label: "Total HT", value: num(cn.subtotal) }, { label: "TVA", value: num(cn.taxTotal) }, { label: "Total avoir", value: num(cn.total), bold: true }], notes: cn.reason ? `Motif : ${cn.reason}` : null,
         status: cn.status === "DRAFT" ? { label: "Brouillon", color: "#64748B" } : undefined,
+        certification: await fneCertification(cn),
       };
       filename = cn.number ?? `avoir-${cn.id.slice(0, 8)}`;
       break;

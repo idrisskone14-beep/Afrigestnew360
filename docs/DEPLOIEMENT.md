@@ -182,3 +182,33 @@ Les entreprises clientes règlent leur abonnement Global Gest depuis **Paramètr
 **Fonctionnement et sécurité.** Le montant est toujours lu dans l'offre en base (jamais envoyé par le navigateur). La notification `/api/paydunya/ipn` ne sert qu'à déclencher une vérification : l'état du paiement est relu auprès de PayDunya avec les clés secrètes, le montant et l'identifiant sont contrôlés, et l'abonnement n'est activé qu'une seule fois (une notification reçue deux fois est sans effet). Renouvellement de la même offre en cours : la période s'ajoute à la fin de l'actuelle. Les paiements sont listés dans la page Abonnement de l'entreprise ; un paiement en échec ou incohérent y reste visible (statut « Échoué »).
 
 **Permission.** Payer exige `settings.billing.update` (administrateurs ; à accorder aux autres rôles dans Rôles et permissions). Seule la devise XOF est acceptée.
+
+## 15. Facture normalisée électronique (FNE, Côte d'Ivoire)
+
+Depuis la loi de finances 2025, les factures émises en Côte d'Ivoire doivent être **certifiées par la plateforme FNE de la DGI** (numéro FNE, QR code de vérification). KAKO Gestion s'y raccorde par l'API décrite dans la « Procédure d'interfaçage des entreprises par API » (DGI, mai 2025). **Chaque entreprise cliente utilise son propre compte FNE et sa propre clé API** : rien n'est partagé entre entreprises.
+
+> **État : en attente de l'autorisation de la DGI.** Tant qu'elle n'est pas obtenue, la FNE reste **fermée** sur la plateforme : aucun onglet, aucune certification, aucun appel. Le code est livré mais dormant.
+
+**Côté plateforme (vous)** :
+
+| Variable | Valeur |
+|---|---|
+| `FNE_ENABLED` | `true` pour ouvrir la FNE (onglet « FNE (DGI) », certification). **Absente = fermée** : à ne mettre qu'après autorisation de la DGI |
+| `FNE_PROD_URL` | URL de production transmise par la DGI après validation (ex. `https://…/ws`). Absente : seul l'environnement de test est proposé |
+| `FNE_TEST_URL` | facultative ; par défaut l'environnement de test public de la DGI `http://54.247.95.108/ws` |
+
+**Côté entreprise** (Paramètres → **FNE (DGI)**, droit « Paramètres de l'entreprise — modifier ») :
+
+1. S'inscrire sur l'environnement de test FNE (`http://54.247.95.108`), y paramétrer le point de vente et l'établissement, puis copier la **clé API** (onglet « Paramétrage », gestionnaire principal).
+2. Dans KAKO Gestion : activer, environnement **Test**, coller la clé, renseigner point de vente et établissement **tels que déclarés à la FNE**, choisir le code des lignes à 0 % (TVAD exonération légale / TVAC conventionnelle).
+3. Émettre des factures de test (B2B avec NCC, B2C), un avoir, télécharger les PDF, et envoyer ces **spécimens** à `support.fne@dgi.gouv.ci`.
+4. Après validation, la DGI donne accès à la clé de production : la saisir, passer en **Production** (exige `FNE_PROD_URL`).
+
+**Fonctionnement**
+- À l'émission (si « Certifier automatiquement » est actif), la facture est transmise à la FNE ; le type de client (B2B / B2C / B2G / B2F, proposé d'après la fiche client : NCC, pays) et le mode de paiement se choisissent dans la fenêtre d'émission. Les factures récurrentes sont certifiées de la même façon (B2B/B2C selon la fiche, paiement « à terme »).
+- Exigences de la FNE vérifiées **avant** l'envoi : téléphone et e-mail du client, NCC en B2B, TVA à 18 %, 9 % ou 0 %, aucune ligne négative.
+- Un refus (données, clé) ou une panne de la FNE **n'annule jamais l'émission** : l'état s'affiche sur la fiche (« non certifiée » avec le motif, ou « incertaine » après une panne réseau) et la certification se relance d'un clic. En cas d'issue incertaine, vérifiez d'abord dans l'espace FNE que la facture n'y figure pas (l'API ne permet pas de la retrouver).
+- Une facture certifiée ne peut plus être annulée : émettez un **avoir**, qui est certifié sur les articles de la facture d'origine.
+- Le PDF porte un cadre « Facture normalisée électronique » : QR code, numéro FNE, date et lien de vérification. **À faire valider par la DGI avec les spécimens** : la procédure parle aussi d'un « visuel FNE », que la plateforme ne fournit pas par l'API.
+
+**Non pris en charge** : bordereau d'achat de produits agricoles (API #3), reçus normalisés (RNE), devises étrangères (B2F en devise), lignes négatives (déduction d'acompte : à certifier depuis l'espace FNE).

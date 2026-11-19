@@ -66,13 +66,13 @@ export const createInvoiceAction = defineTenantAction({ input: invoiceSchema, mo
 export const updateInvoiceAction = defineTenantAction({ input: updateInvoiceSchema, module: M, permission: "finance.invoice.update", handler: async ({ ctx, input }) => { await inv.updateInvoice(ctx, input); bust(); } });
 export const deleteInvoiceAction = defineTenantAction({ input: idSchema, module: M, permission: "finance.invoice.delete", handler: async ({ ctx, input }) => { await inv.deleteInvoice(ctx, input.id); bust(); } });
 export const invoiceFromOrderAction = defineTenantAction({ input: z.object({ id: z.string().uuid(), onlyDelivered: z.boolean().default(false) }), module: M, permission: ["sales.order.read", "finance.invoice.create"], handler: async ({ ctx, input }) => { const i = await inv.createInvoiceFromOrder(ctx, input.id, { onlyDelivered: input.onlyDelivered }); bust(); return { id: i.id }; } });
-export const issueInvoiceAction = defineTenantAction({ input: issueInvoiceSchema, module: M, permission: "finance.invoice.update", handler: async ({ ctx, input }) => { const i = await inv.issueInvoice(ctx, input); bust(); return { number: i.number }; } });
+export const issueInvoiceAction = defineTenantAction({ input: issueInvoiceSchema, module: M, permission: "finance.invoice.update", handler: async ({ ctx, input }) => { const i = await inv.issueInvoice(ctx, input); bust(); return { number: i.number, fne: i.fne }; } });
 export const cancelInvoiceAction = defineTenantAction({ input: idSchema, module: M, permission: "finance.invoice.delete", handler: async ({ ctx, input }) => { await inv.cancelInvoice(ctx, input.id); bust(); } });
 export const remindInvoiceAction = defineTenantAction({ input: reminderSchema, module: M, permission: "finance.invoice.update", handler: async ({ ctx, input }) => { await inv.remindInvoice(ctx, input); bust(); } });
 
 // Avoirs
 export const createCreditNoteAction = defineTenantAction({ input: creditNoteSchema, module: M, permission: "finance.credit_note.create", handler: async ({ ctx, input }) => { const c = await inv.createCreditNote(ctx, input); bust(); return { id: c.id }; } });
-export const issueCreditNoteAction = defineTenantAction({ input: idSchema, module: M, permission: "finance.credit_note.update", handler: async ({ ctx, input }) => { await inv.issueCreditNote(ctx, input.id); bust(); } });
+export const issueCreditNoteAction = defineTenantAction({ input: idSchema, module: M, permission: "finance.credit_note.update", handler: async ({ ctx, input }) => { const c = await inv.issueCreditNote(ctx, input.id); bust(); return { fne: c.fne }; } });
 export const deleteCreditNoteAction = defineTenantAction({ input: idSchema, module: M, permission: "finance.credit_note.update", handler: async ({ ctx, input }) => { await inv.deleteCreditNote(ctx, input.id); bust(); } });
 
 // Paiements

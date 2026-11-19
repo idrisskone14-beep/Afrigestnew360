@@ -7,6 +7,7 @@ const dateStr = z.string().min(8, "Date requise");
 const optDate = z.string().optional().or(z.literal(""));
 
 import { linesSchema } from "@/core/documents/line-schema";
+import { FNE_PAYMENT_VALUES, FNE_TEMPLATE_VALUES } from "./fne/schemas";
 export { lineSchema, linesSchema, type LineInput, type LineOutput } from "@/core/documents/line-schema";
 
 export const quoteSchema = z.object({
@@ -55,7 +56,11 @@ export const invoiceSchema = z.object({
 });
 export type InvoiceInput = z.input<typeof invoiceSchema>;
 export const updateInvoiceSchema = invoiceSchema.extend({ id: uuid });
-export const issueInvoiceSchema = z.object({ id: uuid, installments: z.coerce.number().int().min(1).max(24).default(1), allowOverLimit: z.boolean().default(false) });
+export const issueInvoiceSchema = z.object({
+  id: uuid, installments: z.coerce.number().int().min(1).max(24).default(1), allowOverLimit: z.boolean().default(false),
+  // certification FNE à l'émission (si activée) : type de client et mode de paiement déclarés à la DGI
+  fneTemplate: z.enum(FNE_TEMPLATE_VALUES).optional(), fnePaymentMethod: z.enum(FNE_PAYMENT_VALUES).optional(),
+});
 
 export const PAYMENT_METHODS = [
   { value: "CASH", label: "Espèces" }, { value: "BANK_TRANSFER", label: "Virement" }, { value: "CHEQUE", label: "Chèque" },

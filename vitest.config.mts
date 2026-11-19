@@ -25,6 +25,7 @@ export default defineConfig({
       ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
       AUTH_SECRET: "test-secret",
       REQUIRE_EMAIL_VERIFICATION: "false",
+      FNE_ENABLED: "true",
     },
   },
 });

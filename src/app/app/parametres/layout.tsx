@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/app/page-header";
 import { requireTenantContext } from "@/core/tenant/guards";
+import { fneFeatureEnabled } from "@/modules/sales/fne/client";
 import { SettingsNav } from "./settings-nav";
 
 export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export default async function SettingsLayout({ children }: { children: React.Rea
     { href: "/app/parametres/organisation", label: "Organisation", show: ctx.can("org.structure.read") },
     { href: "/app/parametres/taxes", label: "Taxes", show: ctx.can("settings.company.read") },
     { href: "/app/parametres/numerotation", label: "Numérotation", show: ctx.can("settings.company.read") },
+    { href: "/app/parametres/fne", label: "FNE (DGI)", show: fneFeatureEnabled() && ctx.can("settings.company.read") && ctx.hasModule("sales") },
     { href: "/app/parametres/validations", label: "Validations", show: ctx.can("settings.company.read") },
     { href: "/app/parametres/audit", label: "Journal d'audit", show: ctx.can("audit.log.read") },
     { href: "/app/parametres/donnees", label: "Import / export", show: ctx.can("data.import.manage") || ctx.can("data.export.run") },
