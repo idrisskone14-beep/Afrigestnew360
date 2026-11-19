@@ -58,6 +58,11 @@ export const SECTORS = [
 
 export const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "500+"] as const;
 
+/** Référentiels du dossier de l'entreprise (parcours de paramétrage). */
+export const ACCOUNTING_FRAMEWORKS = ["SYSCOHADA révisé", "SYSCOHADA - Système minimal de trésorerie", "Autre référentiel"] as const;
+export const TAX_REGIMES = ["Réel normal", "Réel simplifié", "Impôt synthétique", "Taxe d'État de l'entreprenant (TEE)", "Autre régime"] as const;
+export const VAT_FREQUENCIES = ["Mensuelle", "Trimestrielle", "Non assujetti à la TVA"] as const;
+
 export const countryName = (code: string) => COUNTRIES.find((c) => c.code === code)?.name ?? code;
 
 /** Sigle de l'identifiant fiscal selon le pays (NCC en Côte d'Ivoire, NINEA au Sénégal…) ; « ID fiscal » à défaut. */

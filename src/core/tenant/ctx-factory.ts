@@ -14,6 +14,9 @@ export interface ActiveCompany {
   timezone: string;
   country: string;
   logoUrl: string | null;
+  /** Parcours de paramétrage du dossier : terminé ? passé par l'administrateur ? (facultatifs : absents dans les contextes système et de test) */
+  onboardingCompletedAt?: Date | null;
+  setupSkippedAt?: Date | null;
 }
 
 export interface SwitcherItem {

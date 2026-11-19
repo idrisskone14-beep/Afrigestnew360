@@ -76,6 +76,8 @@ export const loadContextState = cache(async (): Promise<ContextState> => {
       timezone: active.company.timezone,
       country: active.company.country,
       logoUrl: active.company.logoUrl,
+      onboardingCompletedAt: active.company.onboardingCompletedAt,
+      setupSkippedAt: active.company.setupSkippedAt,
     },
     membership: { id: active.id, roleId: active.role.id, roleName: active.role.name, isOwner: active.isOwner },
     access: buildAccess({

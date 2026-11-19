@@ -6,6 +6,7 @@ export default async function SettingsLayout({ children }: { children: React.Rea
   const ctx = await requireTenantContext();
   const tabs = [
     { href: "/app/parametres", label: "Entreprise", show: ctx.can("settings.company.read") },
+    { href: "/app/parametrage", label: "Dossier (fiscal et social)", show: ctx.can("settings.company.update") },
     { href: "/app/parametres/utilisateurs", label: "Utilisateurs", show: ctx.can("users.member.read") },
     { href: "/app/parametres/roles", label: "Rôles et permissions", show: ctx.can("roles.role.read") },
     { href: "/app/parametres/modules", label: "Modules", show: ctx.can("settings.company.read") || ctx.can("settings.billing.read") },

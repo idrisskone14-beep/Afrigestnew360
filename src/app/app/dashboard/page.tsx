@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowLeftRight, ArrowUpRight, BarChart3, BookOpenCheck, Boxes, Camera, CalendarClock, ClipboardList, FileText, HandCoins, HardHat, KanbanSquare, Landmark, Receipt, ShoppingBag, ShoppingCart, Target, TrendingUp, Truck, Users, UsersRound, Wallet, type LucideIcon,
 } from "lucide-react";
@@ -25,6 +26,9 @@ const TONE = { danger: "text-destructive", warning: "text-warning", success: "te
 
 export default async function DashboardPage() {
   const ctx = await requireTenantContext();
+  // Paramétrage du dossier de l'entreprise : proposé une fois à l'administrateur à sa première connexion ; s'il le passe, un rappel reste affiché.
+  const setupPending = !ctx.company.onboardingCompletedAt && ctx.can("settings.company.update");
+  if (setupPending && !ctx.company.setupSkippedAt) redirect("/app/parametrage");
   const layout = await getLayout(ctx);
   const visible = layout.filter((l) => l.visible).map((l) => WIDGET_BY_KEY.get(l.key)!).filter(Boolean);
   // widgets regroupés en 5 transactions parallèles (voir load.ts) ; l'échec de l'un n'empêche pas l'affichage des autres
@@ -38,6 +42,12 @@ export default async function DashboardPage() {
 
   return (
     <>
+      {setupPending && (
+        <div role="status" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
+          <p className="text-sm">Le dossier de votre entreprise n'est pas terminé : identification, dossier fiscal et social, équipe.</p>
+          <Button asChild size="sm"><Link href="/app/parametrage">Terminer le paramétrage</Link></Button>
+        </div>
+      )}
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b pb-5">
         <div className="min-w-0">
           <p className="eyebrow">{new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}</p>

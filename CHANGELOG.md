@@ -2,6 +2,14 @@
 
 Format : une entrée par phase livrée, des changements les plus récents aux plus anciens. Détail technique : `docs/ARCHITECTURE.md`.
 
+## Paramétrage du dossier de l'entreprise à la première connexion (2026-11)
+- **Parcours en 4 étapes** pour l'administrateur invité par le Super Admin : Identification, Dossier fiscal, Dossier social, Équipe. Page `/app/parametrage`, proposée une seule fois à la première connexion de l'administrateur, puis accessible à tout moment (Paramètres › « Dossier (fiscal et social) »).
+- **Chaque étape s'enregistre séparément** et peut être passée. « Passer pour l'instant » ne redirige plus l'administrateur, mais un rappel reste affiché sur le tableau de bord jusqu'à « Terminer le paramétrage ».
+- **Nouveaux champs** (migration `company_setup_profile`) : sigle, commune, code postal, activité, référentiel comptable, régime fiscal, date de début d'activité, fréquence de TVA, ROF TVA, TVA intracommunautaire, direction régionale et service des impôts, NTD, numéro de caisse sociale, taux de prestation familiale et d'accident du travail, secteur de salaires minima. L'identifiant fiscal (NCC), le RCCM et le capital existaient déjà.
+- **Étape Équipe** : le panneau Utilisateurs existant (invitation par e-mail avec rôle, changement de rôle).
+- Réservé au droit « modifier l'entreprise » (l'administrateur l'a d'office). Les entreprises déjà terminées ne sont pas touchées ; celles créées par le Super Admin sans paramétrage le voient à la première connexion de leur administrateur.
+- Testé : enregistrement des trois sections, champs vides à NULL, « passer » et « terminer » (une seule fois), isolation entre entreprises, validations.
+
 ## Page d'accueil repensée : concrète, avec le vrai produit (2026-11)
 - **Constat** : la page ressemblait à un modèle de site de logiciel (promesses vagues, 17 sections, maquette aux faux chiffres). Elle passe à 12 sections, toutes appuyées sur des fonctions qui existent.
 - **Nouveau message** : « Du devis à la comptabilité, sans ressaisir une seule ligne » (page, titre du site, aperçu au partage, pied de page, écran de connexion).

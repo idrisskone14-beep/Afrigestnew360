@@ -15,7 +15,7 @@ export async function readAccessData(userId: string) {
         company: {
           select: {
             id: true, legalName: true, tradeName: true, slug: true, currency: true, timezone: true,
-            country: true, logoUrl: true, status: true,
+            country: true, logoUrl: true, status: true, onboardingCompletedAt: true, setupSkippedAt: true,
           },
         },
         role: { select: { id: true, name: true, isAdmin: true } },

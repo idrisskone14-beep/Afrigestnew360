@@ -167,6 +167,25 @@ model Company {
   suspendedAt           DateTime?
   suspendedReason       String?
   onboardingCompletedAt DateTime?
+  setupSkippedAt        DateTime?
+  // Dossier de l'entreprise (parcours de paramétrage de l'administrateur)
+  acronym               String?
+  commune               String?
+  postalCode            String?
+  activityDescription   String?
+  accountingFramework   String?
+  taxRegime             String?
+  activityStartDate     DateTime?     @db.Date
+  vatFrequency          String?
+  vatRof                String?
+  intraCommunityVat     String?
+  taxRegion             String?
+  taxOffice             String?
+  ntd                   String?
+  socialSecurityNumber  String?
+  familyBenefitRate     Decimal?      @db.Decimal(5, 2)
+  workAccidentRate      Decimal?      @db.Decimal(5, 2)
+  minimumWageSector     String?
   allowNegativeStock    Boolean       @default(false)
   createdById           String?       @db.Uuid
   createdAt             DateTime      @default(now())
