@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MODULES } from "@/core/modules/registry";
 import { FAMILIES, familyOfModule, moduleItems } from "@/core/tenant/module-nav";
 import { dateRangeParam, pageSizeOf, PAGE_SIZE } from "@/lib/list-params";
@@ -9,8 +9,18 @@ const canOnly = (...keys: string[]) => ({ can: (k: string) => keys.includes(k) }
 describe("navigation : sous-menus par module", () => {
   it("n'affiche que les pages que l'utilisateur peut ouvrir", () => {
     const labels = moduleItems(canOnly("sales.quote.read", "finance.invoice.read"), "sales").map((i) => i.label);
-    expect(labels).toEqual(["Vue d'ensemble", "Devis clients", "Factures de vente", "Factures récurrentes", "Relances"]);
+    // la configuration de test ouvre la FNE (FNE_ENABLED) : le registre FNE est proposé à qui peut voir les factures
+    expect(labels).toEqual(["Vue d'ensemble", "Devis clients", "Factures de vente", "Factures récurrentes", "Registre FNE", "Relances"]);
     expect(moduleItems(canOnly(), "sales").map((i) => i.label)).toEqual(["Vue d'ensemble"]);
+  });
+
+  it("le registre FNE reste invisible tant que la FNE n'est pas ouverte sur la plateforme", () => {
+    vi.stubEnv("FNE_ENABLED", "false");
+    try {
+      expect(moduleItems(canOnly("finance.invoice.read"), "sales").map((i) => i.label)).not.toContain("Registre FNE");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("la paie distingue gestionnaire et salarié", () => {

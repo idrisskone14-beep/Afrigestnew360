@@ -619,3 +619,49 @@ model FneSettings {
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
+
+// Registre FNE : documents certifiés par la DGI, importés depuis l'export de l'espace FNE de l'entreprise (suivi du chiffre d'affaires).
+// Ce registre ne touche ni la comptabilité, ni les créances, ni le stock : il sert à suivre ce qui a été certifié.
+//   INVOICE  : facture de vente (sous-type « normal »)
+//   REFUND   : avoir (sous-type « refund », montants négatifs dans l'export, rattaché à `initialReference`)
+//   PROFORMA : proforma : jamais comptée dans le chiffre d'affaires
+enum FneDocKind {
+  INVOICE
+  REFUND
+  PROFORMA
+}
+
+model FneRegistryEntry {
+  id               String     @id @default(uuid()) @db.Uuid
+  companyId        String     @db.Uuid
+  // numéro FNE du document (colonne « Référence »), unique par entreprise : c'est la clé qui évite les doublons à chaque ré-import
+  reference        String
+  kind             FneDocKind
+  initialReference String?
+  token            String?
+  issuedAt         DateTime
+  paymentMethod    String?
+  template         String? // B2B, B2C, B2G, B2F
+  taxRegime        String?
+  totalHt          Decimal    @db.Decimal(18, 2)
+  discount         Decimal    @default(0) @db.Decimal(18, 2)
+  totalVat         Decimal    @db.Decimal(18, 2)
+  totalTtc         Decimal    @db.Decimal(18, 2)
+  otherTaxes       Decimal    @default(0) @db.Decimal(18, 2)
+  netToPay         Decimal    @db.Decimal(18, 2)
+  currency         String     @default("XOF")
+  customerName     String
+  customerNcc      String?
+  customerPhone    String?
+  customerEmail    String?
+  seller           String?
+  establishment    String?
+  pointOfSale      String?
+  importedAt       DateTime   @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, reference])
+  @@index([companyId, issuedAt])
+  @@index([companyId, customerNcc])
+}

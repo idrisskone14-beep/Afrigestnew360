@@ -24,11 +24,7 @@ export type FneTaxCode = "TVA" | "TVAB" | FneExemptCode;
 
 export type FneEnvironment = "test" | "production";
 
-/**
- * Interrupteur de la plateforme : tant que la DGI n'a pas autorisé le raccordement, la FNE reste invisible et inactive
- * (aucun onglet, aucune certification, aucun appel). Pour l'ouvrir : FNE_ENABLED=true.
- */
-export const fneFeatureEnabled = (env: Record<string, string | undefined> = process.env) => env.FNE_ENABLED === "true";
+export { fneFeatureEnabled } from "./feature";
 
 /** URL de base de l'API : environnement de test public de la DGI, ou URL de production transmise par la DGI (FNE_PROD_URL). */
 export function fneBaseUrl(environment: FneEnvironment, env: Record<string, string | undefined> = process.env): string | null {

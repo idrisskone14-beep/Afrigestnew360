@@ -1,3 +1,4 @@
+import { fneFeatureEnabled } from "@/modules/sales/fne/feature";
 import type { TenantContext } from "./context";
 
 /** Entrée de sous-menu d'un module (une page de liste ou de synthèse). `exact` : active seulement sur l'URL exacte. */
@@ -41,6 +42,7 @@ const ITEMS: Record<string, (ctx: Pick<TenantContext, "can">) => ItemDef[]> = {
     { href: "/app/sales/recurrentes", label: "Factures récurrentes", show: any("finance.invoice.read") },
     { href: "/app/sales/paiements", label: "Paiements", show: any("finance.payment.read") },
     { href: "/app/sales/avoirs", label: "Avoirs", show: any("finance.credit_note.read") },
+    { href: "/app/sales/registre-fne", label: "Registre FNE", show: (can) => fneFeatureEnabled() && can("finance.invoice.read") },
     { href: "/app/sales/relances", label: "Relances", show: any("finance.invoice.read") },
     { href: "/app/sales/listes-de-prix", label: "Listes de prix", show: any("sales.pricelist.manage") },
   ],

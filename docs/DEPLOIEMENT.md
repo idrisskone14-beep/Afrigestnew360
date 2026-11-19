@@ -212,3 +212,11 @@ Depuis la loi de finances 2025, les factures émises en Côte d'Ivoire doivent �
 - Le PDF porte un cadre « Facture normalisée électronique » : QR code, numéro FNE, date et lien de vérification. **À faire valider par la DGI avec les spécimens** : la procédure parle aussi d'un « visuel FNE », que la plateforme ne fournit pas par l'API.
 
 **Non pris en charge** : bordereau d'achat de produits agricoles (API #3), reçus normalisés (RNE), devises étrangères (B2F en devise), lignes négatives (déduction d'acompte : à certifier depuis l'espace FNE).
+
+### Registre FNE : suivre le chiffre d'affaires certifié
+
+L'API de la DGI ne sait qu'**envoyer** des documents (certifier une facture, un avoir) : elle ne permet pas de **relire** ce qui a été certifié, par exemple des factures émises directement sur le portail ou dans un ancien logiciel. Pour les suivre, l'entreprise exporte la liste de ses factures depuis son espace FNE (fichier Excel) et la charge dans **Ventes › Registre FNE**.
+
+- Le registre donne le chiffre d'affaires HT / TVA / TTC par mois, par client et par mode de paiement. Facture = +, avoir = −, **proforma jamais comptée**. Il ne crée ni facture, ni écriture comptable, ni créance : il ne modifie rien d'autre.
+- On peut **ré-importer** un export plus récent à tout moment : la clé de dédoublonnage est le numéro FNE (« Référence »), seuls les documents nouveaux sont ajoutés. Un avoir exporté sans numéro propre est gardé et signalé (à vérifier dans l'espace FNE).
+- Visible seulement quand `FNE_ENABLED=true`. Droit requis : voir les factures (consulter) et créer des factures (importer).

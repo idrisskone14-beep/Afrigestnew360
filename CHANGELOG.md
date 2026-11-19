@@ -2,6 +2,14 @@
 
 Format : une entrée par phase livrée, des changements les plus récents aux plus anciens. Détail technique : `docs/ARCHITECTURE.md`.
 
+## Registre FNE : suivi du chiffre d'affaires à partir de l'export de la DGI (2026-11)
+- **Pourquoi un import** : l'API de la DGI ne permet que d'envoyer (certifier) des documents, pas de les relire. L'export Excel de l'espace FNE est donc la seule source pour retrouver ce qui a déjà été certifié, y compris hors de Global Gest.
+- **Ventes › Registre FNE** (visible quand `FNE_ENABLED=true`) : import de l'export, puis chiffre d'affaires HT / TVA / TTC, graphique par mois, détail par mois, principaux clients, mode de paiement et liste des documents. La période suit l'année choisie en haut de l'écran (ou la pastille de date).
+- **Règles** : facture (sous-type « normal ») = +, avoir (« refund ») = −, proforma = jamais comptée. Les bordereaux d'achat sont ignorés (ce n'est pas du chiffre d'affaires).
+- **Ré-importable** : la clé de dédoublonnage est le numéro FNE (« Référence »), pas le jeton, qui est parfois partagé entre un avoir et des proformas. Un export plus récent n'ajoute que les documents nouveaux. Un avoir exporté sans numéro propre est gardé sous une clé stable (facture d'origine + date) et signalé.
+- **Sans effet de bord** : le registre ne crée ni facture, ni écriture comptable, ni créance, ni mouvement de stock. Table `FneRegistryEntry` (migration `fne_registry`), isolée par entreprise (RLS).
+- Essai sur un export réel de 657 lignes : import en moins d'une seconde, second passage sans doublon, totaux conformes au fichier.
+
 ## Installer l'application : un bouton visible (2026-11)
 - **Avant** : l'invite d'installation n'existait que dans Paramètres › Notifications, introuvable pour un utilisateur.
 - **Maintenant** : bouton « Installer l'app » dans l'en-tête (quand le navigateur propose l'installation, et sur iPhone), entrée « Installer l'application » dans le menu du compte, et bandeau fermable sur le tableau de bord (surtout pour le téléphone).
