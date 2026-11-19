@@ -6,6 +6,7 @@ import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CommandPalette } from "./command-palette";
+import { InstallTopbarButton } from "./install-app";
 import { useMobileMenu } from "./mobile-nav";
 import { CompanySwitcher } from "./company-switcher";
 import { useNavCounts } from "./nav-counts";
@@ -51,6 +52,7 @@ export function Topbar({ nav, companies, activeCompanyId, user, country, year, y
       <div className="hidden sm:block"><YearSelect year={year} years={years} /></div>
 
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        <InstallTopbarButton />
         <CommandPalette modules={nav.modules} companies={companies} activeCompanyId={activeCompanyId} canSeeSettings={nav.canSeeSettings} />
         <div className="hidden sm:block"><ThemeToggle /></div>
         <Button variant="ghost" size="icon" asChild className="relative" aria-label="Notifications">

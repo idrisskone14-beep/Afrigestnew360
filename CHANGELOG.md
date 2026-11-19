@@ -2,6 +2,12 @@
 
 Format : une entrée par phase livrée, des changements les plus récents aux plus anciens. Détail technique : `docs/ARCHITECTURE.md`.
 
+## Installer l'application : un bouton visible (2026-11)
+- **Avant** : l'invite d'installation n'existait que dans Paramètres › Notifications, introuvable pour un utilisateur.
+- **Maintenant** : bouton « Installer l'app » dans l'en-tête (quand le navigateur propose l'installation, et sur iPhone), entrée « Installer l'application » dans le menu du compte, et bandeau fermable sur le tableau de bord (surtout pour le téléphone).
+- **Quand l'installation en un geste n'est pas possible** (iPhone, Safari, Firefox…), une fenêtre explique la marche à suivre selon l'appareil. Rien ne s'affiche si l'application est déjà installée.
+- L'invite du navigateur n'étant émise qu'une fois, elle est captée une seule fois et partagée à tout l'écran (`InstallProvider`).
+
 ## Facture normalisée électronique (FNE, Côte d'Ivoire) (2026-11)
 - **Fermée par défaut** : tant que la DGI n'a pas autorisé le raccordement, la FNE est invisible et inactive ; la variable `FNE_ENABLED=true` l'ouvre.
 - **Raccordement par API** à la plateforme FNE de la DGI (procédure d'interfaçage de mai 2025) : Paramètres › **FNE (DGI)** — environnement test ou production, clé API **chiffrée** (jamais renvoyée au navigateur), point de vente, établissement, messages, code d'exonération pour la TVA 0 % (TVAC / TVAD), solde de stickers.

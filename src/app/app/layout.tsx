@@ -1,6 +1,6 @@
 import { MobileMenuProvider, MobileNav } from "@/components/app/mobile-nav";
 import { NavCountsProvider } from "@/components/app/nav-counts";
-import { PwaRegister } from "@/components/app/pwa-register";
+import { InstallProvider, PwaRegister } from "@/components/app/pwa-register";
 import { NavModulesProvider } from "@/components/app/module-header";
 import { Rail, SidebarContent } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
@@ -39,6 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <NavCountsProvider>
       <NavModulesProvider modules={modules}>
         <MobileMenuProvider>
+        <InstallProvider>
         <PwaRegister />
         <div className="min-h-dvh">
           <Topbar
@@ -59,6 +60,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
           <MobileNav modules={modules} quickActions={quickActions} />
         </div>
+        </InstallProvider>
         </MobileMenuProvider>
       </NavModulesProvider>
     </NavCountsProvider>

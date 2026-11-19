@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 interface InstallEvent extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> }
 
@@ -15,8 +15,14 @@ export function PwaRegister() {
   return null;
 }
 
-/** Invite d'installation : `canInstall` devient vrai quand le navigateur propose d'installer l'application. */
-export function useInstallPrompt() {
+interface InstallState { canInstall: boolean; install: () => Promise<void> }
+const InstallContext = createContext<InstallState>({ canInstall: false, install: async () => undefined });
+
+/**
+ * Capte UNE fois l'invite d'installation du navigateur (l'événement n'est émis qu'une fois) et la partage à tout l'écran :
+ * bouton de l'en-tête, menu du compte, bandeau du tableau de bord, page Notifications.
+ */
+export function InstallProvider({ children }: { children: ReactNode }) {
   const [event, setEvent] = useState<InstallEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   useEffect(() => {
@@ -26,10 +32,16 @@ export function useInstallPrompt() {
     window.addEventListener("appinstalled", onInstalled);
     return () => { window.removeEventListener("beforeinstallprompt", onPrompt); window.removeEventListener("appinstalled", onInstalled); };
   }, []);
-  return {
+  const value = useMemo<InstallState>(() => ({
     canInstall: event !== null && !installed,
     install: async () => { if (!event) return; await event.prompt(); await event.userChoice; setEvent(null); },
-  };
+  }), [event, installed]);
+  return <InstallContext.Provider value={value}>{children}</InstallContext.Provider>;
+}
+
+/** Invite d'installation : `canInstall` devient vrai quand le navigateur propose d'installer l'application. */
+export function useInstallPrompt(): InstallState {
+  return useContext(InstallContext);
 }
 
 /** L'application tourne-t-elle déjà installée (plein écran) ? */

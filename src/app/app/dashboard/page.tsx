@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { AreaTrendChart, BarsChart, CashflowChart, DonutChart } from "@/components/app/lazy-charts";
 import { AnimatedValue } from "@/components/app/animated-value";
+import { InstallBanner } from "@/components/app/install-app";
 import { HBarsChart } from "@/components/app/hbars-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +43,7 @@ export default async function DashboardPage() {
 
   return (
     <>
+      <InstallBanner />
       {setupPending && (
         <div role="status" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
           <p className="text-sm">Le dossier de votre entreprise n'est pas terminé : identification, dossier fiscal et social, équipe.</p>
