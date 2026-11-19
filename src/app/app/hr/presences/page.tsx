@@ -33,7 +33,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
         <Button variant="ghost" size="sm" asChild><Link href="/app/hr/presences">Aujourd'hui</Link></Button>
       </div>
       <AttendanceBoard key={date} date={date} canManage={ctx.can("hr.attendance.manage")} isWeekend={weekday === 0 || weekday === 6} isFuture={date > todayInput()}
-        rows={board.map((r) => ({ employeeId: r.employeeId, number: r.number, name: r.name, jobTitle: r.jobTitle, status: r.status, checkIn: r.checkIn ?? "", checkOut: r.checkOut ?? "", onLeave: r.onLeave }))} />
+        rows={board.map((r) => ({ employeeId: r.employeeId, number: r.number, name: r.name, jobTitle: r.jobTitle, status: r.status, checkIn: r.checkIn ?? "", checkOut: r.checkOut ?? "", onLeave: r.onLeave, offLabel: r.offLabel, note: r.note }))} />
       <section aria-label="Récapitulatif mensuel" className="space-y-2">
         <h3 className="text-base font-semibold">Récapitulatif de {MONTHS[d.getUTCMonth()]} {d.getUTCFullYear()}</h3>
         <Card className="overflow-hidden p-0">

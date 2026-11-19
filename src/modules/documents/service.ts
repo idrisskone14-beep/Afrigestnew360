@@ -37,12 +37,23 @@ export const ENTITY_READ_PERMISSION: Record<EntityType, string> = {
   fine: "fleet.fine.read",
   site: "construction.site.read",
   site_report: "construction.site.read",
+  // pièces des registres RH : accès réservé aux profils qui consultent le registre correspondant (données sensibles)
+  hr_accident: "hr.accident.read",
+  hr_timeoff: "hr.timeoff.read",
+  hr_absence: "hr.absence.read",
+  hr_sickleave: "hr.sickleave.read",
+  hr_sanction: "hr.sanction.read",
+  hr_medvisit: "hr.medvisit.read",
+  hr_equipment: "hr.equipment.read",
+  hr_advance: "hr.advance.read",
 };
 
 export const ENTITY_LABEL: Record<EntityType, string> = {
   customer: "Client", supplier: "Fournisseur", employee: "Salarié", project: "Projet", expense: "Dépense",
   invoice: "Facture", supplier_bill: "Facture fournisseur", purchase_order: "Commande fournisseur",
   vehicle: "Véhicule", driver: "Chauffeur", fine: "Contravention", site: "Chantier", site_report: "Rapport de chantier",
+  hr_accident: "Accident de travail", hr_timeoff: "Permission", hr_absence: "Absence", hr_sickleave: "Arrêt maladie",
+  hr_sanction: "Dossier disciplinaire", hr_medvisit: "Visite médicale", hr_equipment: "Équipement", hr_advance: "Avance",
 };
 
 /** Vérifie qu'une entité existe DANS l'entreprise active (ctx.db est isolé) ; retourne un libellé lisible. */
@@ -61,6 +72,14 @@ async function entityLabel(db: Db, type: EntityType, id: string): Promise<string
     case "driver": return sel(await db.driver.findFirst({ where: { id, deletedAt: null }, select: { fullName: true } }), (r) => r.fullName);
     case "fine": return sel(await db.trafficFine.findFirst({ where: { id }, select: { number: true } }), (r) => `PV ${r.number}`);
     case "site": return sel(await db.constructionSite.findFirst({ where: { id, deletedAt: null }, select: { code: true, name: true } }), (r) => `${r.code} — ${r.name}`);
+    case "hr_accident": return sel(await db.workAccident.findFirst({ where: { id }, select: { number: true, employeeName: true } }), (r) => `${r.number} — ${r.employeeName}`);
+    case "hr_timeoff": return sel(await db.timeOffRequest.findFirst({ where: { id }, select: { startDate: true, employee: { select: { firstName: true, lastName: true } } } }), (r) => `Permission de ${r.employee.firstName} ${r.employee.lastName} du ${r.startDate.toISOString().slice(0, 10)}`);
+    case "hr_absence": return sel(await db.absenceRecord.findFirst({ where: { id }, select: { startDate: true, employee: { select: { firstName: true, lastName: true } } } }), (r) => `Absence de ${r.employee.firstName} ${r.employee.lastName} du ${r.startDate.toISOString().slice(0, 10)}`);
+    case "hr_sickleave": return sel(await db.sickLeave.findFirst({ where: { id }, select: { startDate: true, employee: { select: { firstName: true, lastName: true } } } }), (r) => `Arrêt de ${r.employee.firstName} ${r.employee.lastName} du ${r.startDate.toISOString().slice(0, 10)}`);
+    case "hr_sanction": return sel(await db.disciplinaryCase.findFirst({ where: { id }, select: { number: true, employeeName: true } }), (r) => `${r.number} — ${r.employeeName}`);
+    case "hr_medvisit": return sel(await db.medicalVisit.findFirst({ where: { id }, select: { kind: true, employee: { select: { firstName: true, lastName: true } } } }), (r) => `Visite de ${r.employee.firstName} ${r.employee.lastName}`);
+    case "hr_equipment": return sel(await db.equipmentAssignment.findFirst({ where: { id }, select: { name: true, employee: { select: { firstName: true, lastName: true } } } }), (r) => `${r.name} — ${r.employee.firstName} ${r.employee.lastName}`);
+    case "hr_advance": return sel(await db.salaryAdvance.findFirst({ where: { id }, select: { requestDate: true, employee: { select: { firstName: true, lastName: true } } } }), (r) => `Avance de ${r.employee.firstName} ${r.employee.lastName} du ${r.requestDate.toISOString().slice(0, 10)}`);
     case "site_report": return sel(await db.siteReport.findFirst({ where: { id }, select: { date: true, site: { select: { code: true } } } }), (r) => `Rapport ${r.site.code} du ${r.date.toISOString().slice(0, 10)}`);
   }
 }
@@ -79,6 +98,14 @@ export const ENTITY_HREF: Record<EntityType, (id: string) => string> = {
   fine: (id) => `/app/fleet/contraventions/${id}`,
   site: (id) => `/app/construction/chantiers/${id}`,
   site_report: () => `/app/construction`,
+  hr_accident: (id) => `/app/hr/accidents/${id}`,
+  hr_timeoff: () => `/app/hr/permissions`,
+  hr_absence: () => `/app/hr/absences`,
+  hr_sickleave: () => `/app/hr/arrets-maladie`,
+  hr_sanction: (id) => `/app/hr/sanctions/${id}`,
+  hr_medvisit: () => `/app/hr/visites-medicales`,
+  hr_equipment: () => `/app/hr/equipements`,
+  hr_advance: () => `/app/hr/avances`,
 };
 
 /** Libellés et liens des entités liées ; une entité que l'utilisateur ne peut pas lire n'est pas détaillée. */

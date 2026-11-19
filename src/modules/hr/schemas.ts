@@ -28,6 +28,7 @@ export const employeeSchema = z.object({
   city: text(100),
   hireDate: dateStr,
   jobTitle: text(120),
+  professionalCategory: text(80),
   departmentId: emptyOr(uuid).optional(),
   branchId: emptyOr(uuid).optional(),
   managerId: emptyOr(uuid).optional(),

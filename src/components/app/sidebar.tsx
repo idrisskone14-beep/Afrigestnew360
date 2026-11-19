@@ -46,6 +46,40 @@ function PlainLink({ href, icon, children, active, onNavigate, trailing }: {
   );
 }
 
+type SubItem = NavModule["items"][number];
+const subLinkClass = (active: boolean, indent: string) => cn("block rounded-md py-2 pr-3 text-sm transition-colors", indent, active ? "font-semibold text-brand" : "text-foreground/75 hover:bg-muted hover:text-foreground");
+
+function SubLink({ item: i, activeHref, onNavigate, indent = "pl-10" }: { item: SubItem; activeHref?: string; onNavigate?: () => void; indent?: string }) {
+  return <Link href={i.href} onClick={onNavigate} aria-current={activeHref === i.href ? "page" : undefined} className={subLinkClass(activeHref === i.href, indent)}>{i.label}</Link>;
+}
+
+/** Regroupe les entrées consécutives portant la même rubrique ; les entrées sans rubrique restent à plat. */
+function sections(items: SubItem[]): { label: string | null; items: SubItem[] }[] {
+  const out: { label: string | null; items: SubItem[] }[] = [];
+  for (const i of items) {
+    const label = i.group ?? null;
+    const last = out[out.length - 1];
+    if (last && last.label === label) last.items.push(i);
+    else out.push({ label, items: [i] });
+  }
+  return out;
+}
+
+/** Rubrique repliable d'un sous-menu : ouverte d'office quand elle contient la page courante. */
+function SubGroup({ label, items, activeHref, onNavigate }: { label: string; items: SubItem[]; activeHref?: string; onNavigate?: () => void }) {
+  const hasActive = items.some((i) => i.href === activeHref);
+  const [openByUser, setOpenByUser] = useState<boolean | null>(null);
+  const open = openByUser ?? hasActive;
+  return (
+    <li>
+      <button type="button" aria-expanded={open} onClick={() => setOpenByUser(!open)} className={cn("flex w-full items-center gap-1.5 rounded-md py-1.5 pl-10 pr-3 text-left text-xs font-medium uppercase tracking-wide transition-colors hover:bg-muted", hasActive ? "text-foreground" : "text-muted-foreground")}>
+        <ChevronDown className={cn("size-3 shrink-0 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} aria-hidden="true" />{label}
+      </button>
+      <ul className={open ? "block" : "hidden"}>{items.map((i) => <li key={i.href}><SubLink item={i} activeHref={activeHref} onNavigate={onNavigate} indent="pl-14" /></li>)}</ul>
+    </li>
+  );
+}
+
 /** Module à sous-menu : groupe repliable, ouvert d'office quand on s'y trouve. */
 function ModuleGroup({ module: m, pathname, onNavigate }: { module: NavModule; pathname: string; onNavigate?: () => void }) {
   const inModule = pathname === m.href || pathname.startsWith(`${m.href}/`);
@@ -67,16 +101,9 @@ function ModuleGroup({ module: m, pathname, onNavigate }: { module: NavModule; p
       </button>
       <div id={panelId} className={cn("grid transition-[grid-template-rows] duration-200 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
         <ul className="min-h-0 overflow-hidden" inert={!open}>
-          {m.items.map((i) => (
-            <li key={i.href}>
-              <Link
-                href={i.href} onClick={onNavigate} aria-current={activeHref === i.href ? "page" : undefined}
-                className={cn("block rounded-md py-2 pl-10 pr-3 text-sm transition-colors", activeHref === i.href ? "font-semibold text-brand" : "text-foreground/75 hover:bg-muted hover:text-foreground")}
-              >
-                {i.label}
-              </Link>
-            </li>
-          ))}
+          {sections(m.items).map((s) => s.label
+            ? <SubGroup key={s.label} label={s.label} items={s.items} activeHref={activeHref} onNavigate={onNavigate} />
+            : s.items.map((i) => <li key={i.href}><SubLink item={i} activeHref={activeHref} onNavigate={onNavigate} /></li>))}
         </ul>
       </div>
     </div>

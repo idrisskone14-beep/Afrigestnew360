@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { listAssignments } from "@/modules/hr/staff";
+import { AssignmentDialog } from "@/modules/hr/ui/register-dialogs";
 import { EntityDocuments } from "@/modules/documents/ui/entity-documents";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -27,7 +29,7 @@ import { EmployeeItemDialog } from "@/modules/payroll/ui/item-dialogs";
 import { Trash2 } from "lucide-react";
 
 export const metadata: Metadata = { title: "Fiche salarié" };
-const TABS = ["resume", "contrats", "conges", "evaluations", "formations", "paie"] as const;
+const TABS = ["resume", "affectations", "contrats", "conges", "evaluations", "formations", "paie"] as const;
 
 export default async function EmployeeDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SearchParams> }) {
   const ctx = await requirePagePermission("hr.employee.read");
@@ -39,6 +41,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: { par
   const canEval = ctx.can("hr.evaluation.manage");
   const tabs = [
     { key: "resume", label: "Résumé" },
+    { key: "affectations", label: "Affectations" },
     ...(pay ? [{ key: "contrats", label: "Contrats" }] : []),
     { key: "conges", label: "Congés" },
     ...(canEval ? [{ key: "evaluations", label: "Évaluations" }, { key: "formations", label: "Formations" }] : []),
@@ -67,7 +70,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: { par
         </div>
         <div className="flex flex-wrap gap-2">
           {edit && <EmployeeFormDialog canPay={pay} departments={departments} branches={branches} managers={managers.map((m) => ({ id: m.id, name: `${m.lastName} ${m.firstName}` }))} users={members.map((m) => ({ id: m.userId, name: `${m.user.name} (${m.user.email})` }))}
-            employee={{ id: e.id, firstName: e.firstName, lastName: e.lastName, email: e.email ?? "", phone: e.phone ?? "", birthDate: toInputDate(e.birthDate), nationalId: e.nationalId ?? "", address: e.address ?? "", city: e.city ?? "", hireDate: toInputDate(e.hireDate), jobTitle: e.jobTitle ?? "", departmentId: e.departmentId ?? "", branchId: e.branchId ?? "", managerId: e.managerId ?? "", userId: e.userId ?? "", baseSalary: e.baseSalary ? num(e.baseSalary) : 0, payoutMethod: e.payoutMethod, payoutReference: e.payoutReference ?? "" }} />}
+            employee={{ id: e.id, firstName: e.firstName, lastName: e.lastName, email: e.email ?? "", phone: e.phone ?? "", birthDate: toInputDate(e.birthDate), nationalId: e.nationalId ?? "", address: e.address ?? "", city: e.city ?? "", hireDate: toInputDate(e.hireDate), jobTitle: e.jobTitle ?? "", professionalCategory: e.professionalCategory ?? "", departmentId: e.departmentId ?? "", branchId: e.branchId ?? "", managerId: e.managerId ?? "", userId: e.userId ?? "", baseSalary: e.baseSalary ? num(e.baseSalary) : 0, payoutMethod: e.payoutMethod, payoutReference: e.payoutReference ?? "" }} />}
           {edit && <TerminateDialog employeeId={e.id} name={`${e.firstName} ${e.lastName}`} />}
         </div>
       </div>
@@ -89,6 +92,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: { par
             <CardHeader><CardTitle className="text-base">Emploi</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-2 gap-3 text-sm">
               <Info label="Embauche">{fmtDate(e.hireDate)}</Info>
+              <Info label="Statut professionnel">{e.professionalCategory ?? "—"}</Info>
               <Info label="Sortie">{e.endDate ? `${fmtDate(e.endDate)}${e.terminationReason ? ` — ${e.terminationReason}` : ""}` : "—"}</Info>
               <Info label="Responsable">{e.manager ? <Link href={`/app/hr/salaries/${e.manager.id}`} className="hover:text-brand">{e.manager.firstName} {e.manager.lastName}</Link> : "—"}</Info>
               <Info label="Naissance">{fmtDate(e.birthDate)}</Info>
@@ -100,6 +104,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: { par
         </div>
       )}
 
+      {tab === "affectations" && <AssignmentsTab ctx={ctx} employeeId={id} canEdit={edit} departments={departments.map((d) => ({ value: d.id, label: d.name }))} branches={branches.map((b) => ({ value: b.id, label: b.name }))} managers={managers.filter((m) => m.id !== id).map((m) => ({ value: m.id, label: `${m.lastName} ${m.firstName}` }))} current={{ jobTitle: e.jobTitle, departmentId: e.departmentId, branchId: e.branchId, managerId: e.managerId }} />}
       {tab === "contrats" && pay && <ContractsTab ctxId={id} cur={cur} canAdd={ctx.can("hr.contract.manage") && e.status !== "TERMINATED"} salary={e.baseSalary ? num(e.baseSalary) : 0} ctx={ctx} />}
       {tab === "conges" && <LeaveTab ctx={ctx} employeeId={id} />}
       {tab === "evaluations" && canEval && <EvaluationsTab ctx={ctx} employeeId={id} active={e.status !== "TERMINATED"} />}
@@ -125,6 +130,30 @@ async function ContractsTab({ ctxId, ctx, cur, canAdd, salary }: { ctxId: string
             <TableBody>
               {contracts.map((c) => (
                 <TableRow key={c.id}><TableCell className="text-sm font-medium">{CONTRACT_TYPES.find((t) => t.value === c.type)?.label}</TableCell><TableCell className="text-sm">{fmtDate(c.startDate)}</TableCell><TableCell className="text-sm">{c.endDate ? fmtDate(c.endDate) : "en cours"}</TableCell><TableCell className="hidden text-sm sm:table-cell">{c.jobTitle ?? "—"}</TableCell><TableCell className="text-right text-sm tabular">{formatMoney(num(c.salary), cur)}</TableCell></TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+async function AssignmentsTab({ ctx, employeeId, canEdit, departments, branches, managers, current }: {
+  ctx: PageCtx; employeeId: string; canEdit: boolean; departments: { value: string; label: string }[]; branches: { value: string; label: string }[]; managers: { value: string; label: string }[];
+  current: { jobTitle: string | null; departmentId: string | null; branchId: string | null; managerId: string | null };
+}) {
+  const rows = await listAssignments(ctx, employeeId);
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Historique des affectations</CardTitle>{canEdit && <AssignmentDialog employeeId={employeeId} current={current} departments={departments} branches={branches} managers={managers} />}</CardHeader>
+      <CardContent className="p-0">
+        {rows.length === 0 ? <p className="px-6 pb-6 text-sm text-muted-foreground">Aucune affectation enregistrée.</p> : (
+          <Table>
+            <TableHeader><TableRow><TableHead>À compter du</TableHead><TableHead>Poste</TableHead><TableHead>Service</TableHead><TableHead className="hidden sm:table-cell">Agence</TableHead><TableHead className="hidden sm:table-cell">Responsable</TableHead><TableHead>Motif</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.id}><TableCell className="whitespace-nowrap text-sm">{fmtDate(r.effectiveDate)}</TableCell><TableCell className="text-sm font-medium">{r.jobTitle ?? "—"}</TableCell><TableCell className="text-sm">{r.departmentName ?? "—"}</TableCell><TableCell className="hidden text-sm sm:table-cell">{r.branchName ?? "—"}</TableCell><TableCell className="hidden text-sm sm:table-cell">{r.managerName ?? "—"}</TableCell><TableCell className="text-sm text-muted-foreground">{r.reason ?? "—"}</TableCell></TableRow>
               ))}
             </TableBody>
           </Table>

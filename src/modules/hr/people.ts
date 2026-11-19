@@ -6,8 +6,10 @@ import { businessRule, notFound } from "@/core/errors";
 import { roundMoney } from "@/core/money";
 import type { TenantContext } from "@/core/tenant/context";
 import type { z } from "zod";
+import { absentOn } from "./absences";
 import { onLeaveOn } from "./leave";
 import type { attendanceSchema, bulkAttendanceSchema, evaluationSchema, trainingSchema } from "./schemas";
+import { timeOffOn } from "./timeoff";
 
 type Ctx = TenantContext;
 const blank = (v?: string | null) => (v && v.trim() ? v.trim() : null);
@@ -62,18 +64,27 @@ export async function markAllPresent(ctx: Ctx, input: z.output<typeof bulkAttend
   return { marked: todo.length };
 }
 
-export interface BoardRow { employeeId: string; number: string; name: string; jobTitle: string | null; status: string | null; checkIn: string | null; checkOut: string | null; notes: string | null; onLeave: boolean }
+export interface BoardRow { employeeId: string; number: string; name: string; jobTitle: string | null; status: string | null; checkIn: string | null; checkOut: string | null; notes: string | null; onLeave: boolean; offLabel: string | null; note: string | null }
 
 /** Feuille de présence d'un jour : chaque salarié en activité avec son pointage ou son congé approuvé. */
 export async function attendanceBoard(ctx: Ctx, dateInput: Date): Promise<BoardRow[]> {
   const date = day(dateInput);
-  const [emps, records, leave] = await Promise.all([
+  const [emps, records, leave, offs, absences] = await Promise.all([
     ctx.db.employee.findMany({ where: { status: "ACTIVE", deletedAt: null, hireDate: { lte: date } }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
     ctx.db.attendance.findMany({ where: { date } }),
     onLeaveOn(ctx.db, date),
+    timeOffOn(ctx.db, date),
+    absentOn(ctx.db, date),
   ]);
   const byEmp = new Map(records.map((r) => [r.employeeId, r]));
-  return emps.map((e) => { const r = byEmp.get(e.id); return { employeeId: e.id, number: e.number, name: `${e.lastName} ${e.firstName}`, jobTitle: e.jobTitle, status: r?.status ?? null, checkIn: r?.checkIn ?? null, checkOut: r?.checkOut ?? null, notes: r?.notes ?? null, onLeave: leave.has(e.id) }; });
+  return emps.map((e) => {
+    const r = byEmp.get(e.id);
+    const off = offs.get(e.id), abs = absences.get(e.id);
+    // permission validée ou absence enregistrée : lues dans leurs registres (rien n'est recopié dans les présences, donc rien à défaire en cas d'annulation)
+    const offLabel = abs && !abs.halfDay ? `Absent — ${abs.label}` : off?.full ? "En permission" : null;
+    const note = abs?.halfDay ? `Demi-journée d'absence (${abs.label})` : off && !off.full ? `Permission ${off.from ?? "…"}–${off.to ?? "…"}` : null;
+    return { employeeId: e.id, number: e.number, name: `${e.lastName} ${e.firstName}`, jobTitle: e.jobTitle, status: r?.status ?? null, checkIn: r?.checkIn ?? null, checkOut: r?.checkOut ?? null, notes: r?.notes ?? null, onLeave: leave.has(e.id), offLabel, note };
+  });
 }
 
 /** Récapitulatif mensuel des pointages par salarié. */

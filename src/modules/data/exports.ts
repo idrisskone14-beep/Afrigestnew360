@@ -7,6 +7,7 @@ import { countryName } from "@/lib/reference-data";
 import { parseAuditFilters } from "@/modules/audit/params";
 import { auditForExport, AUDIT_EXPORT_MAX } from "@/modules/audit/service";
 import { canSeePay } from "@/modules/hr/employees";
+import { HR_EXPORTERS } from "@/modules/hr/exports";
 import { ENTITIES, IMPORT_ENTITIES, fieldsFor } from "./entities";
 import { importReport } from "./import-service";
 
@@ -26,6 +27,7 @@ const day = (v: Date | null) => (v ? v.toISOString().slice(0, 10) : "");
 const status = (active: boolean) => (active ? "Actif" : "Inactif");
 
 export const EXPORTERS: Record<string, Exporter> = {
+  ...HR_EXPORTERS,
   audit: {
     permissions: ["audit.log.read"],
     async build(ctx, q) {

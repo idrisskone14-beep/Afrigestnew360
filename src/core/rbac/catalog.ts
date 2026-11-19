@@ -126,6 +126,17 @@ export const PERMISSIONS: readonly PermissionDef[] = [
     leave: ["Congés", ["read", "request", "approve"]],
     evaluation: ["Évaluations et formations", ["manage"]],
     holiday: ["Jours fériés et calendrier de travail", ["manage"]],
+    // Registres de gestion administrative : « lire » = tout consulter, « gérer » = tout saisir ; « approuver » = valider et voir son équipe ; « demander » = ses propres demandes
+    accident: ["Accidents de travail", ["read", "manage"]],
+    timeoff: ["Permissions d'absence", ["read", "request", "approve", "manage"]],
+    absence: ["Absences", ["read", "manage", "approve"]],
+    lateness: ["Retards", ["read", "manage"]],
+    sickleave: ["Arrêts maladie (suivi administratif)", ["read", "manage"]],
+    overtime: ["Heures supplémentaires", ["read", "request", "approve", "manage"]],
+    advance: ["Avances et acomptes sur salaire", ["read", "request", "approve", "manage"]],
+    sanction: ["Sanctions disciplinaires", ["read", "manage"]],
+    medvisit: ["Visites médicales (suivi administratif)", ["read", "manage"]],
+    equipment: ["Équipements et EPI", ["read", "manage"]],
   }),
   ...build("hr", "payroll", { payroll: ["Paie", ["manage"]], payslip: ["Bulletins", ["read"]] }),
 
@@ -188,7 +199,7 @@ export const ROLE_TEMPLATES: readonly RoleTemplate[] = [
   { key: "stock_manager", name: "Responsable Stock", description: "Produits, entrepôts, mouvements.", patterns: [...BASE, "inventory.*", "purchases.supplier.read", "purchases.receipt.*", "sales.delivery.*", "reports.report.read"] },
   { key: "project_manager", name: "Chef de Projet", description: "Projets, tâches, temps et budgets.", patterns: [...BASE, "project.*", "documents.document.*", "construction.*", "reports.report.read", "hr.employee.read"] },
   { key: "fleet_manager", name: "Responsable Flotte", description: "Véhicules, chauffeurs, entretiens, contraventions.", patterns: [...BASE, "fleet.*", "documents.document.*", "finance.expense.read", "reports.report.read"] },
-  { key: "employee", name: "Employé", description: "Accès de base : congés et tâches.", patterns: [...BASE, "hr.leave.request", "hr.leave.read", "project.task.manage", "hr.payslip.read"] },
+  { key: "employee", name: "Employé", description: "Accès de base : congés et tâches.", patterns: [...BASE, "hr.leave.request", "hr.leave.read", "hr.timeoff.request", "hr.overtime.request", "hr.advance.request", "project.task.manage", "hr.payslip.read"] },
   { key: "viewer", name: "Consultation uniquement", description: "Lecture seule.", patterns: ["*.read"] },
 ];
 

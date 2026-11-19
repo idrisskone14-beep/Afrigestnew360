@@ -61,6 +61,8 @@ model Employee {
   terminationReason String?
   status            EmployeeStatus @default(ACTIVE)
   jobTitle          String?
+  // statut professionnel (ex. cadre, agent de maîtrise, employé, ouvrier) : libellé libre, propre à la convention de l'entreprise
+  professionalCategory String?
   departmentId      String?        @db.Uuid
   branchId          String?        @db.Uuid
   managerId         String?        @db.Uuid
@@ -91,6 +93,17 @@ model Employee {
   managedProjects Project[]             @relation("ProjectManager")
   assignedTasks   ProjectTask[]         @relation("TaskAssignee")
   timeEntries     TimeEntry[]
+  workAccidents   WorkAccident[]
+  timeOffRequests TimeOffRequest[]
+  absenceRecords  AbsenceRecord[]
+  latenessRecords LatenessRecord[]
+  sickLeaves      SickLeave[]
+  assignments     EmployeeAssignment[]
+  overtimeRecords OvertimeRecord[]
+  salaryAdvances  SalaryAdvance[]
+  disciplinary    DisciplinaryCase[]
+  medicalVisits   MedicalVisit[]
+  equipment       EquipmentAssignment[]
 
   @@unique([companyId, number])
   @@unique([companyId, userId])
@@ -238,6 +251,26 @@ model HrSettings {
   companyId String   @unique @db.Uuid
   // jours travaillés de la semaine (0 = dimanche … 6 = samedi) ; par défaut du lundi au vendredi
   workDays  Int[]    @default([1, 2, 3, 4, 5])
+  // Horaire de référence (heure locale « HH:MM »), pause facultative : sert aux retards et aux permissions horaires
+  workStartTime           String  @default("08:00")
+  workEndTime             String  @default("17:00")
+  breakStartTime          String?
+  breakEndTime            String?
+  // minutes de tolérance avant de compter un retard
+  lateGraceMinutes        Int     @default(0)
+  // seuils de détection : au moins N retards sur P jours ; au moins N absences non justifiées sur P jours
+  lateRecurrenceCount     Int     @default(3)
+  lateRecurrenceDays      Int     @default(30)
+  absenceRepeatCount      Int     @default(3)
+  absenceRepeatDays       Int     @default(90)
+  // délai (jours) après lequel un accident non déclaré à la CNPS est signalé ; vide = pas d'alerte de délai.
+  // Valeur à fixer avec le conseil juridique de l'entreprise : aucune valeur réglementaire n'est présumée.
+  accidentDeclarationDays Int?
+  // alerte de reprise : nombre de jours avant la fin prévue d'un arrêt maladie
+  sickReturnAlertDays     Int     @default(3)
+  // rappels : visites médicales à venir (jours) et remplacement d'équipement (jours)
+  visitReminderDays       Int     @default(30)
+  equipmentAlertDays      Int     @default(30)
   updatedAt DateTime @updatedAt
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)

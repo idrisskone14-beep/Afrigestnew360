@@ -11,6 +11,7 @@ import type { z } from "zod";
 import { loadCalendar } from "./calendar";
 import { employeeOfUser } from "./employees";
 import { computeBalance, workingDays, type LeaveRow, type LeaveRule } from "./leave-calc";
+import { assertNoConflict } from "./overlaps";
 import type { leaveRequestSchema, leaveTypeSchema, updateLeaveTypeSchema } from "./schemas";
 
 type Ctx = TenantContext;
@@ -117,6 +118,8 @@ export async function requestLeave(ctx: Ctx, input: z.output<typeof leaveRequest
   const days = workingDays(start, end, cal);
   if (days <= 0) throw businessRule("La période ne comporte aucun jour travaillé (week-ends et jours fériés exclus).");
   if (await ctx.db.leaveRequest.findFirst({ where: { employeeId: emp.id, status: { in: ["PENDING", "APPROVED"] }, startDate: { lte: end }, endDate: { gte: start } } })) throw businessRule("Une demande de congé existe déjà sur tout ou partie de cette période.");
+  // pas de congé par-dessus une permission ou une absence enregistrée (les congés entre eux sont déjà contrôlés ci-dessus)
+  await assertNoConflict(ctx.db, emp.id, { startDate: start, startTime: null, endDate: end, endTime: null });
   if (d(type.annualDays).gt(0)) {
     // solde utilisable pour une période se terminant à cette date (acquisition progressive : seul le constitué à la fin de la période compte)
     const bal = (await leaveBalances(ctx, emp.id, start.getUTCFullYear(), end)).find((b) => b.type.id === type.id)!;

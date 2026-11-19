@@ -13,7 +13,7 @@ import { runAction } from "@/components/app/form-kit";
 import { markAllPresentAction, setAttendanceAction } from "../actions";
 import { ATTENDANCE_STATUSES } from "../schemas";
 
-export interface BoardItem { employeeId: string; number: string; name: string; jobTitle: string | null; status: string | null; checkIn: string; checkOut: string; onLeave: boolean }
+export interface BoardItem { employeeId: string; number: string; name: string; jobTitle: string | null; status: string | null; checkIn: string; checkOut: string; onLeave: boolean; offLabel: string | null; note: string | null }
 const NONE = "__none";
 
 /** Feuille de présence d'un jour : une ligne par salarié en activité (congé approuvé affiché, non pointable). */
@@ -45,8 +45,8 @@ export function AttendanceBoard({ date, rows, canManage, isWeekend, isFuture }: 
           const dirty = v.status !== (r.status ?? "") || v.checkIn !== r.checkIn || v.checkOut !== r.checkOut;
           return (
             <div key={r.employeeId} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-              <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{r.name}</p><p className="truncate text-xs text-muted-foreground">{r.number}{r.jobTitle ? ` · ${r.jobTitle}` : ""}</p></div>
-              {r.onLeave ? <Badge variant="secondary">En congé</Badge> : (
+              <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{r.name}</p><p className="truncate text-xs text-muted-foreground">{r.number}{r.jobTitle ? ` · ${r.jobTitle}` : ""}</p>{r.note && <p className="truncate text-xs text-brand">{r.note}</p>}</div>
+              {r.onLeave ? <Badge variant="secondary">En congé</Badge> : r.offLabel ? <Badge variant="secondary">{r.offLabel}</Badge> : (
                 <>
                   <Select value={v.status || NONE} disabled={!editable} onValueChange={(s) => setDraft({ ...draft, [r.employeeId]: { ...v, status: s === NONE ? "" : s } })}>
                     <SelectTrigger className="w-40" aria-label={`Statut de ${r.name}`}><SelectValue /></SelectTrigger>
