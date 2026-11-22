@@ -130,19 +130,20 @@ export function AbsenceDialog({ employees, types, absence }: { employees: Opt[];
   );
 }
 
-export interface AbsenceTypeRow { id: string; name: string; category: string; requiresValidation: boolean; requiresProof: boolean; isActive: boolean }
+export interface AbsenceTypeRow { id: string; name: string; category: string; requiresValidation: boolean; requiresProof: boolean; deductFromPay: boolean; isActive: boolean }
 export function AbsenceTypeDialog({ type }: { type?: AbsenceTypeRow }) {
   const fields: FieldSpec[] = [
     { name: "name", label: "Motif", required: true, wide: true }, { name: "category", label: "Catégorie", kind: "select", required: true, options: opts(ABSENCE_CATEGORIES) },
     { name: "requiresValidation", label: "Soumise à validation administrative", kind: "switch" }, { name: "requiresProof", label: "Justificatif attendu", kind: "switch" },
+    { name: "deductFromPay", label: "Retenue sur salaire prévue (réservé à la paie)", kind: "switch", hint: "Règle à configurer et valider par l'entreprise ; effective seulement si la liaison RH → paie est activée." },
     ...(type ? [{ name: "isActive", label: "Actif", kind: "switch" as const }] : []),
   ];
-  const initial: Values = type ? { name: type.name, category: type.category, requiresValidation: type.requiresValidation, requiresProof: type.requiresProof, isActive: type.isActive } : { name: "", category: "OTHER", requiresValidation: false, requiresProof: false };
+  const initial: Values = type ? { name: type.name, category: type.category, requiresValidation: type.requiresValidation, requiresProof: type.requiresProof, deductFromPay: type.deductFromPay, isActive: type.isActive } : { name: "", category: "OTHER", requiresValidation: false, requiresProof: false, deductFromPay: false };
   return (
     <EntityDialog
       title={type ? `Motif « ${type.name} »` : "Nouveau motif d'absence"} fields={fields} initial={initial} success="Motif enregistré"
       trigger={type ? <EditBtn label={`Modifier ${type.name}`} /> : <Button size="sm" variant="outline"><Plus className="size-4" /> Nouveau motif</Button>}
-      onSubmit={(v) => (type ? updateAbsenceTypeAction(p(v, { id: type.id, requiresValidation: bool(v.requiresValidation), requiresProof: bool(v.requiresProof), isActive: bool(v.isActive) })) : createAbsenceTypeAction(p(v, { requiresValidation: bool(v.requiresValidation), requiresProof: bool(v.requiresProof) })))}
+      onSubmit={(v) => (type ? updateAbsenceTypeAction(p(v, { id: type.id, requiresValidation: bool(v.requiresValidation), requiresProof: bool(v.requiresProof), deductFromPay: bool(v.deductFromPay), isActive: bool(v.isActive) })) : createAbsenceTypeAction(p(v, { requiresValidation: bool(v.requiresValidation), requiresProof: bool(v.requiresProof), deductFromPay: bool(v.deductFromPay) })))}
     />
   );
 }

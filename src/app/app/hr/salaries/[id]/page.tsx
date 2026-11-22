@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { leaveEntitlementHistory } from "@/modules/hr/reports";
 import { listAssignments } from "@/modules/hr/staff";
 import { AssignmentDialog } from "@/modules/hr/ui/register-dialogs";
 import { EntityDocuments } from "@/modules/documents/ui/entity-documents";
@@ -165,9 +166,10 @@ async function AssignmentsTab({ ctx, employeeId, canEdit, departments, branches,
 
 async function LeaveTab({ ctx, employeeId }: { ctx: PageCtx; employeeId: string }) {
   const year = new Date().getUTCFullYear();
-  const [balances, reqs] = await Promise.all([
+  const [balances, reqs, history] = await Promise.all([
     leaveBalances(ctx, employeeId, year),
     ctx.db.leaveRequest.findMany({ where: { employeeId }, orderBy: { startDate: "desc" }, take: 20, include: { type: { select: { name: true } } } }),
+    leaveEntitlementHistory(ctx, employeeId),
   ]);
   return (
     <div className="space-y-4">
@@ -182,6 +184,19 @@ async function LeaveTab({ ctx, employeeId }: { ctx: PageCtx; employeeId: string 
           <Link key={r.id} href={`/app/hr/conges?statut=${r.status}`} className="flex items-center gap-3 px-6 py-3 hover:bg-muted/50"><span className="flex-1 text-sm font-medium">{r.type.name} · {num(r.days)} j</span><span className="text-xs text-muted-foreground">{fmtDate(r.startDate)} → {fmtDate(r.endDate)}</span><Status value={r.status} /></Link>
         ))}
       </Card>
+      {history.length > 0 && (
+        <Card className="overflow-hidden">
+          <CardHeader><CardTitle className="text-base">Historique des droits (jours)</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader><TableRow><TableHead>Année</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Droit</TableHead><TableHead className="text-right">Report reçu</TableHead><TableHead className="text-right">Pris</TableHead><TableHead className="text-right">En attente</TableHead><TableHead className="text-right">Reste</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {history.map((h) => <TableRow key={`${h.year}-${h.type}`}><TableCell className="text-sm">{h.year}</TableCell><TableCell className="text-sm font-medium">{h.type}</TableCell><TableCell className="text-right text-sm tabular">{h.entitlement}</TableCell><TableCell className="text-right text-sm tabular">{h.carryOver}</TableCell><TableCell className="text-right text-sm tabular">{h.taken}</TableCell><TableCell className="text-right text-sm tabular">{h.pending}</TableCell><TableCell className="text-right text-sm font-medium tabular">{h.remaining}</TableCell></TableRow>)}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

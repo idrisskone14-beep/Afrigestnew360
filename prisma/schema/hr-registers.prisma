@@ -175,6 +175,8 @@ model AbsenceType {
   // la saisie passe par une validation administrative (moteur de validation global)
   requiresValidation Boolean         @default(false)
   requiresProof      Boolean         @default(false)
+  // retenue sur salaire prévue pour ce motif : règle CONFIGURÉE et validée par l'entreprise (jamais appliquée par défaut)
+  deductFromPay      Boolean         @default(false)
   isActive           Boolean         @default(true)
   createdAt          DateTime        @default(now())
 
@@ -361,6 +363,8 @@ model OvertimeRecord {
   decidedById     String?       @db.Uuid
   decidedAt       DateTime?
   decisionComment String?
+  // période de paie (AAAA-MM) qui a payé ces heures, posée à la validation de la campagne et retirée si elle est annulée : jamais payées deux fois
+  payrollPeriod   String?
   createdById     String?       @db.Uuid
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -598,4 +602,31 @@ model EquipmentAssignment {
 
   @@index([companyId, employeeId, issuedOn])
   @@index([companyId, replaceOn])
+}
+
+// ── Liaison avec la paie : éléments RH retenus par une campagne (traçabilité, annulation, jamais de double paiement) ─
+
+enum PayrollHrLinkKind {
+  OVERTIME
+  ADVANCE
+}
+
+model PayrollHrLink {
+  id         String            @id @default(uuid()) @db.Uuid
+  companyId  String            @db.Uuid
+  runId      String            @db.Uuid
+  employeeId String            @db.Uuid
+  kind       PayrollHrLinkKind
+  // heures supplémentaires (OvertimeRecord) ou avance (SalaryAdvance) concernée
+  refId      String            @db.Uuid
+  // avance : montant retenu ce mois-ci ; heures supplémentaires : heures payées
+  amount     Decimal           @db.Decimal(18, 2)
+  hours      Decimal?          @db.Decimal(6, 2)
+  createdAt  DateTime          @default(now())
+
+  company Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  run     PayrollRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, runId])
+  @@index([companyId, kind, refId])
 }

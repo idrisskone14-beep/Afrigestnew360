@@ -91,6 +91,8 @@ export const absenceTypeSchema = z.object({
   category: z.enum(["JUSTIFIED", "UNJUSTIFIED", "SICK", "EXCEPTIONAL", "OTHER"]),
   requiresValidation: z.boolean().default(false),
   requiresProof: z.boolean().default(false),
+  /** Retenue sur salaire prévue pour ce motif : règle configurée et validée par l'entreprise (réservé à la paie). */
+  deductFromPay: z.boolean().default(false),
 });
 export const updateAbsenceTypeSchema = absenceTypeSchema.extend({ id: uuid, isActive: z.boolean().default(true) });
 

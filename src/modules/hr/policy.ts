@@ -26,10 +26,13 @@ export interface HrPolicy {
   /** Rappels : visites médicales à venir et remplacement d'équipement (jours). */
   visitReminderDays: number;
   equipmentAlertDays: number;
+  /** Liaison avec la paie (tout désactivé par défaut). */
+  payroll: { unpaidTimeOff: boolean; unpaidAbsences: boolean; overtime: boolean; advances: boolean; monthlyHours: number | null };
 }
 
 export const DEFAULT_POLICY: HrPolicy = {
   schedule: DEFAULT_SCHEDULE, lateGraceMinutes: 0, lateRecurrenceCount: 3, lateRecurrenceDays: 30, absenceRepeatCount: 3, absenceRepeatDays: 90, accidentDeclarationDays: null, sickReturnAlertDays: 3, visitReminderDays: 30, equipmentAlertDays: 30,
+  payroll: { unpaidTimeOff: false, unpaidAbsences: false, overtime: false, advances: false, monthlyHours: null },
 };
 
 export async function loadPolicy(db: Pick<Db, "hrSettings">): Promise<HrPolicy> {
@@ -39,6 +42,7 @@ export async function loadPolicy(db: Pick<Db, "hrSettings">): Promise<HrPolicy> 
     schedule: { start: s.workStartTime, end: s.workEndTime, breakStart: s.breakStartTime, breakEnd: s.breakEndTime },
     lateGraceMinutes: s.lateGraceMinutes, lateRecurrenceCount: s.lateRecurrenceCount, lateRecurrenceDays: s.lateRecurrenceDays,
     absenceRepeatCount: s.absenceRepeatCount, absenceRepeatDays: s.absenceRepeatDays, accidentDeclarationDays: s.accidentDeclarationDays, sickReturnAlertDays: s.sickReturnAlertDays, visitReminderDays: s.visitReminderDays, equipmentAlertDays: s.equipmentAlertDays,
+    payroll: { unpaidTimeOff: s.payrollUnpaidTimeOff, unpaidAbsences: s.payrollUnpaidAbsences, overtime: s.payrollOvertime, advances: s.payrollAdvances, monthlyHours: s.payrollMonthlyHours == null ? null : Number(s.payrollMonthlyHours) },
   };
 }
 

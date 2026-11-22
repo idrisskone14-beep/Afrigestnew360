@@ -111,7 +111,7 @@ export default async function AbsencesPage({ searchParams }: { searchParams: Pro
               <div key={t.id} className="flex items-center gap-3 px-6 py-2 text-sm">
                 <span className={`flex-1 font-medium ${t.isActive ? "" : "text-muted-foreground line-through"}`}>{t.name}</span>
                 <span className="text-xs text-muted-foreground">{label(ABSENCE_CATEGORIES, t.category)}{t.requiresValidation ? " · validation" : ""}{t.requiresProof ? " · justificatif" : ""}</span>
-                <AbsenceTypeDialog type={{ id: t.id, name: t.name, category: t.category, requiresValidation: t.requiresValidation, requiresProof: t.requiresProof, isActive: t.isActive }} />
+                <AbsenceTypeDialog type={{ id: t.id, name: t.name, category: t.category, requiresValidation: t.requiresValidation, requiresProof: t.requiresProof, deductFromPay: t.deductFromPay, isActive: t.isActive }} />
               </div>
             ))}
           </CardContent>

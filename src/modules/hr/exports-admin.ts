@@ -7,6 +7,7 @@ import { ADVANCE_KINDS, CONDITIONS, DISCIPLINE_STATUSES, VISIT_KINDS, VISIT_STAT
 import { listEquipment } from "./equipment";
 import { listVisits } from "./medvisits";
 import { listOvertime } from "./overtime";
+import { leaveBalanceReport, monthlyReport } from "./reports";
 import { listCases } from "./sanctions";
 
 type Ctx = TenantContext;
@@ -52,6 +53,40 @@ export const HR_ADMIN_EXPORTERS: Record<string, Exporter> = {
           { key: "inst", label: "Mensualités", type: "number", width: 11 }, { key: "first", label: "1re retenue", type: "date", width: 12 }, { key: "repaid", label: "Remboursé", type: "money", width: 14 }, { key: "balance", label: "Reste", type: "money", width: 14 }, { key: "status", label: "Statut", width: 11 },
         ],
         rows: rows.map((r) => ({ date: r.requestDate, employee: `${r.employee.lastName} ${r.employee.firstName}`, matricule: r.employee.number, kind: label(ADVANCE_KINDS, r.kind), amount: num(r.amount), inst: r.installments, first: r.firstDeductionMonth, repaid: num(r.amount) - r.balance.toNumber(), balance: r.balance.toNumber(), status: REQUEST_STATUS[r.status] ?? r.status })),
+      };
+    },
+  },
+  "hr-rapport-mensuel": {
+    module: "hr", permissions: ["hr.employee.read"],
+    async build(ctx, q) {
+      const m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(q("mois") ?? "");
+      const now = new Date();
+      const year = m ? Number(m[1]) : now.getUTCFullYear(), month = m ? Number(m[2]) : now.getUTCMonth() + 1;
+      const rep = await monthlyReport(ctx, year, month);
+      const cols = [
+        { key: "matricule", label: "Matricule", width: 11 }, { key: "employee", label: "Salarié", width: 24 }, { key: "department", label: "Service", width: 16 },
+        { key: "leave", label: "Congés (j)", type: "number" as const, width: 10 }, { key: "offDays", label: "Permissions (j)", type: "number" as const, width: 12 }, { key: "offHours", label: "Permissions (h)", type: "number" as const, width: 12 },
+        { key: "abs", label: "Absences (j)", type: "number" as const, width: 11 }, { key: "unj", label: "dont injustifiées (j)", type: "number" as const, width: 14 }, { key: "sick", label: "Arrêts maladie (j cal.)", type: "number" as const, width: 14 },
+        { key: "late", label: "Retards", type: "number" as const, width: 9 }, { key: "lateMin", label: "Retards (min)", type: "number" as const, width: 11 }, { key: "ot", label: "H. supp. approuvées", type: "number" as const, width: 13 }, { key: "acc", label: "Accidents", type: "number" as const, width: 10 },
+      ];
+      const row = (r: { number?: string; name?: string; department?: string | null; leaveDays: number | null; timeOffDays: number | null; timeOffHours: number | null; absenceDays: number | null; unjustifiedDays: number | null; sickDays: number | null; lateCount: number | null; lateMinutes: number | null; overtimeHours: number | null; accidents: number | null }) => ({
+        matricule: r.number, employee: r.name, department: r.department, leave: r.leaveDays, offDays: r.timeOffDays, offHours: r.timeOffHours, abs: r.absenceDays, unj: r.unjustifiedDays, sick: r.sickDays, late: r.lateCount, lateMin: r.lateMinutes, ot: r.overtimeHours, acc: r.accidents,
+      });
+      return { ...base(ctx), title: `Rapport RH mensuel ${String(month).padStart(2, "0")}-${year}`, subtitle: "Colonnes selon vos droits ; jours ouvrés (arrêts maladie : jours calendaires)", columns: cols, rows: rep.rows.map(row), totals: { ...row(rep.totals), employee: "Total" } };
+    },
+  },
+  "hr-soldes-conges": {
+    module: "hr", permissions: ["hr.employee.read"],
+    async build(ctx, q) {
+      const year = Number(q("annee")) || new Date().getUTCFullYear();
+      const rows = await leaveBalanceReport(ctx, year);
+      return {
+        ...base(ctx), title: `Soldes de congés ${year}`,
+        columns: [
+          { key: "matricule", label: "Matricule", width: 11 }, { key: "employee", label: "Salarié", width: 24 }, { key: "type", label: "Type de congé", width: 20 }, { key: "ent", label: "Droit de l'année (j)", type: "number", width: 14 },
+          { key: "carry", label: "Report reçu (j)", type: "number", width: 13 }, { key: "taken", label: "Pris (j)", type: "number", width: 9 }, { key: "pending", label: "En attente (j)", type: "number", width: 12 }, { key: "rest", label: "Reste (j)", type: "number", width: 10 },
+        ],
+        rows: rows.map((r) => ({ matricule: r.number, employee: r.name, type: r.type, ent: r.entitlement, carry: r.carryOver, taken: r.taken, pending: r.pending, rest: r.remaining })),
       };
     },
   },

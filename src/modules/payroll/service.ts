@@ -11,6 +11,8 @@ import "@/modules/registry";
 import { formatMoney } from "@/lib/reference-data";
 import { loadCalendar } from "@/modules/hr/calendar";
 import { workingDays } from "@/modules/hr/leave-calc";
+import { consumeOnValidation, hrPayrollVars, releaseOnCancel, saveLinks, type HrPayrollVars } from "@/modules/hr/payroll-link";
+import { loadPolicy } from "@/modules/hr/policy";
 import type { z } from "zod";
 import { computePayslip, type Bracket, type ExtraItem, type ItemDef } from "./calc";
 import type { employeeItemSchema, payRunSchema, payrollItemSchema, runSchema } from "./schemas";
@@ -133,16 +135,20 @@ async function calculate(tx: Db, ctx: Ctx, runId: string) {
   await tx.payslip.deleteMany({ where: { runId } });
   let tGross = d(0), tDed = d(0), tNet = d(0), tEmp = d(0);
   const skipped: string[] = [];
+  const policy = await loadPolicy(tx);
+  const hrRows: { employeeId: string; vars: HrPayrollVars }[] = [];
 
   for (const e of employees) {
     const from = e.hireDate > start ? e.hireDate : start;
     const to = e.endDate && e.endDate < end ? e.endDate : end;
     const presentDays = workingDays(from, to, cal);
     const leaves = await tx.leaveRequest.findMany({ where: { employeeId: e.id, status: "APPROVED", type: { paid: false }, startDate: { lte: to }, endDate: { gte: from } }, select: { startDate: true, endDate: true } });
-    const unpaid = leaves.reduce((a, l) => a + workingDays(l.startDate > from ? l.startDate : from, l.endDate < to ? l.endDate : to, cal), 0);
+    // congés non payés + éléments RH (permissions non rémunérées, absences retenues, selon les réglages de l'entreprise)
+    const hr = await hrPayrollVars(tx, e, { monthStart: start, monthEnd: end, from, to, cal, currency: run.currency, policy });
+    const unpaid = leaves.reduce((a, l) => a + workingDays(l.startDate > from ? l.startDate : from, l.endDate < to ? l.endDate : to, cal), 0) + hr.unpaidDays;
     const prorata = monthWorkdays > 0 ? d(Math.max(0, presentDays - unpaid)).div(monthWorkdays) : d(0);
     const extrasRows = await tx.employeePayrollItem.findMany({ where: { employeeId: e.id, isActive: true, startDate: { lte: end }, OR: [{ endDate: null }, { endDate: { gte: start } }] } });
-    const extras: ExtraItem[] = extrasRows.map((x) => ({ name: x.name, type: x.type as "EARNING" | "DEDUCTION", category: x.category, amount: d(x.amount), taxable: x.taxable }));
+    const extras: ExtraItem[] = [...extrasRows.map((x) => ({ name: x.name, type: x.type as "EARNING" | "DEDUCTION", category: x.category, amount: d(x.amount), taxable: x.taxable })), ...hr.extras];
     if (d(e.baseSalary).isZero() && extras.length === 0) { skipped.push(`${e.lastName} ${e.firstName}`); continue; }
     const calc = computePayslip({ baseSalary: d(e.baseSalary), prorata: prorata.toDecimalPlaces(6), items, extras, currency: run.currency });
     if (calc.net.lt(0)) throw businessRule(`Net négatif pour ${e.lastName} ${e.firstName} (${formatMoney(calc.net.toNumber(), run.currency)}) : vérifiez ses retenues.`);
@@ -153,8 +159,10 @@ async function calculate(tx: Db, ctx: Ctx, runId: string) {
         lines: { create: calc.lines.map((l, i) => ({ companyId: ctx.company.id, position: i, code: l.code, label: l.label, type: l.type, category: l.category, base: l.base?.toString() ?? null, rate: l.rate?.toString() ?? null, amount: l.amount.toString() })) },
       },
     });
+    hrRows.push({ employeeId: e.id, vars: hr });
     tGross = tGross.plus(calc.gross); tDed = tDed.plus(calc.deductions); tNet = tNet.plus(calc.net); tEmp = tEmp.plus(calc.employerCharges);
   }
+  await saveLinks(tx, ctx, runId, hrRows);
   await tx.payrollRun.update({ where: { id: runId }, data: { totalGross: tGross.toString(), totalDeductions: tDed.toString(), totalNet: tNet.toString(), totalEmployer: tEmp.toString(), calculatedAt: new Date() } });
   return { skipped };
 }
@@ -191,6 +199,7 @@ export async function validateRun(ctx: Ctx, id: string) {
     const slips = await tx.payslip.findMany({ where: { runId: id }, orderBy: { employee: { lastName: "asc" } } });
     if (slips.length === 0) throw businessRule("Aucun bulletin à valider : vérifiez les salariés et leurs salaires de base.");
     for (const s of slips) await tx.payslip.update({ where: { id: s.id }, data: { number: await nextNumber(tx, ctx.company.id, "payslip", new Date(Date.UTC(r.year, r.month - 1, 1))) } });
+    await consumeOnValidation(tx, ctx, r); // heures payées et retenues d'avance : enregistrées une seule fois, défaites si la campagne est annulée
     const updated = await tx.payrollRun.update({ where: { id }, data: { status: "VALIDATED", validatedAt: new Date(), validatedById: ctx.user.id } });
     await emit(tx, ctx, "payroll.validated", { runId: id });
     return updated;
@@ -231,7 +240,7 @@ export async function cancelRun(ctx: Ctx, id: string) {
   await ctx.tx(async (tx) => {
     await lockRun(tx, id);
     if (r.status === "DRAFT") await tx.payrollRun.delete({ where: { id } });
-    else { await tx.payrollRun.update({ where: { id }, data: { status: "CANCELLED" } }); await emit(tx, ctx, "payroll.cancelled", { runId: id }); }
+    else { await releaseOnCancel(tx, r); await tx.payrollRun.update({ where: { id }, data: { status: "CANCELLED" } }); await emit(tx, ctx, "payroll.cancelled", { runId: id }); }
   });
   await audit(ctx, { action: "payroll.run.cancel", resource: "PayrollRun", resourceId: id, summary: `${ctx.user.name} a ${r.status === "DRAFT" ? "supprimé le brouillon de" : "annulé"} la paie de ${periodLabel(r.year, r.month)}.` });
 }
