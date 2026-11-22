@@ -66,8 +66,10 @@ function EntityDialog({ title, description, fields, initial, trigger, onSubmit }
   );
 }
 
-const AddButton = ({ label }: { label: string }) => <Button size="sm"><Plus className="size-4" /> {label}</Button>;
-const EditButton = ({ label }: { label: string }) => <Button size="icon" variant="ghost" aria-label={label}><Pencil className="size-4" /></Button>;
+// Un déclencheur de fenêtre (DialogTrigger asChild) injecte onClick, aria-* et ref dans son enfant : le composant DOIT les transmettre au bouton, sinon la fenêtre ne s'ouvre jamais.
+type BtnProps = React.ComponentProps<typeof Button>;
+const AddButton = ({ label, ...props }: { label: string } & BtnProps) => <Button size="sm" {...props}><Plus className="size-4" /> {label}</Button>;
+const EditButton = ({ label, ...props }: { label: string } & BtnProps) => <Button size="icon" variant="ghost" aria-label={label} {...props}><Pencil className="size-4" /></Button>;
 const Status = ({ active }: { active: boolean }) => (active ? null : <Badge variant="outline" className="ml-2">Désactivé</Badge>);
 
 function Section({ title, hint, action, children }: { title: string; hint?: string; action?: React.ReactNode; children: React.ReactNode }) {

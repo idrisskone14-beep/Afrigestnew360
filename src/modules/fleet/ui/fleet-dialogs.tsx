@@ -16,8 +16,10 @@ const dateIn = (v: Date | string | null | undefined) => (v ? new Date(v).toISOSt
 const dtIn = (v: Date | string | null | undefined) => (v ? new Date(v).toISOString().slice(0, 16) : "");
 const p = (v: Values, extra: Record<string, unknown> = {}) => ({ ...v, ...extra }) as never;
 
-const AddBtn = ({ label }: { label: string }) => <Button size="sm"><Plus className="size-4" /> {label}</Button>;
-const EditBtn = ({ label }: { label: string }) => <Button size="icon" variant="ghost" aria-label={label}><Pencil className="size-4" /></Button>;
+// Un déclencheur de fenêtre (DialogTrigger asChild) injecte onClick, aria-* et ref dans son enfant : le composant DOIT les transmettre au bouton, sinon la fenêtre ne s'ouvre jamais.
+type BtnProps = React.ComponentProps<typeof Button>;
+const AddBtn = ({ label, ...props }: { label: string } & BtnProps) => <Button size="sm" {...props}><Plus className="size-4" /> {label}</Button>;
+const EditBtn = ({ label, ...props }: { label: string } & BtnProps) => <Button size="icon" variant="ghost" aria-label={label} {...props}><Pencil className="size-4" /></Button>;
 
 // ── Véhicules ─────────────────────────────────────────────────
 
