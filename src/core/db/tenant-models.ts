@@ -70,6 +70,7 @@ export const TENANT_KEY: Readonly<Record<string, "companyId" | "id">> = {
   MedicalVisit: "companyId",
   EquipmentAssignment: "companyId",
   FneSettings: "companyId",
+  FneRegistryEntry: "companyId",
   ShareLink: "companyId",
   DocumentDispatch: "companyId",
   RecurringInvoice: "companyId",

@@ -281,6 +281,7 @@ export async function reverseManualEntry(ctx: Ctx, id: string) {
  * Génère les écritures des documents antérieurs à l'activation du module Comptabilité (ou bloqués par une période verrouillée) :
  * factures, avoirs, encaissements, factures et règlements fournisseurs, dépenses payées, mouvements saisis et transferts.
  * Idempotent : un document déjà comptabilisé est ignoré. Chaque document est traité dans sa propre transaction.
+ * Les factures et avoirs REPRIS d'un export (importSource, ex. registre FNE) ne sont jamais comptabilisés ici : leur historique est supposé déjà tenu ailleurs.
  */
 export async function generateMissingEntries(ctx: Ctx) {
   await ensureChart(ctx);
@@ -291,9 +292,9 @@ export async function generateMissingEntries(ctx: Ctx) {
   };
 
   const doneInv = await existing("invoice");
-  for (const i of await ctx.db.invoice.findMany({ where: { status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] } }, select: { id: true, number: true }, orderBy: { issueDate: "asc" } })) if (!doneInv.has(i.id)) await run(`Facture ${i.number}`, (tx) => posting.postInvoice(tx, ctx, i.id));
+  for (const i of await ctx.db.invoice.findMany({ where: { status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] }, importSource: null }, select: { id: true, number: true }, orderBy: { issueDate: "asc" } })) if (!doneInv.has(i.id)) await run(`Facture ${i.number}`, (tx) => posting.postInvoice(tx, ctx, i.id));
   const doneCn = await existing("credit_note");
-  for (const c of await ctx.db.creditNote.findMany({ where: { status: "ISSUED" }, select: { id: true, number: true } })) if (!doneCn.has(c.id)) await run(`Avoir ${c.number}`, (tx) => posting.postCreditNote(tx, ctx, c.id));
+  for (const c of await ctx.db.creditNote.findMany({ where: { status: "ISSUED", importSource: null }, select: { id: true, number: true } })) if (!doneCn.has(c.id)) await run(`Avoir ${c.number}`, (tx) => posting.postCreditNote(tx, ctx, c.id));
   const donePay = await existing("payment");
   for (const p of await ctx.db.payment.findMany({ where: { direction: "IN", status: "VALIDATED" }, select: { id: true, number: true }, orderBy: { date: "asc" } })) if (!donePay.has(p.id)) await run(`Encaissement ${p.number}`, (tx) => posting.postCustomerPayment(tx, ctx, p.id));
   const doneBill = await existing("supplier_bill");

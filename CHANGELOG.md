@@ -14,6 +14,23 @@ Format : une entrée par phase livrée, des changements les plus récents aux pl
 - **Heures supplémentaires** (taux de majoration paramétrables, validation hiérarchique), **avances et acomptes** (régularisation, remboursements, aucune double déduction possible), **sanctions disciplinaires** (suivi de procédure confidentiel, types configurables, jamais automatique), **visites médicales** (suivi administratif, rappels), **équipements et EPI** (fiche de remise PDF, alertes, lien facultatif au stock). Migration `hr_admin_registers`.
 - Voir `docs/RH-REGISTRES.md` (mode d'emploi, règles à valider juridiquement, ce qui n'est pas encore livré). Migration `hr_registers`.
 
+## Registre FNE intégré aux ventes : clients, factures et avoirs (2026-11)
+- **Bouton « Intégrer aux ventes »** (Ventes › Registre FNE, après l'import) : crée dans Global Gest les clients, les factures et les avoirs de l'export de la DGI. Une fenêtre de confirmation explique exactement ce qui va se passer.
+- **Clients** : rapprochés par NCC puis par nom ; seuls les manquants sont créés (limite de clients de l'offre respectée).
+- **Factures et avoirs** : numéro = numéro FNE (la numérotation de l'entreprise n'est pas consommée) ; l'export ne contenant que les totaux, une seule ligne « Facture FNE n° … » avec le taux de TVA déduit (18 / 9 / 0 %). Les avoirs sont rattachés à leur facture d'origine et réduisent son solde.
+- **L'utilisateur gère le payé / impayé** : factures émises, à encaisser, **sans date d'échéance** (aucune alerte « facture échue » en rafale), marquées envoyées ; il enregistre lui-même les paiements comme d'habitude.
+- **Garde-fous** : aucune écriture comptable (le « rattrapage » de la Comptabilité ignore ces documents, colonne `importSource`), aucun mouvement de stock, aucun encaissement ; marqués « certifiés FNE », ils ne sont jamais renvoyés à la DGI ; une facture déjà présente (certifiée depuis Global Gest) est rattachée, jamais doublée ; ré-exécutable sans risque.
+- **Pas intégrés** : les proformas (pas des ventes) ; un avoir dont la facture d'origine est introuvable est laissé de côté jusqu'à l'import d'un export plus ancien.
+- Migration `fne_registry_integration` (colonnes facultatives). Essai sur un export réel : 592 factures, 52 avoirs, 31 clients en 3 s, relance sans doublon, total net conforme (3 174 063 496 FCFA TTC), comptabilité inchangée.
+
+## Registre FNE : suivi du chiffre d'affaires à partir de l'export de la DGI (2026-11)
+- **Pourquoi un import** : l'API de la DGI ne permet que d'envoyer (certifier) des documents, pas de les relire. L'export Excel de l'espace FNE est donc la seule source pour retrouver ce qui a déjà été certifié, y compris hors de Global Gest.
+- **Ventes › Registre FNE** (visible quand `FNE_ENABLED=true`) : import de l'export, puis chiffre d'affaires HT / TVA / TTC, graphique par mois, détail par mois, principaux clients, mode de paiement et liste des documents. La période suit l'année choisie en haut de l'écran (ou la pastille de date).
+- **Règles** : facture (sous-type « normal ») = +, avoir (« refund ») = −, proforma = jamais comptée. Les bordereaux d'achat sont ignorés (ce n'est pas du chiffre d'affaires).
+- **Ré-importable** : la clé de dédoublonnage est le numéro FNE (« Référence »), pas le jeton, qui est parfois partagé entre un avoir et des proformas. Un export plus récent n'ajoute que les documents nouveaux. Un avoir exporté sans numéro propre est gardé sous une clé stable (facture d'origine + date) et signalé.
+- **Sans effet de bord** : le registre ne crée ni facture, ni écriture comptable, ni créance, ni mouvement de stock. Table `FneRegistryEntry` (migration `fne_registry`), isolée par entreprise (RLS).
+- Essai sur un export réel de 657 lignes : import en moins d'une seconde, second passage sans doublon, totaux conformes au fichier.
+
 ## Installer l'application : un bouton visible (2026-11)
 - **Avant** : l'invite d'installation n'existait que dans Paramètres › Notifications, introuvable pour un utilisateur.
 - **Maintenant** : bouton « Installer l'app » dans l'en-tête (quand le navigateur propose l'installation, et sur iPhone), entrée « Installer l'application » dans le menu du compte, et bandeau fermable sur le tableau de bord (surtout pour le téléphone).

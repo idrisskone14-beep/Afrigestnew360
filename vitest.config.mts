@@ -1,7 +1,8 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
-const TEST_DB_PORT = 54330;
+// TEST_DB_PORT permet à deux exécutions de tests simultanées (deux sessions de travail) d'utiliser chacune leur base éphémère
+const TEST_DB_PORT = Number(process.env.TEST_DB_PORT) || 54330;
 const TEST_DB_NAME = "afrigest_test";
 
 export default defineConfig({

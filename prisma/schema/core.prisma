@@ -227,6 +227,7 @@ model Company {
   deliveries            Delivery[]
   deliveryLines         DeliveryLine[]
   invoices              Invoice[]
+  fneRegistry           FneRegistryEntry[]
   invoiceLines          InvoiceLine[]
   invoiceInstallments   InvoiceInstallment[]
   creditNotes           CreditNote[]
