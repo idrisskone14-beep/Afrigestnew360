@@ -1,0 +1,601 @@
+// ════════════════════════════════════════════════════════════════
+// RH — registres de gestion administrative du personnel
+// Accidents de travail, permissions, absences, retards. Les heures sont des textes « HH:MM » (heure locale de
+// l'entreprise, sans fuseau : même convention que les présences) ; les jours sont des dates sans heure.
+// Les pièces justificatives passent par la GED (DocumentLink) : aucun fichier n'est stocké ici.
+// ════════════════════════════════════════════════════════════════
+
+// Statut commun des demandes RH soumises au moteur de validation global (permissions, absences à valider…)
+enum RequestStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// Justificatif d'une absence ou d'un retard
+enum JustificationStatus {
+  NOT_REQUIRED
+  PENDING
+  PROVIDED
+  ACCEPTED
+  REFUSED
+}
+
+// ── Accidents de travail ───────────────────────────────────────
+
+enum AccidentKind {
+  // survenu sur le lieu et pendant le temps de travail
+  WORKPLACE
+  // trajet entre le domicile et le lieu de travail (la qualification relève de l'organisme compétent)
+  COMMUTE
+  // déplacement professionnel
+  MISSION
+}
+
+enum AccidentStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum CnpsDeclarationStatus {
+  NOT_REQUIRED
+  TO_DECLARE
+  DECLARED
+  ACKNOWLEDGED
+}
+
+enum AccidentQualification {
+  TO_QUALIFY
+  RECOGNIZED
+  NOT_RECOGNIZED
+}
+
+model WorkAccident {
+  id                String                @id @default(uuid()) @db.Uuid
+  companyId         String                @db.Uuid
+  number            String
+  employeeId        String                @db.Uuid
+  // Photographie du salarié au moment des faits (le dossier reste lisible si la fiche évolue)
+  employeeNumber    String
+  employeeName      String
+  departmentName    String?
+  kind              AccidentKind          @default(WORKPLACE)
+  occurredOn        DateTime              @db.Date
+  occurredTime      String?
+  place             String
+  category          String?
+  circumstances     String
+  injuries          String?
+  witnesses         String?
+  firstAid          String?
+  careFacility      String?
+  // trajet : itinéraire et circonstances (interruption, détour…) à soumettre à l'organisme compétent
+  commuteDetails    String?
+  workStop          Boolean               @default(false)
+  stopStart         DateTime?             @db.Date
+  stopEnd           DateTime?             @db.Date
+  returnDate        DateTime?             @db.Date
+  cnpsStatus        CnpsDeclarationStatus @default(TO_DECLARE)
+  cnpsDeclaredOn    DateTime?             @db.Date
+  cnpsReference     String?
+  qualification     AccidentQualification @default(TO_QUALIFY)
+  correctiveActions String?
+  status            AccidentStatus        @default(OPEN)
+  closedAt          DateTime?
+  archivedAt        DateTime?
+  createdById       String?               @db.Uuid
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, number])
+  @@index([companyId, employeeId, occurredOn])
+  @@index([companyId, status, occurredOn])
+  @@index([companyId, cnpsStatus])
+}
+
+// ── Permissions (autorisations d'absence, distinctes des congés annuels) ─
+
+enum TimeOffUnit {
+  HOURLY
+  DAILY
+}
+
+model TimeOffType {
+  id            String   @id @default(uuid()) @db.Uuid
+  companyId     String   @db.Uuid
+  name          String
+  paid          Boolean  @default(true)
+  requiresProof Boolean  @default(false)
+  // plafond de jours par demande (facultatif ; à fixer selon la convention applicable, jamais codé en dur)
+  maxDays       Decimal? @db.Decimal(5, 1)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requests TimeOffRequest[]
+
+  @@unique([companyId, name])
+}
+
+model TimeOffRequest {
+  id              String        @id @default(uuid()) @db.Uuid
+  companyId       String        @db.Uuid
+  employeeId      String        @db.Uuid
+  typeId          String        @db.Uuid
+  unit            TimeOffUnit
+  startDate       DateTime      @db.Date
+  startTime       String?
+  endDate         DateTime      @db.Date
+  endTime         String?
+  // jours ouvrés (permission journalière) ou heures de travail (permission horaire), calculés par le serveur
+  days            Decimal       @default(0) @db.Decimal(6, 2)
+  hours           Decimal       @default(0) @db.Decimal(6, 2)
+  paid            Boolean
+  reason          String
+  comment         String?
+  status          RequestStatus @default(DRAFT)
+  submittedAt     DateTime?
+  decidedById     String?       @db.Uuid
+  decidedAt       DateTime?
+  decisionComment String?
+  createdById     String?       @db.Uuid
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type     TimeOffType @relation(fields: [typeId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, employeeId, startDate])
+  @@index([companyId, status])
+  @@index([companyId, typeId])
+}
+
+// ── Absences ────────────────────────────────────────────────────
+
+enum AbsenceCategory {
+  JUSTIFIED
+  UNJUSTIFIED
+  SICK
+  EXCEPTIONAL
+  OTHER
+}
+
+model AbsenceType {
+  id                 String          @id @default(uuid()) @db.Uuid
+  companyId          String          @db.Uuid
+  name               String
+  category           AbsenceCategory @default(OTHER)
+  // la saisie passe par une validation administrative (moteur de validation global)
+  requiresValidation Boolean         @default(false)
+  requiresProof      Boolean         @default(false)
+  isActive           Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+
+  company Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  records AbsenceRecord[]
+
+  @@unique([companyId, name])
+}
+
+model AbsenceRecord {
+  id              String              @id @default(uuid()) @db.Uuid
+  companyId       String              @db.Uuid
+  employeeId      String              @db.Uuid
+  typeId          String              @db.Uuid
+  startDate       DateTime            @db.Date
+  endDate         DateTime            @db.Date
+  // demi-journée : une seule date, 0,5 jour
+  halfDay         Boolean             @default(false)
+  days            Decimal             @db.Decimal(6, 2)
+  reason          String?
+  justification   JustificationStatus @default(PENDING)
+  hrNote          String?
+  status          RequestStatus       @default(APPROVED)
+  decidedById     String?             @db.Uuid
+  decidedAt       DateTime?
+  decisionComment String?
+  createdById     String?             @db.Uuid
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type     AbsenceType @relation(fields: [typeId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, employeeId, startDate])
+  @@index([companyId, status])
+  @@index([companyId, typeId])
+}
+
+// ── Retards ─────────────────────────────────────────────────────
+
+enum LatenessSource {
+  MANUAL
+  ATTENDANCE
+}
+
+model LatenessRecord {
+  id            String              @id @default(uuid()) @db.Uuid
+  companyId     String              @db.Uuid
+  employeeId    String              @db.Uuid
+  date          DateTime            @db.Date
+  expectedTime  String
+  actualTime    String
+  // minutes de retard, calculées par le serveur (heure réelle - heure prévue)
+  minutesLate   Int
+  reason        String?
+  justification JustificationStatus @default(PENDING)
+  hrNote        String?
+  source        LatenessSource      @default(MANUAL)
+  createdById   String?             @db.Uuid
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+  @@index([companyId, date])
+  @@index([companyId, employeeId, date])
+}
+
+// ── Arrêts maladie (gestion administrative uniquement : AUCUN diagnostic ni information médicale détaillée) ─
+
+enum SickLeaveStatus {
+  ONGOING
+  ENDED
+  CANCELLED
+}
+
+model SickLeave {
+  id              String              @id @default(uuid()) @db.Uuid
+  companyId       String              @db.Uuid
+  employeeId      String              @db.Uuid
+  startDate       DateTime            @db.Date
+  // fin prévue (prolongée au besoin : chaque prolongation est historisée)
+  expectedEndDate DateTime            @db.Date
+  // premier jour de travail effectif après l'arrêt (« reprise »)
+  returnDate      DateTime?           @db.Date
+  // justificatif médical : seul son STATUT administratif est géré ici ; le document est joint dans la GED (accès restreint)
+  certificate     JustificationStatus @default(PENDING)
+  observations    String?
+  status          SickLeaveStatus     @default(ONGOING)
+  createdById     String?             @db.Uuid
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  company     Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee    Employee             @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  extensions  SickLeaveExtension[]
+
+  @@index([companyId, employeeId, startDate])
+  @@index([companyId, status])
+}
+
+model SickLeaveExtension {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  sickLeaveId String   @db.Uuid
+  previousEnd DateTime @db.Date
+  newEnd      DateTime @db.Date
+  note        String?
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sickLeave SickLeave @relation(fields: [sickLeaveId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, sickLeaveId])
+}
+
+// ── Historique des affectations (poste, service, agence, responsable) ───
+
+model EmployeeAssignment {
+  id             String    @id @default(uuid()) @db.Uuid
+  companyId      String    @db.Uuid
+  employeeId     String    @db.Uuid
+  effectiveDate  DateTime  @db.Date
+  jobTitle       String?
+  // noms conservés tels qu'au moment du changement (le service peut être renommé ou supprimé plus tard)
+  departmentId   String?   @db.Uuid
+  departmentName String?
+  branchId       String?   @db.Uuid
+  branchName     String?
+  managerId      String?   @db.Uuid
+  managerName    String?
+  reason         String?
+  createdById    String?   @db.Uuid
+  createdAt      DateTime  @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId, effectiveDate])
+}
+
+// ════════════════════════════════════════════════════════════════
+// RH — administration : heures supplémentaires, avances, sanctions, visites médicales, équipements
+// ════════════════════════════════════════════════════════════════
+
+// ── Heures supplémentaires ──────────────────────────────────────
+
+// Taux de majoration PARAMÉTRABLES par l'entreprise (jamais codés en dur)
+model OvertimeRate {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  name        String
+  multiplier  Decimal  @db.Decimal(5, 2)
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  records OvertimeRecord[]
+
+  @@unique([companyId, name])
+}
+
+model OvertimeRecord {
+  id              String        @id @default(uuid()) @db.Uuid
+  companyId       String        @db.Uuid
+  employeeId      String        @db.Uuid
+  date            DateTime      @db.Date
+  startTime       String
+  endTime         String
+  // heures normales prévues ce jour-là (horaire de référence) et heures supplémentaires réalisées, calculées par le serveur
+  normalHours     Decimal       @db.Decimal(5, 2)
+  hours           Decimal       @db.Decimal(5, 2)
+  // heures retenues à la validation (jamais plus que les heures réalisées)
+  approvedHours   Decimal?      @db.Decimal(5, 2)
+  rateId          String?       @db.Uuid
+  reason          String
+  status          RequestStatus @default(DRAFT)
+  submittedAt     DateTime?
+  decidedById     String?       @db.Uuid
+  decidedAt       DateTime?
+  decisionComment String?
+  createdById     String?       @db.Uuid
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  company  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  rate     OvertimeRate? @relation(fields: [rateId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, employeeId, date])
+  @@index([companyId, status])
+  @@index([companyId, rateId])
+}
+
+// ── Avances et acomptes sur salaire ─────────────────────────────
+
+enum AdvanceKind {
+  ADVANCE
+  ACOMPTE
+}
+
+enum RepaymentSource {
+  MANUAL
+  PAYROLL
+}
+
+model SalaryAdvance {
+  id                  String        @id @default(uuid()) @db.Uuid
+  companyId           String        @db.Uuid
+  employeeId          String        @db.Uuid
+  kind                AdvanceKind   @default(ADVANCE)
+  amount              Decimal       @db.Decimal(18, 2)
+  requestDate         DateTime      @db.Date
+  reason              String?
+  // modalités de régularisation : nombre de mensualités et premier mois de retenue (1er du mois)
+  installments        Int           @default(1)
+  firstDeductionMonth DateTime      @db.Date
+  status              RequestStatus @default(DRAFT)
+  submittedAt         DateTime?
+  decidedById         String?       @db.Uuid
+  decidedAt           DateTime?
+  decisionComment     String?
+  createdById         String?       @db.Uuid
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  company    Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee   Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  repayments AdvanceRepayment[]
+
+  @@index([companyId, employeeId, requestDate])
+  @@index([companyId, status])
+}
+
+model AdvanceRepayment {
+  id          String          @id @default(uuid()) @db.Uuid
+  companyId   String          @db.Uuid
+  advanceId   String          @db.Uuid
+  date        DateTime        @db.Date
+  amount      Decimal         @db.Decimal(18, 2)
+  source      RepaymentSource @default(MANUAL)
+  // période de paie (AAAA-MM) pour une retenue sur bulletin : unique par avance, donc jamais de double déduction
+  period      String?
+  note        String?
+  createdById String?         @db.Uuid
+  createdAt   DateTime        @default(now())
+
+  company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  advance SalaryAdvance @relation(fields: [advanceId], references: [id], onDelete: Cascade)
+
+  @@unique([advanceId, period])
+  @@index([companyId, advanceId])
+}
+
+// ── Sanctions disciplinaires ────────────────────────────────────
+
+enum DisciplineStatus {
+  OPEN
+  DECIDED
+  NOTIFIED
+  CLOSED
+  CANCELLED
+}
+
+enum DisciplineStepKind {
+  FACTS_REPORT
+  EXPLANATION_REQUEST
+  CONVOCATION
+  HEARING
+  DECISION
+  NOTIFICATION
+  OTHER
+}
+
+// Types de sanction CONFIGURABLES (l'entreprise y reporte ceux de son règlement intérieur et de la convention applicable)
+model SanctionType {
+  id              String   @id @default(uuid()) @db.Uuid
+  companyId       String   @db.Uuid
+  name            String
+  // une audition (entretien) doit avoir eu lieu avant la décision : à régler selon la procédure applicable à ce type
+  requiresHearing Boolean  @default(true)
+  description     String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cases   DisciplinaryCase[]
+
+  @@unique([companyId, name])
+}
+
+model DisciplinaryCase {
+  id               String           @id @default(uuid()) @db.Uuid
+  companyId        String           @db.Uuid
+  number           String
+  employeeId       String           @db.Uuid
+  employeeNumber   String
+  employeeName     String
+  factsDate        DateTime         @db.Date
+  description      String
+  breachNature     String
+  procedureNote    String?
+  sanctionTypeId   String?          @db.Uuid
+  decisionDate     DateTime?        @db.Date
+  notificationDate DateTime?        @db.Date
+  responsibleName  String?
+  observations     String?
+  status           DisciplineStatus @default(OPEN)
+  createdById      String?          @db.Uuid
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  company      Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee     Employee           @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  sanctionType SanctionType?      @relation(fields: [sanctionTypeId], references: [id], onDelete: Restrict)
+  steps        DisciplinaryStep[]
+
+  @@unique([companyId, number])
+  @@index([companyId, employeeId, factsDate])
+  @@index([companyId, status])
+  @@index([companyId, sanctionTypeId])
+}
+
+model DisciplinaryStep {
+  id          String             @id @default(uuid()) @db.Uuid
+  companyId   String             @db.Uuid
+  caseId      String             @db.Uuid
+  kind        DisciplineStepKind
+  date        DateTime           @db.Date
+  note        String?
+  createdById String?            @db.Uuid
+  createdAt   DateTime           @default(now())
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  case    DisciplinaryCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, caseId, date])
+}
+
+// ── Visites médicales professionnelles (suivi administratif : jamais de résultat ni de donnée médicale) ─
+
+enum MedicalVisitKind {
+  HIRING
+  PERIODIC
+  RETURN
+  OTHER
+}
+
+enum MedicalVisitStatus {
+  PLANNED
+  DONE
+  CANCELLED
+}
+
+model MedicalVisit {
+  id          String              @id @default(uuid()) @db.Uuid
+  companyId   String              @db.Uuid
+  employeeId  String              @db.Uuid
+  kind        MedicalVisitKind
+  scheduledOn DateTime?           @db.Date
+  doneOn      DateTime?           @db.Date
+  // organisme ou service de santé au travail
+  provider    String?
+  nextDueOn   DateTime?           @db.Date
+  // document d'aptitude (GED, accès restreint) : seul son statut de réception est suivi
+  aptitudeDoc JustificationStatus @default(NOT_REQUIRED)
+  status      MedicalVisitStatus  @default(PLANNED)
+  notes       String?
+  createdById String?             @db.Uuid
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId, scheduledOn])
+  @@index([companyId, status, scheduledOn])
+  @@index([companyId, nextDueOn])
+}
+
+// ── Équipements et EPI ──────────────────────────────────────────
+
+enum EquipmentCondition {
+  NEW
+  GOOD
+  WORN
+  DAMAGED
+}
+
+model EquipmentAssignment {
+  id                String              @id @default(uuid()) @db.Uuid
+  companyId         String              @db.Uuid
+  employeeId        String              @db.Uuid
+  name              String
+  reference         String?
+  quantity          Int                 @default(1)
+  issuedOn          DateTime            @db.Date
+  condition         EquipmentCondition  @default(NEW)
+  // date de remplacement prévue (alerte)
+  replaceOn         DateTime?           @db.Date
+  returnedOn        DateTime?           @db.Date
+  returnCondition   EquipmentCondition?
+  responsibleName   String?
+  observations      String?
+  // liaison facultative au stock (module Stock) : sortie à la remise, retour en stock à la restitution
+  productId         String?             @db.Uuid
+  warehouseId       String?             @db.Uuid
+  issueMovementId   String?             @db.Uuid
+  returnMovementId  String?             @db.Uuid
+  createdById       String?             @db.Uuid
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId, issuedOn])
+  @@index([companyId, replaceOn])
+}

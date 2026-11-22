@@ -2,7 +2,8 @@ import { fneFeatureEnabled } from "@/modules/sales/fne/feature";
 import type { TenantContext } from "./context";
 
 /** Entrée de sous-menu d'un module (une page de liste ou de synthèse). `exact` : active seulement sur l'URL exacte. */
-export interface NavItem { href: string; label: string; exact?: boolean }
+/** `group` : intitulé de rubrique repliable dans le menu latéral (les entrées sans rubrique restent à plat). */
+export interface NavItem { href: string; label: string; exact?: boolean; group?: string }
 
 type Can = TenantContext["can"];
 interface ItemDef extends NavItem { show: (can: Can) => boolean }
@@ -71,13 +72,24 @@ const ITEMS: Record<string, (ctx: Pick<TenantContext, "can">) => ItemDef[]> = {
     { href: "/app/inventory/entrepots", label: "Entrepôts & catégories", show: any("inventory.product.read", "inventory.warehouse.manage") },
   ],
   hr: () => [
-    { href: "/app/hr", label: "Vue d'ensemble", exact: true, show: always },
-    { href: "/app/hr/indicateurs", label: "Indicateurs RH", show: any("hr.employee.read") },
-    { href: "/app/hr/salaries", label: "Salariés", show: any("hr.employee.read") },
-    { href: "/app/hr/conges", label: "Congés", show: any("hr.leave.read", "hr.leave.request") },
-    { href: "/app/hr/suivi-conges", label: "Suivi des congés", show: any("hr.employee.read", "hr.leave.approve") },
-    { href: "/app/hr/presences", label: "Présences", show: any("hr.attendance.read") },
-    { href: "/app/hr/feries", label: "Jours fériés", show: any("hr.employee.read", "hr.holiday.manage") },
+    { href: "/app/hr", label: "Tableau de bord RH", exact: true, group: "Vue d'ensemble", show: always },
+    { href: "/app/hr/indicateurs", label: "Indicateurs RH", group: "Vue d'ensemble", show: any("hr.employee.read") },
+    { href: "/app/hr/salaries", label: "Salariés", group: "Personnel", show: any("hr.employee.read") },
+    { href: "/app/hr/registre", label: "Registre du personnel", group: "Personnel", show: any("hr.employee.read") },
+    { href: "/app/hr/presences", label: "Présences", group: "Temps et absences", show: any("hr.attendance.read") },
+    { href: "/app/hr/conges", label: "Congés", group: "Temps et absences", show: any("hr.leave.read", "hr.leave.request") },
+    { href: "/app/hr/suivi-conges", label: "Suivi des congés", group: "Temps et absences", show: any("hr.employee.read", "hr.leave.approve") },
+    { href: "/app/hr/permissions", label: "Permissions", group: "Temps et absences", show: any("hr.timeoff.read", "hr.timeoff.manage", "hr.timeoff.request", "hr.timeoff.approve") },
+    { href: "/app/hr/absences", label: "Absences", group: "Temps et absences", show: any("hr.absence.read", "hr.absence.manage", "hr.absence.approve") },
+    { href: "/app/hr/heures-supplementaires", label: "Heures supplémentaires", group: "Temps et absences", show: any("hr.overtime.read", "hr.overtime.manage", "hr.overtime.request", "hr.overtime.approve") },
+    { href: "/app/hr/retards", label: "Retards", group: "Temps et absences", show: any("hr.lateness.read", "hr.lateness.manage") },
+    { href: "/app/hr/feries", label: "Jours fériés", group: "Temps et absences", show: any("hr.employee.read", "hr.holiday.manage") },
+    { href: "/app/hr/accidents", label: "Accidents de travail", group: "Santé et sécurité", show: any("hr.accident.read", "hr.accident.manage") },
+    { href: "/app/hr/arrets-maladie", label: "Arrêts maladie", group: "Santé et sécurité", show: any("hr.sickleave.read", "hr.sickleave.manage") },
+    { href: "/app/hr/visites-medicales", label: "Visites médicales", group: "Santé et sécurité", show: any("hr.medvisit.read", "hr.medvisit.manage") },
+    { href: "/app/hr/equipements", label: "Équipements et EPI", group: "Santé et sécurité", show: any("hr.equipment.read", "hr.equipment.manage") },
+    { href: "/app/hr/sanctions", label: "Sanctions disciplinaires", group: "Administration RH", show: any("hr.sanction.read", "hr.sanction.manage") },
+    { href: "/app/hr/avances", label: "Avances et acomptes", group: "Administration RH", show: any("hr.advance.read", "hr.advance.manage", "hr.advance.request", "hr.advance.approve") },
   ],
   payroll: ({ can }) => {
     const manage = can("hr.payroll.manage");
@@ -105,7 +117,7 @@ const ITEMS: Record<string, (ctx: Pick<TenantContext, "can">) => ItemDef[]> = {
 
 /** Sous-menu d'un module, limité aux pages que l'utilisateur peut ouvrir. Vide : le module n'a qu'une page. */
 export function moduleItems(ctx: Pick<TenantContext, "can">, moduleKey: string): NavItem[] {
-  return (ITEMS[moduleKey]?.(ctx) ?? []).filter((i) => i.show(ctx.can)).map(({ href, label, exact }) => ({ href, label, ...(exact ? { exact } : {}) }));
+  return (ITEMS[moduleKey]?.(ctx) ?? []).filter((i) => i.show(ctx.can)).map(({ href, label, exact, group }) => ({ href, label, ...(exact ? { exact } : {}), ...(group ? { group } : {}) }));
 }
 
 /**

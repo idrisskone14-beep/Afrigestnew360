@@ -51,7 +51,7 @@ export default async function ValidationsPage({ searchParams }: { searchParams: 
               return (
                 <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{meta ? <Link href={`${meta.href}/${r.resourceId}`} className="hover:text-brand">{r.title}</Link> : r.title}</p>
+                    <p className="truncate text-sm font-medium">{meta ? <Link href={type === "timeoff" || type === "absence" ? meta.href : `${meta.href}/${r.resourceId}`} className="hover:text-brand">{r.title}</Link> : r.title}</p>
                     <p className="text-xs text-muted-foreground">{meta?.label ?? r.resourceType} · demandé par {people.get(r.requestedById) ?? "—"} le {fmtDateTime(r.createdAt)}{r.decidedAt ? ` · décidé par ${people.get(r.decidedById ?? "") ?? "—"} le ${fmtDateTime(r.decidedAt)}` : ""}</p>
                     {chain && (
                       <p className="mt-0.5 text-xs text-muted-foreground">
@@ -71,7 +71,7 @@ export default async function ValidationsPage({ searchParams }: { searchParams: 
                     )}
                     {!r.decisions.length && r.comment && <p className="mt-0.5 text-xs">« {r.comment} »</p>}
                   </div>
-                  <span className="tabular text-sm font-medium">{r.resourceType === "leave" ? `${num(r.amount)} j` : formatMoney(num(r.amount), r.currency)}</span>
+                  <span className="tabular text-sm font-medium">{type && "unit" in APPROVAL_TYPES[type] ? (APPROVAL_TYPES[type].unit === "days" ? `${num(r.amount)} j` : "—") : formatMoney(num(r.amount), r.currency)}</span>
                   {mayDecide ? <DecisionButtons id={r.id} title={r.title} /> : <StatusBadge tone={TONE[r.status]}>{LABEL[r.status]}</StatusBadge>}
                   {r.status === "PENDING" && r.requestedById === ctx.user.id && <span className="text-xs text-muted-foreground">Votre demande</span>}
                 </div>

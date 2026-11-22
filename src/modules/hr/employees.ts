@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/reference-data";
 import { assertOrgRefs } from "@/modules/org/service";
 import type { z } from "zod";
 import type { contractSchema, employeeSchema, terminateSchema, updateEmployeeSchema } from "./schemas";
+import { assignmentChanged, recordAssignment } from "./staff";
 
 type Ctx = TenantContext;
 const blank = (v?: string | null) => (v && v.trim() ? v.trim() : null);
@@ -78,13 +79,15 @@ export async function createEmployee(ctx: Ctx, input: z.output<typeof employeeSc
   const hire = parseDate(input.hireDate) ?? new Date();
   const e = await ctx.tx(async (tx) => {
     const number = await nextNumber(tx, ctx.company.id, "employee"); // le matricule ne dépend pas de la date d'embauche
-    return tx.employee.create({
+    const created = await tx.employee.create({
       data: {
         companyId: ctx.company.id, number, firstName: input.firstName.trim(), lastName: input.lastName.trim(), email: blank(input.email), phone: blank(input.phone), birthDate: parseDate(input.birthDate), nationalId: canSeePay(ctx) ? blank(input.nationalId) : null,
-        address: blank(input.address), city: blank(input.city), hireDate: day(hire), jobTitle: blank(input.jobTitle), departmentId: input.departmentId || null, branchId: input.branchId || null, managerId: input.managerId || null, userId: input.userId || null,
+        address: blank(input.address), city: blank(input.city), hireDate: day(hire), jobTitle: blank(input.jobTitle), professionalCategory: blank(input.professionalCategory), departmentId: input.departmentId || null, branchId: input.branchId || null, managerId: input.managerId || null, userId: input.userId || null,
         baseSalary: roundMoney(input.baseSalary, ctx.company.currency).toString(), currency: ctx.company.currency, payoutMethod: input.payoutMethod, payoutReference: canSeePay(ctx) ? blank(input.payoutReference) : null, createdById: ctx.user.id,
       },
     });
+    await recordAssignment(tx, ctx, created.id, created, created.hireDate, "Embauche");
+    return created;
   });
   await audit(ctx, { action: "hr.employee.create", resource: "Employee", resourceId: e.id, summary: `${ctx.user.name} a enregistré le salarié ${e.number} — ${e.firstName} ${e.lastName}.` });
   return e;
@@ -97,14 +100,19 @@ export async function updateEmployee(ctx: Ctx, input: z.output<typeof updateEmpl
   await checkRefs(ctx, input, input.id);
   const pay = canSeePay(ctx);
   const salary = pay ? roundMoney(input.baseSalary, ctx.company.currency) : d(before.baseSalary);
-  const after = await ctx.db.employee.update({
+  const after = await ctx.tx(async (tx) => {
+    const upd = await tx.employee.update({
     where: { id: input.id },
     data: {
       firstName: input.firstName.trim(), lastName: input.lastName.trim(), email: blank(input.email), phone: blank(input.phone), birthDate: parseDate(input.birthDate), address: blank(input.address), city: blank(input.city),
-      hireDate: day(parseDate(input.hireDate) ?? before.hireDate), jobTitle: blank(input.jobTitle), departmentId: input.departmentId || null, branchId: input.branchId || null, managerId: input.managerId || null, userId: input.userId || null,
+      hireDate: day(parseDate(input.hireDate) ?? before.hireDate), jobTitle: blank(input.jobTitle), professionalCategory: blank(input.professionalCategory), departmentId: input.departmentId || null, branchId: input.branchId || null, managerId: input.managerId || null, userId: input.userId || null,
       payoutMethod: input.payoutMethod,
       ...(pay ? { baseSalary: salary.toString(), nationalId: blank(input.nationalId), payoutReference: blank(input.payoutReference) } : {}),
     },
+    });
+    // changement de poste, service, agence ou responsable : trace datée du jour (pour une date d'effet précise, utilisez « Changer l'affectation »)
+    if (assignmentChanged(before, upd)) await recordAssignment(tx, ctx, upd.id, upd, day(new Date()), "Modification de la fiche");
+    return upd;
   });
   const salaryNote = pay && !salary.eq(before.baseSalary) ? ` Salaire de base : ${formatMoney(d(before.baseSalary).toNumber(), after.currency)} → ${formatMoney(salary.toNumber(), after.currency)}.` : "";
   await audit(ctx, { action: "hr.employee.update", resource: "Employee", resourceId: after.id, summary: `${ctx.user.name} a modifié la fiche de ${after.firstName} ${after.lastName} (${after.number}).${salaryNote}` });
@@ -153,7 +161,8 @@ export async function addContract(ctx: Ctx, input: z.output<typeof contractSchem
     for (const o of open) await tx.employmentContract.update({ where: { id: o.id }, data: { endDate: new Date(start.getTime() - DAY) } });
     if (await tx.employmentContract.findFirst({ where: { employeeId: emp.id, startDate: { gte: start } } })) throw businessRule("Un contrat existe déjà à partir de cette date ou après : le nouveau contrat doit être le plus récent.");
     const created = await tx.employmentContract.create({ data: { companyId: ctx.company.id, employeeId: emp.id, type: input.type, startDate: start, endDate: end, jobTitle: blank(input.jobTitle), salary: salary.toString(), notes: blank(input.notes), createdById: ctx.user.id } });
-    await tx.employee.update({ where: { id: emp.id }, data: { baseSalary: salary.toString(), ...(blank(input.jobTitle) ? { jobTitle: blank(input.jobTitle) } : {}) } });
+    const upd = await tx.employee.update({ where: { id: emp.id }, data: { baseSalary: salary.toString(), ...(blank(input.jobTitle) ? { jobTitle: blank(input.jobTitle) } : {}) } });
+    if (assignmentChanged(emp, upd)) await recordAssignment(tx, ctx, emp.id, upd, start, "Nouveau contrat");
     return created;
   });
   await audit(ctx, { action: "hr.contract.create", resource: "EmploymentContract", resourceId: c.id, summary: `${ctx.user.name} a enregistré un contrat (${input.type}) pour ${emp.firstName} ${emp.lastName} dès le ${iso(start)}. Salaire de base : ${formatMoney(d(emp.baseSalary).toNumber(), emp.currency)} → ${formatMoney(salary.toNumber(), emp.currency)}.` });

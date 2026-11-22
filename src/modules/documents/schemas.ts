@@ -7,7 +7,7 @@ const text = (max: number) => z.string().trim().max(max).optional().or(z.literal
 export const idSchema = z.object({ id: uuid });
 
 /** Types d'entités auxquelles un document peut être rattaché. */
-export const ENTITY_TYPES = ["customer", "supplier", "employee", "project", "expense", "invoice", "supplier_bill", "purchase_order", "vehicle", "driver", "fine", "site", "site_report"] as const;
+export const ENTITY_TYPES = ["customer", "supplier", "employee", "project", "expense", "invoice", "supplier_bill", "purchase_order", "vehicle", "driver", "fine", "site", "site_report", "hr_accident", "hr_timeoff", "hr_absence", "hr_sickleave", "hr_sanction", "hr_medvisit", "hr_equipment", "hr_advance"] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 export const entityTypeSchema = z.enum(ENTITY_TYPES);
 

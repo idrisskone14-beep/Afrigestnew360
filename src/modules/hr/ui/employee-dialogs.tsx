@@ -20,10 +20,10 @@ const NONE = "__none";
 type Opt = { id: string; name: string };
 
 export interface EmployeeInit {
-  id?: string; firstName: string; lastName: string; email: string; phone: string; birthDate: string; nationalId: string; address: string; city: string; hireDate: string; jobTitle: string;
+  id?: string; firstName: string; lastName: string; email: string; phone: string; birthDate: string; nationalId: string; address: string; city: string; hireDate: string; jobTitle: string; professionalCategory: string;
   departmentId: string; branchId: string; managerId: string; userId: string; baseSalary: number; payoutMethod: string; payoutReference: string;
 }
-const BLANK: EmployeeInit = { firstName: "", lastName: "", email: "", phone: "", birthDate: "", nationalId: "", address: "", city: "", hireDate: todayInput(), jobTitle: "", departmentId: "", branchId: "", managerId: "", userId: "", baseSalary: 0, payoutMethod: "BANK_TRANSFER", payoutReference: "" };
+const BLANK: EmployeeInit = { firstName: "", lastName: "", email: "", phone: "", birthDate: "", nationalId: "", address: "", city: "", hireDate: todayInput(), jobTitle: "", professionalCategory: "", departmentId: "", branchId: "", managerId: "", userId: "", baseSalary: 0, payoutMethod: "BANK_TRANSFER", payoutReference: "" };
 
 function PickField({ label, value, onChange, options, none = "— Aucun —" }: { label: string; value: string; onChange: (v: string) => void; options: Opt[]; none?: string }) {
   return (
@@ -68,7 +68,8 @@ export function EmployeeFormDialog({ employee, departments, branches, managers, 
           <Field label="Date d'embauche *" htmlFor="em-hd"><Input id="em-hd" type="date" value={f.hireDate} onChange={(e) => set("hireDate", e.target.value)} /></Field>
           <Field label="Adresse" htmlFor="em-ad"><Input id="em-ad" value={f.address} onChange={(e) => set("address", e.target.value)} /></Field>
           <Field label="Ville" htmlFor="em-ci"><Input id="em-ci" value={f.city} onChange={(e) => set("city", e.target.value)} /></Field>
-          <Field label="Poste" htmlFor="em-job" className="sm:col-span-2"><Input id="em-job" value={f.jobTitle} onChange={(e) => set("jobTitle", e.target.value)} /></Field>
+          <Field label="Poste" htmlFor="em-job"><Input id="em-job" value={f.jobTitle} onChange={(e) => set("jobTitle", e.target.value)} /></Field>
+          <Field label="Statut professionnel" htmlFor="em-cat" hint="Ex. cadre, agent de maîtrise, employé, ouvrier."><Input id="em-cat" value={f.professionalCategory} onChange={(e) => set("professionalCategory", e.target.value)} /></Field>
           <PickField label="Département" value={f.departmentId} onChange={(v) => set("departmentId", v)} options={departments} />
           <PickField label="Agence" value={f.branchId} onChange={(v) => set("branchId", v)} options={branches} />
           <PickField label="Responsable hiérarchique" value={f.managerId} onChange={(v) => set("managerId", v)} options={managers.filter((m) => m.id !== employee?.id)} />

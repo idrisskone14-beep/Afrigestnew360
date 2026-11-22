@@ -1,4 +1,5 @@
 import "server-only";
+import { decisionGuardOf } from "@/core/approval-guards";
 import { APPROVAL_TYPES, APPROVAL_TYPE_KEYS, POLICY_TYPE_KEYS, isApprovalType, type ApprovalType } from "@/core/approval-types";
 import { audit } from "@/core/audit";
 import type { Db } from "@/core/db/client";
@@ -181,6 +182,7 @@ export async function decideApproval(ctx: Ctx, input: { id: string; decision: "A
     if (!canDecideRequest(ctx, req)) throw forbidden(req.ruleId ? "Cette étape est réservée à un autre rôle." : "Vous n'avez pas le droit de valider ce type de demande.");
 
     const type = req.resourceType as ApprovalType;
+    await decisionGuardOf(type)?.(tx, ctx, { resourceId: req.resourceId, requestedById: req.requestedById, ruleId: req.ruleId });
     await tx.approvalDecision.create({ data: { companyId: ctx.company.id, requestId: req.id, step: req.currentStep, decidedById: ctx.user.id, decision: input.decision, comment } });
 
     // étape intermédiaire approuvée → on passe à la suivante, rien n'est encore appliqué à la ressource

@@ -32,6 +32,8 @@ export const NUMBERING_DEFAULTS = {
   project: { label: "Projets", prefix: "PRJ", padding: 4, withYear: false },
   trip: { label: "Missions (transport)", prefix: "MIS", padding: 5, withYear: true },
   site: { label: "Chantiers", prefix: "CHA", padding: 4, withYear: false },
+  work_accident: { label: "Accidents de travail", prefix: "AT", padding: 4, withYear: true },
+  disciplinary: { label: "Dossiers disciplinaires", prefix: "DIS", padding: 4, withYear: true },
 } as const satisfies Record<string, NumberingDefault>;
 
 export type NumberingKey = keyof typeof NUMBERING_DEFAULTS;

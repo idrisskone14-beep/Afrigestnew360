@@ -2,6 +2,18 @@
 
 Format : une entrée par phase livrée, des changements les plus récents aux plus anciens. Détail technique : `docs/ARCHITECTURE.md`.
 
+## RH : registres des accidents, permissions, absences et retards (2026-11)
+- **Menu RH regroupé** en rubriques repliables (Vue d'ensemble, Personnel, Temps et absences, Santé et sécurité).
+- **Accidents de travail** : dossier numéroté, accidents de trajet et de mission, déclaration CNPS suivie, arrêt de travail, pièces (Documents), alertes de dossier incomplet, clôture, archivage (jamais de suppression), historique et consultations tracées, fiche PDF, export, tableau de bord.
+- **Permissions** (distinctes des congés) : types configurables, journalières ou horaires (y compris sur deux journées), brouillon → validation par le moteur « Validations » → présences ; refus des chevauchements avec congés, absences et autres permissions.
+- **Absences** : motifs configurables, validation administrative optionnelle, justificatifs, historique, absences répétées signalées (aucune retenue ni sanction automatique).
+- **Retards** : calcul automatique selon l'horaire de référence, import depuis les présences, justification, statistiques mensuelles, retards récurrents, export Excel/PDF.
+- **Paramètres RH** (horaires, tolérance, seuils, délai d'alerte d'accident — aucun délai légal présumé). Nouveaux droits : `hr.accident.*`, `hr.timeoff.*`, `hr.absence.*`, `hr.lateness.*`.
+- **Arrêts maladie** (suivi administratif, aucune donnée médicale) : prolongations historisées, reprise effective, alertes de reprise, intégration aux présences et aux contrôles de chevauchement. Migration `hr_sick_leave_assignments`.
+- **Registre du personnel** : vue de gestion tirée des fiches (export Excel/PDF sans salaire), statut professionnel, **historique daté des affectations** (poste, service, agence, responsable).
+- **Heures supplémentaires** (taux de majoration paramétrables, validation hiérarchique), **avances et acomptes** (régularisation, remboursements, aucune double déduction possible), **sanctions disciplinaires** (suivi de procédure confidentiel, types configurables, jamais automatique), **visites médicales** (suivi administratif, rappels), **équipements et EPI** (fiche de remise PDF, alertes, lien facultatif au stock). Migration `hr_admin_registers`.
+- Voir `docs/RH-REGISTRES.md` (mode d'emploi, règles à valider juridiquement, ce qui n'est pas encore livré). Migration `hr_registers`.
+
 ## Registre FNE intégré aux ventes : clients, factures et avoirs (2026-11)
 - **Bouton « Intégrer aux ventes »** (Ventes › Registre FNE, après l'import) : crée dans Global Gest les clients, les factures et les avoirs de l'export de la DGI. Une fenêtre de confirmation explique exactement ce qui va se passer.
 - **Clients** : rapprochés par NCC puis par nom ; seuls les manquants sont créés (limite de clients de l'offre respectée).
