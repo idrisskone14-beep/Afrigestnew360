@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { num } from "@/core/money";
 import { requireModulePage } from "@/core/tenant/guards";
 import { formatMoney } from "@/lib/reference-data";
+import { loadPolicy } from "@/modules/hr/policy";
+import { PayrollLinkDialog } from "@/modules/hr/ui/payroll-link-dialog";
 import { listItems, listRuns, periodLabel } from "@/modules/payroll/service";
 import { NewRunDialog } from "@/modules/payroll/ui/run-dialogs";
 
@@ -17,7 +19,7 @@ export const metadata: Metadata = { title: "Paie" };
 export default async function PayrollPage() {
   const ctx = await requireModulePage("payroll");
   if (!ctx.can("hr.payroll.manage")) redirect("/app/payroll/bulletins");
-  const [runs, items] = await Promise.all([listRuns(ctx), listItems(ctx)]);
+  const [runs, items, policy] = await Promise.all([listRuns(ctx), listItems(ctx), loadPolicy(ctx.db)]);
   const now = new Date();
   const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
 
@@ -26,7 +28,7 @@ export default async function PayrollPage() {
       {items.length === 0 && (
         <p className="mb-4 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">Aucune rubrique de paie n'est configurée : les bulletins ne comporteront que le salaire de base. Configurez vos cotisations et impôts dans l'onglet <Link href="/app/payroll/rubriques" className="font-medium underline">Rubriques</Link>.</p>
       )}
-      <div className="mb-4 flex justify-end"><NewRunDialog defaultYear={prev.getUTCFullYear()} defaultMonth={prev.getUTCMonth() + 1} /></div>
+      <div className="mb-4 flex flex-wrap justify-end gap-2">{ctx.hasModule("hr") && <PayrollLinkDialog policy={policy.payroll} />}<NewRunDialog defaultYear={prev.getUTCFullYear()} defaultMonth={prev.getUTCMonth() + 1} /></div>
       {runs.length === 0 ? <EmptyState icon={<Banknote className="size-8" />} title="Aucune campagne de paie" description="Préparez la paie du mois : les bulletins sont calculés pour tous les salariés." /> : (
         <Card className="overflow-hidden p-0">
           <Table>

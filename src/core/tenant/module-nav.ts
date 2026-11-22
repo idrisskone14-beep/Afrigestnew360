@@ -74,6 +74,8 @@ const ITEMS: Record<string, (ctx: Pick<TenantContext, "can">) => ItemDef[]> = {
   hr: () => [
     { href: "/app/hr", label: "Tableau de bord RH", exact: true, group: "Vue d'ensemble", show: always },
     { href: "/app/hr/indicateurs", label: "Indicateurs RH", group: "Vue d'ensemble", show: any("hr.employee.read") },
+    { href: "/app/hr/alertes", label: "Alertes et échéances", group: "Vue d'ensemble", show: any("hr.employee.read", "hr.sickleave.read", "hr.medvisit.read", "hr.equipment.read", "hr.accident.read", "hr.absence.read", "hr.lateness.read") },
+    { href: "/app/hr/rapports", label: "Rapports RH", group: "Vue d'ensemble", show: any("hr.employee.read") },
     { href: "/app/hr/salaries", label: "Salariés", group: "Personnel", show: any("hr.employee.read") },
     { href: "/app/hr/registre", label: "Registre du personnel", group: "Personnel", show: any("hr.employee.read") },
     { href: "/app/hr/presences", label: "Présences", group: "Temps et absences", show: any("hr.attendance.read") },

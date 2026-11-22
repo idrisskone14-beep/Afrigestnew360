@@ -6,7 +6,7 @@ Ce document décrit les registres de gestion administrative du personnel (module
 
 ## Menu RH
 
-Le menu RH est regroupé en rubriques repliables : *Vue d'ensemble* · *Personnel* · *Personnel* (Salariés, Registre du personnel) · *Temps et absences* (Présences, Congés, Suivi des congés, Permissions, Absences, Retards, Heures supplémentaires, Jours fériés) · *Santé et sécurité* (Accidents de travail, Arrêts maladie, Visites médicales, Équipements et EPI) · *Administration RH* (Sanctions disciplinaires, Avances et acomptes). Chaque entrée n'apparaît que si l'utilisateur a le droit correspondant.
+Le menu RH est regroupé en rubriques repliables : *Vue d'ensemble* (Tableau de bord RH, Indicateurs RH, Alertes et échéances, Rapports RH) · *Personnel* · *Personnel* (Salariés, Registre du personnel) · *Temps et absences* (Présences, Congés, Suivi des congés, Permissions, Absences, Retards, Heures supplémentaires, Jours fériés) · *Santé et sécurité* (Accidents de travail, Arrêts maladie, Visites médicales, Équipements et EPI) · *Administration RH* (Sanctions disciplinaires, Avances et acomptes). Chaque entrée n'apparaît que si l'utilisateur a le droit correspondant.
 
 ## Droits (catalogue RBAC)
 
@@ -107,6 +107,30 @@ Portée des données : *tout* (RH) · *équipe* = collaborateurs directs et indi
 - **Alertes** : remplacement proche ou dépassé (seuil réglable) et équipement **non restitué par un salarié sorti**.
 - **Lien au stock** (facultatif, module Stock actif et droits de mouvement) : produit + entrepôt → une *sortie de stock* est enregistrée dans la même transaction que la remise (stock insuffisant : rien n'est enregistré) ; la restitution peut remettre en stock (mouvement de retour). Sans lien, aucune écriture de stock.
 
+## Liaison RH → paie (désactivée par défaut)
+
+Réglage : **Paie › Éléments RH** (droit « gérer la paie »). Chaque option est indépendante et **désactivée tant que l'entreprise ne l'active pas** ; aucune règle de retenue ou de majoration n'est présumée.
+
+| Option | Effet sur la campagne de paie (au calcul) |
+|---|---|
+| Permissions non rémunérées | Les permissions *validées* marquées non rémunérées réduisent le temps payé (jours ; une permission horaire est convertie en jours d'après la journée de référence). |
+| Absences « retenue sur salaire » | Seuls les motifs d'absence explicitement marqués « retenue sur salaire » (réservé à la paie) sont déduits ; aucune autre absence. |
+| Heures supplémentaires | Heures *approuvées avec un taux affecté* : montant = (salaire de base ÷ heures mensuelles de référence) × coefficient × heures. Les heures mensuelles de référence sont à fixer par l'entreprise (sans elles, l'option est refusée). Sans taux affecté : non payées, avec avertissement. |
+| Avances et acomptes | Mensualité = montant ÷ nombre de mensualités à partir du premier mois prévu (rattrape les mois manqués, la dernière solde le reste, jamais plus que le reste dû). |
+
+Garde-fous :
+- La page de la campagne affiche l'**aperçu** des éléments RH intégrés (par salarié) avant validation ; le calcul d'un brouillon est rejouable.
+- La **consommation** n'est enregistrée qu'à la **validation** de la campagne, à partir de ce qui a été calculé : heures marquées payées pour la période, retenues d'avance enregistrées comme remboursements « paie » (unique par avance et par période). Si une déclaration ou un remboursement a changé entre-temps, la validation est refusée (« recalculez »).
+- **Annulation d'une campagne validée** : les heures redeviennent payables et les retenues d'avance sont retirées. Une campagne payée ne s'annule plus (régularisation sur la paie suivante).
+- **Arrêts maladie : jamais retenus ni indemnisés par la paie** (les règles de maintien de salaire sont à valider avant toute automatisation).
+- Aucune retenue sur départ (solde d'une avance), aucune règle de plafond de retenue : à traiter manuellement.
+
+## Alertes et échéances, rapports
+
+- **Alertes et échéances** (`/app/hr/alertes`) : contrats arrivant à échéance (60 j), reprises d'arrêts maladie, visites médicales (en retard / proches / à programmer), équipements à remplacer ou non restitués, dossiers d'accident à compléter, absences injustifiées répétées, retards récurrents, demandes à valider. Une section n'apparaît que si l'utilisateur a le droit du registre. Ce sont des signaux : jamais d'action ni de sanction automatique.
+- **Rapports RH** (`/app/hr/rapports`) : rapport mensuel consolidé (une ligne par salarié : congés, permissions, absences dont injustifiées, arrêts maladie, retards, heures supplémentaires approuvées, accidents) avec totaux et export Excel/PDF/CSV ; les colonnes dépendent des droits de l'utilisateur sur chaque registre. Export **Soldes de congés** (`hr-soldes-conges`) par année.
+- **Congés** : la fiche salarié (onglet Congés) affiche l'**historique des droits** des 4 dernières années (droit, report reçu, pris, en attente, reste) ; le suivi des congés (calendrier collectif, soldes, circuit d'approbation) existait déjà et est conservé.
+
 ## Paramètres RH
 
 Bouton « Paramètres » (droit `hr.holiday.manage`) : horaire de référence, pause, tolérance de retard, seuils de récurrence, **délai d'alerte de déclaration d'accident** (vide par défaut = aucune alerte de délai), alerte de reprise d'un arrêt maladie, rappels de visites médicales et de remplacement d'équipement.
@@ -125,6 +149,6 @@ Bouton « Paramètres » (droit `hr.holiday.manage`) : horaire de référence, p
 10. **Visites médicales** : périodicité par poste, conservation du document d'aptitude.
 11. **Horaires de référence** (durée du travail, pauses) : par défaut 08:00–17:00, simples valeurs modifiables.
 
-## Non livré à ce stade (voir le plan)
+## Non livré à ce stade
 
-Phase 3 : amélioration des congés (historique des droits, calendrier collectif), **interconnexion avec la paie** (permission non payée, absence retenue sur règle validée, arrêts maladie, heures supplémentaires en éléments variables, retenue des avances par période), tableau de bord RH complet et rapports consolidés. Pages « Contrats », « Documents administratifs » et « Alertes et échéances » du menu cible. Lettre de notification de sanction générée (seule la fiche de dossier l'est).
+Pièces justificatives rattachées directement à une demande de congé (le calendrier collectif et le circuit existent), notifications supplémentaires, lettre de notification de sanction générée, tableau de bord RH graphique complet (indicateurs et alertes présents, pas de graphiques par service), retenue d'avance au départ du salarié, règles d'indemnisation des arrêts maladie, pages « Contrats » et « Documents administratifs » du menu cible (les contrats et les pièces restent dans la fiche salarié).

@@ -271,6 +271,13 @@ model HrSettings {
   // rappels : visites médicales à venir (jours) et remplacement d'équipement (jours)
   visitReminderDays       Int     @default(30)
   equipmentAlertDays      Int     @default(30)
+  // Liaison avec la paie : TOUT est désactivé par défaut et se règle par l'entreprise (aucune règle légale présumée)
+  payrollUnpaidTimeOff    Boolean @default(false)
+  payrollUnpaidAbsences   Boolean @default(false)
+  payrollOvertime         Boolean @default(false)
+  payrollAdvances         Boolean @default(false)
+  // heures mensuelles de référence pour le taux horaire (salaire de base ÷ heures) : à fixer par l'entreprise, vide = heures supp. non payées par la paie
+  payrollMonthlyHours     Decimal? @db.Decimal(6, 2)
   updatedAt DateTime @updatedAt
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)

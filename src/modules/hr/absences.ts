@@ -23,10 +23,11 @@ const fr = (v: Date) => v.toLocaleDateString("fr-FR", { timeZone: "UTC" });
 
 export const listAbsenceTypes = (ctx: Ctx, includeInactive = false) => ctx.db.absenceType.findMany({ where: includeInactive ? {} : { isActive: true }, orderBy: [{ category: "asc" }, { name: "asc" }] });
 
-export async function createAbsenceType(ctx: Ctx, input: z.output<typeof absenceTypeSchema>) {
+export async function createAbsenceType(ctx: Ctx, input: z.input<typeof absenceTypeSchema>) {
   assertCan(ctx, "hr.absence.manage");
+  if (input.deductFromPay === true) assertCan(ctx, "hr.payroll.manage", "Seule la paie peut marquer un motif comme retenu sur salaire.");
   if (await ctx.db.absenceType.findFirst({ where: { name: { equals: input.name.trim(), mode: "insensitive" } } })) throw businessRule("Ce motif d'absence existe déjà.");
-  const t = await ctx.db.absenceType.create({ data: { companyId: ctx.company.id, name: input.name.trim(), category: input.category, requiresValidation: input.requiresValidation, requiresProof: input.requiresProof } });
+  const t = await ctx.db.absenceType.create({ data: { companyId: ctx.company.id, name: input.name.trim(), category: input.category, requiresValidation: input.requiresValidation ?? false, requiresProof: input.requiresProof ?? false, deductFromPay: input.deductFromPay === true } });
   await audit(ctx, { action: "hr.absence_type.create", resource: "AbsenceType", resourceId: t.id, summary: `${ctx.user.name} a créé le motif d'absence « ${t.name} ».` });
   return t;
 }
@@ -35,8 +36,9 @@ export async function updateAbsenceType(ctx: Ctx, input: z.output<typeof updateA
   assertCan(ctx, "hr.absence.manage");
   const t = await ctx.db.absenceType.findFirst({ where: { id: input.id } });
   if (!t) throw notFound("Motif d'absence");
+  if (input.deductFromPay !== t.deductFromPay) assertCan(ctx, "hr.payroll.manage", "Seule la paie peut modifier la retenue sur salaire d'un motif.");
   if (await ctx.db.absenceType.findFirst({ where: { name: { equals: input.name.trim(), mode: "insensitive" }, id: { not: input.id } } })) throw businessRule("Ce motif d'absence existe déjà.");
-  const after = await ctx.db.absenceType.update({ where: { id: input.id }, data: { name: input.name.trim(), category: input.category, requiresValidation: input.requiresValidation, requiresProof: input.requiresProof, isActive: input.isActive } });
+  const after = await ctx.db.absenceType.update({ where: { id: input.id }, data: { name: input.name.trim(), category: input.category, requiresValidation: input.requiresValidation, requiresProof: input.requiresProof, deductFromPay: input.deductFromPay, isActive: input.isActive } });
   await audit(ctx, { action: "hr.absence_type.update", resource: "AbsenceType", resourceId: t.id, summary: `${ctx.user.name} a modifié le motif d'absence « ${after.name} ».`, before: { category: t.category, requiresValidation: t.requiresValidation, isActive: t.isActive }, after: { category: after.category, requiresValidation: after.requiresValidation, isActive: after.isActive } });
   return after;
 }

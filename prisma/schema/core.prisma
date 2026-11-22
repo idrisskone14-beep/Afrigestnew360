@@ -259,6 +259,7 @@ model Company {
   disciplinarySteps     DisciplinaryStep[]
   medicalVisits         MedicalVisit[]
   equipmentAssignments  EquipmentAssignment[]
+  payrollHrLinks        PayrollHrLink[]
   fneSettings           FneSettings?
   suppliers             Supplier[]
   purchaseRequests      PurchaseRequest[]

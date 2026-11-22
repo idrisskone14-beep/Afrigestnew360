@@ -2,6 +2,11 @@
 
 Format : une entrée par phase livrée, des changements les plus récents aux plus anciens. Détail technique : `docs/ARCHITECTURE.md`.
 
+## RH : liaison avec la paie, alertes, rapports (2026-11)
+- **Liaison RH → paie, désactivée par défaut** (Paie › Éléments RH) : permissions non rémunérées, absences marquées « retenue sur salaire », heures supplémentaires (taux affecté, heures de référence à fixer), retenue mensuelle des avances. Aperçu avant validation ; consommation enregistrée seulement à la validation de la campagne, défaite à son annulation ; jamais de double paiement ni de double déduction. Les arrêts maladie ne sont jamais retenus.
+- **Alertes et échéances** et **Rapports RH** (rapport mensuel consolidé, soldes de congés, exports) ; **historique des droits à congés** dans la fiche salarié.
+- Migration `hr_payroll_link`. Voir `docs/RH-REGISTRES.md`.
+
 ## RH : registres des accidents, permissions, absences et retards (2026-11)
 - **Menu RH regroupé** en rubriques repliables (Vue d'ensemble, Personnel, Temps et absences, Santé et sécurité).
 - **Accidents de travail** : dossier numéroté, accidents de trajet et de mission, déclaration CNPS suivie, arrêt de travail, pièces (Documents), alertes de dossier incomplet, clôture, archivage (jamais de suppression), historique et consultations tracées, fiche PDF, export, tableau de bord.

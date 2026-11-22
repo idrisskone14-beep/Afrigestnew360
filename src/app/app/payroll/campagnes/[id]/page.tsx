@@ -15,6 +15,7 @@ import { formatMoney } from "@/lib/reference-data";
 import { cancelRunAction, recalculateRunAction, validateRunAction } from "@/modules/payroll/actions";
 import { getRun, periodLabel } from "@/modules/payroll/service";
 import { PayRunDialog } from "@/modules/payroll/ui/run-dialogs";
+import { PayrollHrPanel } from "@/modules/hr/ui/payroll-hr-panel";
 import { DocHeader } from "@/modules/sales/ui/doc-kit";
 import { listAccounts } from "@/modules/finance/treasury";
 
@@ -77,6 +78,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
           {run.payslips.length > 0 && <TableFooter><TableRow><TableCell colSpan={3} className="hidden md:table-cell" /><TableCell className="text-right text-sm font-semibold tabular">{formatMoney(num(run.totalGross), cur)}</TableCell><TableCell className="hidden text-right text-sm font-semibold tabular sm:table-cell">{formatMoney(num(run.totalDeductions), cur)}</TableCell><TableCell className="text-right text-sm font-semibold tabular">{formatMoney(num(run.totalNet), cur)}</TableCell><TableCell /></TableRow></TableFooter>}
         </Table>
       </Card>
+      <PayrollHrPanel ctx={ctx} run={run} />
       {run.notes && <p className="text-sm text-muted-foreground">{run.notes}</p>}
     </div>
   );
