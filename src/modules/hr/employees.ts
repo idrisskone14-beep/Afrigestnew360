@@ -73,6 +73,14 @@ function assertPayRight(ctx: Ctx, salary: number) {
   if (salary > 0 && !canSeePay(ctx)) throw forbidden("Seuls les profils habilités (contrats, paie) peuvent définir une rémunération.");
 }
 
+/** État civil, enfants et immatriculation CNPS (communs à la création et à la modification). */
+function civil(input: z.output<typeof employeeSchema>) {
+  return {
+    birthPlace: blank(input.birthPlace), nationality: blank(input.nationality), maritalStatus: input.maritalStatus || null,
+    childrenCount: input.childrenCount, insuredChildren: input.insuredChildren, cnpsNumber: blank(input.cnpsNumber),
+  };
+}
+
 export async function createEmployee(ctx: Ctx, input: z.output<typeof employeeSchema>) {
   assertPayRight(ctx, input.baseSalary);
   await checkRefs(ctx, input);
@@ -81,7 +89,7 @@ export async function createEmployee(ctx: Ctx, input: z.output<typeof employeeSc
     const number = await nextNumber(tx, ctx.company.id, "employee"); // le matricule ne dépend pas de la date d'embauche
     const created = await tx.employee.create({
       data: {
-        companyId: ctx.company.id, number, firstName: input.firstName.trim(), lastName: input.lastName.trim(), email: blank(input.email), phone: blank(input.phone), birthDate: parseDate(input.birthDate), nationalId: canSeePay(ctx) ? blank(input.nationalId) : null,
+        companyId: ctx.company.id, number, firstName: input.firstName.trim(), lastName: input.lastName.trim(), email: blank(input.email), phone: blank(input.phone), birthDate: parseDate(input.birthDate), nationalId: canSeePay(ctx) ? blank(input.nationalId) : null, ...civil(input),
         address: blank(input.address), city: blank(input.city), hireDate: day(hire), jobTitle: blank(input.jobTitle), professionalCategory: blank(input.professionalCategory), departmentId: input.departmentId || null, branchId: input.branchId || null, managerId: input.managerId || null, userId: input.userId || null,
         baseSalary: roundMoney(input.baseSalary, ctx.company.currency).toString(), currency: ctx.company.currency, payoutMethod: input.payoutMethod, payoutReference: canSeePay(ctx) ? blank(input.payoutReference) : null, createdById: ctx.user.id,
       },
@@ -104,7 +112,7 @@ export async function updateEmployee(ctx: Ctx, input: z.output<typeof updateEmpl
     const upd = await tx.employee.update({
     where: { id: input.id },
     data: {
-      firstName: input.firstName.trim(), lastName: input.lastName.trim(), email: blank(input.email), phone: blank(input.phone), birthDate: parseDate(input.birthDate), address: blank(input.address), city: blank(input.city),
+      firstName: input.firstName.trim(), lastName: input.lastName.trim(), email: blank(input.email), phone: blank(input.phone), birthDate: parseDate(input.birthDate), address: blank(input.address), city: blank(input.city), ...civil(input),
       hireDate: day(parseDate(input.hireDate) ?? before.hireDate), jobTitle: blank(input.jobTitle), professionalCategory: blank(input.professionalCategory), departmentId: input.departmentId || null, branchId: input.branchId || null, managerId: input.managerId || null, userId: input.userId || null,
       payoutMethod: input.payoutMethod,
       ...(pay ? { baseSalary: salary.toString(), nationalId: blank(input.nationalId), payoutReference: blank(input.payoutReference) } : {}),

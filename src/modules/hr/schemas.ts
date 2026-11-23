@@ -13,16 +13,23 @@ export const CONTRACT_TYPES = [
   { value: "PERMANENT", label: "CDI" }, { value: "FIXED_TERM", label: "CDD" }, { value: "TEMP", label: "Intérim" }, { value: "INTERNSHIP", label: "Stage" }, { value: "CONSULTANT", label: "Prestataire" },
 ] as const;
 export const PAYOUT_METHODS = [{ value: "BANK_TRANSFER", label: "Virement" }, { value: "CASH", label: "Espèces" }, { value: "MOBILE_MONEY", label: "Mobile money" }] as const;
+export const MARITAL_STATUSES = [{ value: "SINGLE", label: "Célibataire" }, { value: "MARRIED", label: "Marié(e)" }, { value: "DIVORCED", label: "Divorcé(e)" }, { value: "WIDOWED", label: "Veuf / veuve" }] as const;
 export const ATTENDANCE_STATUSES = [
   { value: "PRESENT", label: "Présent" }, { value: "ABSENT", label: "Absent" }, { value: "LATE", label: "En retard" }, { value: "REMOTE", label: "Télétravail" }, { value: "HALF_DAY", label: "Demi-journée" },
 ] as const;
 
-export const employeeSchema = z.object({
+const employeeBase = z.object({
   firstName: z.string().trim().min(1, "Prénom requis").max(80),
   lastName: z.string().trim().min(1, "Nom requis").max(80),
   email: z.string().trim().email("E-mail invalide").optional().or(z.literal("")),
   phone: text(40),
   birthDate: optDate,
+  birthPlace: text(120),
+  nationality: text(80),
+  maritalStatus: emptyOr(z.enum(["SINGLE", "MARRIED", "DIVORCED", "WIDOWED"])).optional(),
+  childrenCount: z.coerce.number().int("Nombre entier attendu").min(0, "Nombre positif").max(50).default(0),
+  insuredChildren: z.coerce.number().int("Nombre entier attendu").min(0, "Nombre positif").max(50).default(0),
+  cnpsNumber: text(40),
   nationalId: text(60),
   address: text(250),
   city: text(100),
@@ -37,8 +44,11 @@ export const employeeSchema = z.object({
   payoutMethod: z.enum(["BANK_TRANSFER", "CASH", "MOBILE_MONEY"]).default("BANK_TRANSFER"),
   payoutReference: text(80),
 });
+const insuredOk = (v: { childrenCount: number; insuredChildren: number }) => v.insuredChildren <= v.childrenCount;
+const insuredMsg = { message: "Les enfants pris en charge par l'assurance ne peuvent pas dépasser le nombre d'enfants.", path: ["insuredChildren"] };
+export const employeeSchema = employeeBase.refine(insuredOk, insuredMsg);
 export type EmployeeInput = z.input<typeof employeeSchema>;
-export const updateEmployeeSchema = employeeSchema.extend({ id: uuid });
+export const updateEmployeeSchema = employeeBase.extend({ id: uuid }).refine(insuredOk, insuredMsg);
 export const terminateSchema = z.object({ id: uuid, endDate: dateStr, reason: text(300) });
 
 export const contractSchema = z.object({

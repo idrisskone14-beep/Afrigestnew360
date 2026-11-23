@@ -126,6 +126,16 @@ describe("salariés", () => {
     expect(found.rows.map((r) => r.id)).toEqual([boss.id]);
   });
 
+  it("état civil, enfants et numéro CNPS enregistrés et modifiables ; les enfants assurés ne dépassent pas le nombre d'enfants", async () => {
+    const s = await setup();
+    const civil = { birthPlace: "Bouaké", nationality: "Ivoirienne", maritalStatus: "MARRIED", childrenCount: 3, insuredChildren: 2, cnpsNumber: "1234567890" };
+    const e = await newEmp(s, civil);
+    expect(e).toMatchObject(civil);
+    const upd = await emp.updateEmployee(s.ctx, { ...employeeSchema.parse({ firstName: "Awa", lastName: "Koné", hireDate: "2020-01-06", ...civil, maritalStatus: "", childrenCount: 1, insuredChildren: 1 }), id: e.id });
+    expect(upd).toMatchObject({ maritalStatus: null, childrenCount: 1, insuredChildren: 1, cnpsNumber: "1234567890" });
+    expect(employeeSchema.safeParse({ firstName: "A", lastName: "B", hireDate: "2020-01-06", childrenCount: 1, insuredChildren: 2 }).success).toBe(false);
+  });
+
   it("rémunération et pièce d'identité masquées sans droit « contrats/paie » ; définir un salaire exige ce droit", async () => {
     const s = await setup();
     await newEmp(s, { nationalId: "CI-123456", payoutReference: "CI93 0001 1234" });

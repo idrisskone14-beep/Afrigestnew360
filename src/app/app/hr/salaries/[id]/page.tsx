@@ -20,7 +20,7 @@ import { formatMoney } from "@/lib/reference-data";
 import { canSeePay, getEmployee, listContracts } from "@/modules/hr/employees";
 import { leaveBalances } from "@/modules/hr/leave";
 import { BalanceCard } from "@/modules/hr/ui/balance-card";
-import { CONTRACT_TYPES, PAYOUT_METHODS } from "@/modules/hr/schemas";
+import { CONTRACT_TYPES, MARITAL_STATUSES, PAYOUT_METHODS } from "@/modules/hr/schemas";
 import { ContractDialog, EmployeeFormDialog, TerminateDialog } from "@/modules/hr/ui/employee-dialogs";
 import { DeleteEvaluationButton, DeleteTrainingButton, EvaluationDialog, TrainingDialog } from "@/modules/hr/ui/evaluation-panels";
 import { toInputDate } from "@/lib/format";
@@ -71,7 +71,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: { par
         </div>
         <div className="flex flex-wrap gap-2">
           {edit && <EmployeeFormDialog canPay={pay} departments={departments} branches={branches} managers={managers.map((m) => ({ id: m.id, name: `${m.lastName} ${m.firstName}` }))} users={members.map((m) => ({ id: m.userId, name: `${m.user.name} (${m.user.email})` }))}
-            employee={{ id: e.id, firstName: e.firstName, lastName: e.lastName, email: e.email ?? "", phone: e.phone ?? "", birthDate: toInputDate(e.birthDate), nationalId: e.nationalId ?? "", address: e.address ?? "", city: e.city ?? "", hireDate: toInputDate(e.hireDate), jobTitle: e.jobTitle ?? "", professionalCategory: e.professionalCategory ?? "", departmentId: e.departmentId ?? "", branchId: e.branchId ?? "", managerId: e.managerId ?? "", userId: e.userId ?? "", baseSalary: e.baseSalary ? num(e.baseSalary) : 0, payoutMethod: e.payoutMethod, payoutReference: e.payoutReference ?? "" }} />}
+            employee={{ id: e.id, firstName: e.firstName, lastName: e.lastName, email: e.email ?? "", phone: e.phone ?? "", birthDate: toInputDate(e.birthDate), nationalId: e.nationalId ?? "", birthPlace: e.birthPlace ?? "", nationality: e.nationality ?? "", maritalStatus: e.maritalStatus ?? "", childrenCount: e.childrenCount, insuredChildren: e.insuredChildren, cnpsNumber: e.cnpsNumber ?? "", address: e.address ?? "", city: e.city ?? "", hireDate: toInputDate(e.hireDate), jobTitle: e.jobTitle ?? "", professionalCategory: e.professionalCategory ?? "", departmentId: e.departmentId ?? "", branchId: e.branchId ?? "", managerId: e.managerId ?? "", userId: e.userId ?? "", baseSalary: e.baseSalary ? num(e.baseSalary) : 0, payoutMethod: e.payoutMethod, payoutReference: e.payoutReference ?? "" }} />}
           {edit && <TerminateDialog employeeId={e.id} name={`${e.firstName} ${e.lastName}`} />}
         </div>
       </div>
@@ -96,7 +96,11 @@ export default async function EmployeeDetailPage({ params, searchParams }: { par
               <Info label="Statut professionnel">{e.professionalCategory ?? "—"}</Info>
               <Info label="Sortie">{e.endDate ? `${fmtDate(e.endDate)}${e.terminationReason ? ` — ${e.terminationReason}` : ""}` : "—"}</Info>
               <Info label="Responsable">{e.manager ? <Link href={`/app/hr/salaries/${e.manager.id}`} className="hover:text-brand">{e.manager.firstName} {e.manager.lastName}</Link> : "—"}</Info>
-              <Info label="Naissance">{fmtDate(e.birthDate)}</Info>
+              <Info label="Naissance">{e.birthDate || e.birthPlace ? [e.birthDate ? fmtDate(e.birthDate) : null, e.birthPlace ? `à ${e.birthPlace}` : null].filter(Boolean).join(" ") : "—"}</Info>
+              <Info label="Nationalité">{e.nationality ?? "—"}</Info>
+              <Info label="Situation matrimoniale">{MARITAL_STATUSES.find((m) => m.value === e.maritalStatus)?.label ?? "—"}</Info>
+              <Info label="Enfants">{e.childrenCount}{e.childrenCount > 0 ? ` (dont ${e.insuredChildren} pris en charge par l'assurance)` : ""}</Info>
+              <Info label="N° CNPS">{e.cnpsNumber ?? "—"}</Info>
               {pay && <Info label="Salaire de base">{e.baseSalary ? formatMoney(num(e.baseSalary), cur) : "—"}</Info>}
               {pay && <Info label="Paiement">{PAYOUT_METHODS.find((m) => m.value === e.payoutMethod)?.label}{e.payoutReference ? ` · ${e.payoutReference}` : ""}</Info>}
               {pay && <Info label="Pièce d'identité">{e.nationalId ?? "—"}</Info>}

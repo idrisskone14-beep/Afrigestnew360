@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FormAlert } from "@/components/app/form-kit";
 import { todayInput } from "@/lib/format";
 import { addContractAction, createEmployeeAction, terminateEmployeeAction, updateEmployeeAction } from "../actions";
-import { CONTRACT_TYPES, PAYOUT_METHODS } from "../schemas";
+import { CONTRACT_TYPES, MARITAL_STATUSES, PAYOUT_METHODS } from "../schemas";
 import { missingFields } from "@/lib/required-fields";
 
 const errText = (e: { message: string; fieldErrors?: Record<string, string[]> }) => (e.fieldErrors ? Object.values(e.fieldErrors).flat()[0] ?? e.message : e.message);
@@ -21,9 +21,10 @@ type Opt = { id: string; name: string };
 
 export interface EmployeeInit {
   id?: string; firstName: string; lastName: string; email: string; phone: string; birthDate: string; nationalId: string; address: string; city: string; hireDate: string; jobTitle: string; professionalCategory: string;
+  birthPlace: string; nationality: string; maritalStatus: string; childrenCount: number; insuredChildren: number; cnpsNumber: string;
   departmentId: string; branchId: string; managerId: string; userId: string; baseSalary: number; payoutMethod: string; payoutReference: string;
 }
-const BLANK: EmployeeInit = { firstName: "", lastName: "", email: "", phone: "", birthDate: "", nationalId: "", address: "", city: "", hireDate: todayInput(), jobTitle: "", professionalCategory: "", departmentId: "", branchId: "", managerId: "", userId: "", baseSalary: 0, payoutMethod: "BANK_TRANSFER", payoutReference: "" };
+const BLANK: EmployeeInit = { firstName: "", lastName: "", email: "", phone: "", birthDate: "", nationalId: "", birthPlace: "", nationality: "", maritalStatus: "", childrenCount: 0, insuredChildren: 0, cnpsNumber: "", address: "", city: "", hireDate: todayInput(), jobTitle: "", professionalCategory: "", departmentId: "", branchId: "", managerId: "", userId: "", baseSalary: 0, payoutMethod: "BANK_TRANSFER", payoutReference: "" };
 
 function PickField({ label, value, onChange, options, none = "— Aucun —" }: { label: string; value: string; onChange: (v: string) => void; options: Opt[]; none?: string }) {
   return (
@@ -46,7 +47,7 @@ export function EmployeeFormDialog({ employee, departments, branches, managers, 
   const set = <K extends keyof EmployeeInit>(k: K, v: EmployeeInit[K]) => setF((s) => ({ ...s, [k]: v }));
   const submit = () => start(async () => {
     setError(null);
-    const payload = { ...f, baseSalary: Number(f.baseSalary || 0) };
+    const payload = { ...f, baseSalary: Number(f.baseSalary || 0), childrenCount: Number(f.childrenCount || 0), insuredChildren: Number(f.insuredChildren || 0) };
     const res = employee ? await updateEmployeeAction({ ...payload, id: employee.id! } as never) : await createEmployeeAction(payload as never);
     if (!res.ok) return setError(errText(res.error));
     toast.success(employee ? "Fiche mise à jour" : "Salarié enregistré");
@@ -65,6 +66,17 @@ export function EmployeeFormDialog({ employee, departments, branches, managers, 
           <Field label="E-mail" htmlFor="em-mail"><Input id="em-mail" type="email" value={f.email} onChange={(e) => set("email", e.target.value)} /></Field>
           <Field label="Téléphone" htmlFor="em-tel"><Input id="em-tel" type="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} /></Field>
           <Field label="Date de naissance" htmlFor="em-bd"><Input id="em-bd" type="date" value={f.birthDate} onChange={(e) => set("birthDate", e.target.value)} /></Field>
+          <Field label="Lieu de naissance" htmlFor="em-bp"><Input id="em-bp" value={f.birthPlace} onChange={(e) => set("birthPlace", e.target.value)} /></Field>
+          <Field label="Nationalité" htmlFor="em-nat"><Input id="em-nat" value={f.nationality} placeholder="Ivoirienne" onChange={(e) => set("nationality", e.target.value)} /></Field>
+          <Field label="Situation matrimoniale">
+            <Select value={f.maritalStatus || NONE} onValueChange={(v) => set("maritalStatus", v === NONE ? "" : v)}>
+              <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value={NONE}>— Non renseignée —</SelectItem>{MARITAL_STATUSES.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Nombre d'enfants" htmlFor="em-ch"><Input id="em-ch" type="number" min={0} step={1} value={f.childrenCount} onChange={(e) => set("childrenCount", Number(e.target.value))} /></Field>
+          <Field label="Enfants assurés" htmlFor="em-ich" hint="Pris en charge par l'assurance"><Input id="em-ich" type="number" min={0} max={f.childrenCount} step={1} value={f.insuredChildren} onChange={(e) => set("insuredChildren", Number(e.target.value))} /></Field>
+          <Field label="Numéro CNPS" htmlFor="em-cnps"><Input id="em-cnps" value={f.cnpsNumber} onChange={(e) => set("cnpsNumber", e.target.value)} /></Field>
           <Field label="Date d'embauche *" htmlFor="em-hd"><Input id="em-hd" type="date" value={f.hireDate} onChange={(e) => set("hireDate", e.target.value)} /></Field>
           <Field label="Adresse" htmlFor="em-ad"><Input id="em-ad" value={f.address} onChange={(e) => set("address", e.target.value)} /></Field>
           <Field label="Ville" htmlFor="em-ci"><Input id="em-ci" value={f.city} onChange={(e) => set("city", e.target.value)} /></Field>
@@ -82,7 +94,7 @@ export function EmployeeFormDialog({ employee, departments, branches, managers, 
               <Field label="IBAN / n° de compte / téléphone" htmlFor="em-pr"><Input id="em-pr" value={f.payoutReference} onChange={(e) => set("payoutReference", e.target.value)} /></Field>
             </>
           )}
-          <Button className="sm:col-span-2" disabled={pending} onClick={() => { const m = missingFields([[Boolean(f.firstName.trim()), "Prénom"], [Boolean(f.lastName.trim()), "Nom"], [Boolean(f.hireDate), "Date d'embauche"]]); if (m) return setError(m); submit(); }}>{employee ? "Enregistrer" : "Créer le salarié"}</Button>
+          <Button className="sm:col-span-2" disabled={pending} onClick={() => { const m = missingFields([[Boolean(f.firstName.trim()), "Prénom"], [Boolean(f.lastName.trim()), "Nom"], [Boolean(f.hireDate), "Date d'embauche"]]); if (m) return setError(m); if (Number(f.insuredChildren || 0) > Number(f.childrenCount || 0)) return setError("Les enfants pris en charge par l'assurance ne peuvent pas dépasser le nombre d'enfants."); submit(); }}>{employee ? "Enregistrer" : "Créer le salarié"}</Button>
         </div>
       </DialogContent>
     </Dialog>
